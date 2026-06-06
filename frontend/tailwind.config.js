@@ -15,43 +15,53 @@ export default {
         display: ['"Playfair Display"', 'serif'],
       },
       colors: {
-        // Ink = dark foreground / text on light bg
         ink: {
-          DEFAULT: '#1a1a1a',
-          soft: '#5a5a5a',
-          muted: '#9a9a9a',
+          DEFAULT: 'rgb(var(--color-ink) / <alpha-value>)',
+          soft: 'rgb(var(--color-ink-soft) / <alpha-value>)',
+          muted: 'rgb(var(--color-ink-muted) / <alpha-value>)',
         },
-        // Bone = light surfaces (warm ivory — never stark white for main bg)
         bone: {
-          DEFAULT: '#faf8f4',
-          soft: '#ffffff',
-          muted: '#ede7dc',
+          DEFAULT: 'rgb(var(--color-bone) / <alpha-value>)',
+          soft: 'rgb(var(--color-bone-soft) / <alpha-value>)',
+          muted: 'rgb(var(--color-bone-muted) / <alpha-value>)',
         },
-        // Gold accent — slightly deeper for contrast on ivory
+        hairline: 'rgb(var(--color-hairline) / <alpha-value>)',
         accent: {
-          DEFAULT: '#b8895a',
-          glow: '#d4a574',
-          deep: '#8a6238',
-          neon: '#39ff88',
+          DEFAULT: 'rgb(var(--color-accent) / <alpha-value>)',
+          glow: 'rgb(var(--color-accent-glow) / <alpha-value>)',
+          deep: 'rgb(var(--color-accent-deep) / <alpha-value>)',
+        },
+        gold: {
+          DEFAULT: 'rgb(var(--color-gold) / <alpha-value>)',
+          light: 'rgb(var(--color-gold-light) / <alpha-value>)',
+          deep: 'rgb(var(--color-gold-deep) / <alpha-value>)',
+        },
+        sale: {
+          DEFAULT: 'rgb(var(--color-sale) / <alpha-value>)',
+        },
+        success: {
+          DEFAULT: 'rgb(var(--color-success) / <alpha-value>)',
         },
       },
       boxShadow: {
-        glow: '0 4px 20px rgba(184, 137, 90, 0.25), 0 0 32px rgba(184, 137, 90, 0.15)',
-        'glow-neon': '0 0 28px rgba(57, 255, 136, 0.4)',
-        soft: '0 1px 2px rgba(26, 26, 26, 0.04), 0 8px 24px rgba(26, 26, 26, 0.06)',
+        glow: '0 12px 32px rgba(188, 74, 44, 0.12)',
+        'glow-gold': '0 12px 32px rgba(197, 158, 89, 0.18)',
+        soft: '0 1px 2px rgba(22, 22, 22, 0.03), 0 18px 44px rgba(22, 22, 22, 0.06)',
+        card: '0 1px 0 rgba(22, 22, 22, 0.03), 0 14px 32px rgba(22, 22, 22, 0.05)',
+        'card-hover': '0 2px 0 rgba(22, 22, 22, 0.04), 0 24px 48px rgba(22, 22, 22, 0.10)',
       },
       animation: {
         'fade-up': 'fadeUp 0.6s ease forwards',
-        marquee: 'marquee 30s linear infinite',
+        'fade-in': 'fadeIn 0.5s ease forwards',
       },
       keyframes: {
         fadeUp: {
           '0%': { opacity: 0, transform: 'translateY(12px)' },
           '100%': { opacity: 1, transform: 'translateY(0)' },
         },
-        marquee: {
-          '0%': { transform: 'translateX(0)' },
-          '100%': { transform: 'translateX(-50%)' },
+        fadeIn: {
+          '0%': { opacity: 0 },
+          '100%': { opacity: 1 },
         },
       },
     },

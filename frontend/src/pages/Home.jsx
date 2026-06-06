@@ -1,69 +1,116 @@
 import Hero from '@/components/common/Hero';
-import SectionHeader from '@/components/common/SectionHeader';
-import CategoryGrid from '@/components/common/CategoryGrid';
+import SectionShell from '@/components/common/SectionShell';
+import EditorialGrid from '@/components/common/EditorialGrid';
+import FeatureSplit from '@/components/common/FeatureSplit';
+import TestimonialGrid from '@/components/common/TestimonialGrid';
+import NewsletterBand from '@/components/common/NewsletterBand';
 import ProductGrid from '@/components/common/ProductGrid';
 import ProductGridSkeleton from '@/components/common/ProductGridSkeleton';
-import PromoBanner from '@/components/common/PromoBanner';
+import Seo from '@/components/common/Seo';
 import useFetch from '@/hooks/useFetch';
+import { homeContent } from '@/lib/siteContent';
 import { normalizeProduct } from '@/lib/utils';
 
 export default function Home() {
   const bestsellers = useFetch('/products?sort=bestselling&limit=8');
-  const newArrivals = useFetch('/products?sort=new&limit=4');
+  const newArrivals  = useFetch('/products?sort=new&limit=4');
+  const reviewsRes   = useFetch('/reviews');
 
-  const bestList = (bestsellers.data?.data || []).map(normalizeProduct);
-  const newList = (newArrivals.data?.data || []).map(normalizeProduct);
+  const bestList     = (bestsellers.data?.data || []).map(normalizeProduct);
+  const newList      = (newArrivals.data?.data  || []).map(normalizeProduct);
+  const testimonials = reviewsRes.data?.data?.length
+    ? reviewsRes.data.data
+    : homeContent.testimonials;
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
   return (
     <>
+      <Seo
+        title="DreamzDecors — Premium Wall Art, Gallery Sets & Bundles"
+        description="Shop premium wall art, gallery sets, and bundles designed for modern Indian homes. Gold foil finishing, secure packaging, pan-India delivery."
+        canonical="/"
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'DreamzDecors',
+          url: origin,
+        }}
+      />
+
+      {/* ① Hero ─────────────────────────────────────────────── */}
       <Hero />
 
-      <section className="container-page py-20">
-        <SectionHeader
-          eyebrow="Shop by category"
-          title="Find your aesthetic."
-          link={{ label: 'View all', href: '/shop' }}
-        />
-        <CategoryGrid />
-      </section>
+      {/* ② Shop by Collection ───────────────────────────────── */}
+      <SectionShell
+        className="bg-bone-soft"
+        eyebrow="Shop by collection"
+        title="Find your aesthetic."
+        description="Wall art, gallery sets, and bundles — the three cleanest entry points into the range."
+        link={{ label: 'View all', href: '/shop' }}
+      >
+        <EditorialGrid items={homeContent.collections} />
+      </SectionShell>
 
-      <section className="container-page py-12">
-        <SectionHeader
-          eyebrow="Most loved"
-          title="Bestsellers right now."
-          link={{ label: 'See all bestsellers', href: '/shop?sort=bestselling' }}
-        />
+      {/* ③ Bestsellers ──────────────────────────────────────── */}
+      <SectionShell
+        className="bg-bone"
+        eyebrow="Most loved"
+        title="Bestsellers right now."
+        link={{ label: 'See all bestsellers', href: '/shop?sort=bestselling' }}
+      >
         {bestsellers.loading ? (
-          <ProductGridSkeleton columns={4} count={8} />
+          <ProductGridSkeleton columns={4} count={8} layout="editorial" />
         ) : bestsellers.error ? (
-          <div className="py-10 text-center text-sm text-ink/60">
-            Could not load products: {bestsellers.error.message}
-          </div>
+          <p className="py-10 text-center text-sm text-ink/50">
+            Could not load products — {bestsellers.error.message}
+          </p>
         ) : (
-          <ProductGrid products={bestList} columns={4} />
+          <ProductGrid products={bestList} columns={4} layout="editorial" />
         )}
-      </section>
+      </SectionShell>
 
-      <section className="container-page py-20">
-        <PromoBanner />
-      </section>
+      {/* ④ Why Dreamz Decor ─────────────────────────────────── */}
+      <FeatureSplit
+        eyebrow={homeContent.featureEyebrow}
+        title={homeContent.featureTitle}
+        description={homeContent.featureDescription}
+        points={homeContent.featurePoints}
+        image={homeContent.featureImage}
+        imageAlt="Dreamz Decor styled interior"
+        cta={homeContent.featureCta}
+      />
 
-      <section className="container-page pb-24">
-        <SectionHeader
-          eyebrow="Fresh in"
-          title="New this week."
-          link={{ label: 'Browse new arrivals', href: '/shop?sort=new' }}
-        />
+      {/* ⑤ New Arrivals ─────────────────────────────────────── */}
+      <SectionShell
+        className="bg-bone-soft"
+        eyebrow="Fresh in"
+        title="New this week."
+        link={{ label: 'Browse new arrivals', href: '/shop?sort=new' }}
+      >
         {newArrivals.loading ? (
-          <ProductGridSkeleton columns={4} count={4} />
+          <ProductGridSkeleton columns={4} count={4} layout="editorial" />
         ) : newArrivals.error ? (
-          <div className="py-10 text-center text-sm text-ink/60">
-            Could not load products: {newArrivals.error.message}
-          </div>
+          <p className="py-10 text-center text-sm text-ink/50">
+            Could not load products — {newArrivals.error.message}
+          </p>
         ) : (
-          <ProductGrid products={newList} columns={4} />
+          <ProductGrid products={newList} columns={4} layout="editorial" />
         )}
-      </section>
+      </SectionShell>
+
+      {/* ⑥ Testimonials ─────────────────────────────────────── */}
+      <SectionShell
+        className="bg-bone"
+        eyebrow="Testimonials"
+        title="What customers are saying."
+        description="Honest reviews from homeowners, interior designers, and hotel owners across India."
+      >
+        <TestimonialGrid items={testimonials} />
+      </SectionShell>
+
+      {/* ⑦ Newsletter ───────────────────────────────────────── */}
+      <NewsletterBand />
     </>
   );
 }

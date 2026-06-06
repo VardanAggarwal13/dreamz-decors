@@ -1,4 +1,4 @@
-// Placeholder catalog used by the storefront until the backend is seeded.
+// Placeholder catalog used by the storefront until the backend is live.
 // Replace with API data via `/api/products` once the backend is live.
 export const categories = [
   {
@@ -9,11 +9,11 @@ export const categories = [
       'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1200&auto=format&fit=crop&q=70',
   },
   {
-    slug: 'neon-signs',
-    title: 'Neon Signs',
-    blurb: 'Custom neons, pre-designed quotes and statement glows.',
+    slug: 'gallery-sets',
+    title: 'Gallery Sets',
+    blurb: 'Curated pairings and triptychs for a more finished wall.',
     image:
-      'https://images.unsplash.com/photo-1567608198063-489b890ab8a4?w=1200&auto=format&fit=crop&q=70',
+      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&auto=format&fit=crop&q=70',
   },
   {
     slug: 'skateboards',
@@ -23,11 +23,11 @@ export const categories = [
       'https://images.unsplash.com/photo-1520975922323-a59c2deb1cc1?w=1200&auto=format&fit=crop&q=70',
   },
   {
-    slug: 'custom',
-    title: 'Custom',
-    blurb: 'Send a reference, our designers draft, you approve, we ship.',
+    slug: 'bundles',
+    title: 'Bundles',
+    blurb: 'Best-value sets for gifting and quick room refreshes.',
     image:
-      'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1200&auto=format&fit=crop&q=70',
+      'https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&auto=format&fit=crop&q=70',
   },
 ];
 
@@ -49,15 +49,15 @@ export const products = [
   },
   {
     id: 'p2',
-    slug: 'dream-bigger-neon',
-    title: 'Dream Bigger Neon',
-    category: 'neon-signs',
+    slug: 'studio-harmony-set',
+    title: 'Studio Harmony Set',
+    category: 'gallery-sets',
     price: 4999,
     mrp: 5999,
     image:
-      'https://images.unsplash.com/photo-1574169208507-84376144848b?w=900&auto=format&fit=crop&q=70',
+      'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?w=900&auto=format&fit=crop&q=70',
     hover:
-      'https://images.unsplash.com/photo-1567609322116-7642b08b3e4f?w=900&auto=format&fit=crop&q=70',
+      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&auto=format&fit=crop&q=70',
     badge: 'NEW',
     rating: 4.9,
     reviews: 88,
@@ -79,7 +79,7 @@ export const products = [
   },
   {
     id: 'p4',
-    slug: 'pop-burst-deck',
+    slug: 'pop-burst-skate-deck',
     title: 'Pop Burst Skate Deck',
     category: 'skateboards',
     price: 3499,
@@ -94,21 +94,6 @@ export const products = [
   },
   {
     id: 'p5',
-    slug: 'good-vibes-neon',
-    title: 'Good Vibes Neon',
-    category: 'neon-signs',
-    price: 3899,
-    mrp: 4499,
-    image:
-      'https://images.unsplash.com/photo-1571513800374-df1bbe650e56?w=900&auto=format&fit=crop&q=70',
-    hover:
-      'https://images.unsplash.com/photo-1599689018034-48e2ead82951?w=900&auto=format&fit=crop&q=70',
-    badge: 'BEST',
-    rating: 4.9,
-    reviews: 305,
-  },
-  {
-    id: 'p6',
     slug: 'sunset-haze-canvas',
     title: 'Sunset Haze Canvas',
     category: 'wall-art',
@@ -121,6 +106,21 @@ export const products = [
     badge: '-19%',
     rating: 4.8,
     reviews: 167,
+  },
+  {
+    id: 'p6',
+    slug: 'collector-wall-bundle',
+    title: 'Collector Wall Bundle',
+    category: 'bundles',
+    price: 3899,
+    mrp: 4599,
+    image:
+      'https://images.unsplash.com/photo-1494526585095-c41746248156?w=900&auto=format&fit=crop&q=70',
+    hover:
+      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&auto=format&fit=crop&q=70',
+    badge: 'BEST',
+    rating: 4.8,
+    reviews: 73,
   },
   {
     id: 'p7',
@@ -139,9 +139,9 @@ export const products = [
   },
   {
     id: 'p8',
-    slug: 'love-yourself-neon',
-    title: 'Love Yourself Neon',
-    category: 'neon-signs',
+    slug: 'signature-pair-bundle',
+    title: 'Signature Pair Bundle',
+    category: 'bundles',
     price: 4299,
     mrp: 4999,
     image:
@@ -157,9 +157,9 @@ export const products = [
 export const trustStrip = [
   '15,000+ Homes Styled',
   '4.9 / 5 from 4,200 Reviews',
-  'Free Shipping over ₹1,499',
+  'Free Shipping over Rs. 1,499',
   'Easy 7-day returns',
-  'Made in India · Shipped Worldwide',
+  'Made in India / Premium finishing',
 ];
 
 export const navMenu = [
@@ -173,12 +173,12 @@ export const navMenu = [
     ],
   },
   {
-    label: 'Neon Signs',
-    href: '/shop/neon-signs',
+    label: 'Gallery Sets',
+    href: '/shop/gallery-sets',
     groups: [
-      { title: 'Popular', items: ['Quotes', 'Names', 'Logos', 'Animals', 'Symbols'] },
-      { title: 'For Spaces', items: ['Bedroom', 'Cafe', 'Salon', 'Studio', 'Wedding'] },
-      { title: 'By Color', items: ['Pink', 'Cool White', 'Warm White', 'Ice Blue', 'Lime', 'Multi'] },
+      { title: 'Popular', items: ['Pairings', 'Triptychs', 'Series', 'Minimal Sets', 'Nature Sets'] },
+      { title: 'For Spaces', items: ['Bedroom', 'Living Room', 'Office', 'Entryway', 'Dining'] },
+      { title: 'By Mood', items: ['Calm', 'Warm', 'Bold', 'Neutral', 'Layered', 'Statement'] },
     ],
   },
   {
@@ -189,6 +189,13 @@ export const navMenu = [
       { title: 'Display', items: ['Wall Mount', 'Stand'] },
     ],
   },
-  { label: 'Custom', href: '/shop/custom' },
-  { label: 'Bundles', href: '/shop?filter=bundles' },
+  {
+    label: 'Bundles',
+    href: '/shop/bundles',
+    groups: [
+      { title: 'Popular', items: ['Starter Sets', 'Gift Sets', 'Best Value', 'Collector Sets'] },
+      { title: 'For Rooms', items: ['Living Room', 'Bedroom', 'Office', 'Dining'] },
+      { title: 'Occasion', items: ['Housewarming', 'Gifting', 'Refresh', 'Seasonal'] },
+    ],
+  },
 ];

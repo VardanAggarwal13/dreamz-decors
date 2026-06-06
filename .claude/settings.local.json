@@ -1,7 +1,27 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:aesthesy.com)"
+      "WebFetch(domain:aesthesy.com)",
+      "Skill(run)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5174)",
+      "Bash(npx playwright *)",
+      "WebSearch",
+      "Bash(node -e ' *)",
+      "Bash(node src/scripts/seed.js)",
+      "WebFetch(domain:unsplash.com)",
+      "Bash(npm install *)",
+      "Bash(node -e \"const wp=require\\('web-push'\\); const k=wp.generateVAPIDKeys\\(\\); console.log\\('VAPID_PUBLIC_KEY='+k.publicKey\\); console.log\\('VAPID_PRIVATE_KEY='+k.privateKey\\);\")",
+      "Bash(node --input-type=module -e \"import\\('./src/app.js'\\).then\\(\\(\\)=>{console.log\\('OK: app.js and all notification modules import cleanly'\\);process.exit\\(0\\)}\\).catch\\(e=>{console.error\\('IMPORT ERROR:',e\\);process.exit\\(1\\)}\\)\")",
+      "Bash(awk '{print $NF}')",
+      "Bash(grep -v \"^\\\\.$\\\\|^\\\\.\\\\.$\")",
+      "WebFetch(domain:www.better-auth.com)",
+      "Bash(node --check src/config/auth.js)",
+      "Bash(node --input-type=module -e \"import\\('dotenv/config'\\).then\\(\\(\\)=>import\\('./src/config/auth.js'\\)\\).then\\(m=>{const api=m.auth?.api||{}; console.log\\('✓ auth instance created'\\); console.log\\('  has handler:', typeof m.auth.handler\\); console.log\\('  api endpoints:', Object.keys\\(api\\).length\\); console.log\\('  signInEmail:', typeof api.signInEmail, '| getSession:', typeof api.getSession, '| forgetPassword:', typeof api.forgetPassword\\);}\\).catch\\(e=>{console.error\\('ERR:', e.message\\); process.exit\\(1\\)}\\)\")",
+      "Bash(node --input-type=module -e \"import\\('dotenv/config'\\).then\\(\\(\\)=>import\\('./src/app.js'\\)\\).then\\(\\(\\)=>console.log\\('✓ app loads with Better Auth'\\)\\).catch\\(e=>{console.error\\('LOAD ERR:',e.message\\);process.exit\\(1\\)}\\)\")",
+      "Bash(curl -s http://localhost:5000/api/health)",
+      "Bash(curl -s -c /tmp/ba_cookies.txt -X POST http://localhost:5000/api/auth/sign-up/email -H \"Content-Type: application/json\" -d '{\"email\":\"batest_001@example.com\",\"password\":\"Test12345\",\"name\":\"BA Test\"}' -w \"\\\\nHTTP %{http_code}\\\\n\")"
     ]
   }
 }

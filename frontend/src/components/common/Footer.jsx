@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FaInstagram, FaFacebookF, FaPinterestP, FaYoutube, FaWhatsapp } from 'react-icons/fa';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Mail, MapPin } from 'lucide-react';
 import Logo from './Logo';
 
 const columns = [
@@ -9,18 +8,15 @@ const columns = [
     title: 'Shop',
     links: [
       ['Wall Art', '/shop/wall-art'],
-      ['Neon Signs', '/shop/neon-signs'],
+      ['Gallery Sets', '/shop/gallery-sets'],
       ['Skateboards', '/shop/skateboards'],
-      ['Custom Orders', '/shop/custom'],
-      ['Bundles', '/shop?filter=bundles'],
+      ['Bundles', '/shop/bundles'],
     ],
   },
   {
     title: 'Help',
     links: [
-      ['Track Order', '/track'],
-      ['Shipping & Delivery', '/shipping'],
-      ['Returns & Refunds', '/returns'],
+      ['Shipping and Delivery', '/shipping'],
       ['Contact Us', '/contact'],
       ['FAQ', '/faq'],
     ],
@@ -29,64 +25,71 @@ const columns = [
     title: 'Company',
     links: [
       ['About', '/about'],
-      ['Blog', '/blog'],
-      ['Reviews', '/reviews'],
-      ['Press', '/press'],
-      ['Careers', '/careers'],
+      ['Terms', '/terms'],
     ],
   },
 ];
 
 export default function Footer() {
   return (
-    <footer className="border-t border-ink/8 bg-bone-muted">
-      <div className="container-page grid grid-cols-1 gap-10 py-16 md:grid-cols-2 lg:grid-cols-5">
-        <div className="lg:col-span-2">
-          <Logo variant="horizontal" className="mb-6 h-18 w-auto sm:h-20" />
-          <h3 className="font-display text-2xl">Stay in the loop</h3>
-          <p className="mt-2 max-w-sm text-sm text-ink/70">
-            Drops, designer collabs and member-only sales. No spam, ever.
-          </p>
-          <form className="mt-4 flex max-w-sm gap-2" onSubmit={(e) => e.preventDefault()}>
-            <Input type="email" placeholder="you@email.com" required />
-            <Button variant="primary" size="md" type="submit">Join</Button>
-          </form>
-          <div className="mt-6 flex gap-3 text-ink/70">
-            {[FaInstagram, FaFacebookF, FaPinterestP, FaYoutube, FaWhatsapp].map((Icon, i) => (
-              <a
-                key={i}
-                href="#"
-                aria-label="Social"
-                className="grid h-9 w-9 place-items-center rounded-full border border-ink/20 hover:border-accent hover:text-accent"
-              >
-                <Icon size={14} />
-              </a>
+    <footer className="border-t border-ink/8 bg-bone/85 text-ink">
+      <div className="container-page py-8 sm:py-10">
+        <div className="grid gap-10 lg:grid-cols-[1.1fr_1.6fr_1fr] lg:gap-12">
+          <div className="text-center sm:text-left lg:-mt-2">
+            <Logo variant="horizontal" className="mx-auto h-12 w-auto sm:mx-0" />
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-7 text-ink-soft sm:mx-0">
+              Premium canvas paintings, gallery sets, and framed decor crafted in India with secure packaging and safe online checkout.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-8 text-center sm:grid-cols-3 sm:text-left">
+            {columns.map((column) => (
+              <div key={column.title}>
+                <h4 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-ink">{column.title}</h4>
+                <span className="mx-auto mt-2 block h-px w-8 bg-gold sm:mx-0" />
+                <ul className="mt-4 space-y-3 text-sm text-ink-soft">
+                  {column.links.map(([label, href]) => (
+                    <li key={label}>
+                      <Link to={href} className="transition hover:text-accent">
+                        {label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
+          </div>
+
+          <div className="border-t border-hairline pt-8 text-center sm:text-left lg:border-t-0 lg:pt-0">
+            <h4 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-ink">Support</h4>
+            <span className="mx-auto mt-2 block h-px w-8 bg-gold sm:mx-0" />
+            <ul className="mt-4 space-y-4 text-sm text-ink-soft">
+              <li className="flex justify-center gap-3 sm:justify-start">
+                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                <span>support@dreamzdecor.com</span>
+              </li>
+              <li className="flex justify-center gap-3 sm:justify-start">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                <span>Made in India, delivering pan India</span>
+              </li>
+            </ul>
+            <div className="mt-6 flex flex-wrap justify-center gap-3 text-ink-soft sm:justify-start">
+              {[FaInstagram, FaFacebookF, FaPinterestP, FaYoutube, FaWhatsapp].map((Icon, index) => (
+                <a
+                  key={index}
+                  href="#"
+                  aria-label="Social"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-hairline bg-bone transition hover:border-accent hover:bg-accent hover:text-bone"
+                >
+                  <Icon size={14} />
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 
-        {columns.map((c) => (
-          <div key={c.title}>
-            <div className="text-xs uppercase tracking-[0.22em] text-ink/50">{c.title}</div>
-            <ul className="mt-4 space-y-2 text-sm text-ink/75">
-              {c.links.map(([label, href]) => (
-                <li key={label}>
-                  <Link to={href} className="hover:text-accent">{label}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-
-      <div className="border-t border-ink/8">
-        <div className="container-page flex flex-col items-center justify-between gap-3 py-6 text-xs text-ink/60 md:flex-row">
-          <div>© {new Date().getFullYear()} DreamzDecors Studio · Made in India</div>
-          <div className="flex gap-5">
-            <Link to="/privacy" className="hover:text-ink">Privacy</Link>
-            <Link to="/terms" className="hover:text-ink">Terms</Link>
-            <Link to="/sitemap" className="hover:text-ink">Sitemap</Link>
-          </div>
+        <div className="mt-8 border-t border-hairline pt-5 text-center text-xs text-ink-muted">
+          &copy; {new Date().getFullYear()} Dreamz Decor. Proudly made in India.
         </div>
       </div>
     </footer>

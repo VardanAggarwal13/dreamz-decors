@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { toast } from 'sonner';
 
 export const useCartStore = create(
   persist(
     (set, get) => ({
       items: [],
-      addItem: (product, qty = 1, options = {}) =>
+      addItem: (product, qty = 1, options = {}) => {
         set((state) => {
           const key = `${product.id}-${JSON.stringify(options)}`;
           const existing = state.items.find((i) => i.key === key);
@@ -26,12 +27,15 @@ export const useCartStore = create(
                 title: product.title,
                 price: product.price,
                 image: product.image,
+                category: product.categoryTitle || product.category || '',
                 options,
                 qty,
               },
             ],
           };
-        }),
+        });
+        toast.success('Added to cart', { description: product.title });
+      },
       updateQty: (key, qty) =>
         set((state) => ({
           items: state.items

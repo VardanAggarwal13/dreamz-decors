@@ -2,6 +2,19 @@ import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import { buildPagination, buildPaginationMeta, paginationPresets } from '../utils/query.js';
+import { notify } from '../services/notificationService.js';
+
+const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
+
+// Map an order status to the notification it should fire.
+const STATUS_NOTIFICATION = {
+  paid:       { type: 'order_paid',       title: 'Payment received',  message: (o) => `We've received your payment of ${inr(o.total)}.` },
+  processing: { type: 'order_processing', title: 'Order processing',  message: () => 'Your order is being prepared for dispatch.' },
+  shipped:    { type: 'order_shipped',    title: 'Order shipped',     message: () => 'Your order has been dispatched and is on its way.' },
+  delivered:  { type: 'order_delivered',  title: 'Order delivered',   message: () => 'Your order has been delivered. We hope you love it!' },
+  cancelled:  { type: 'order_cancelled',  title: 'Order cancelled',   message: () => 'Your order has been cancelled.' },
+  refunded:   { type: 'order_refunded',   title: 'Refund processed',  message: (o) => `Your refund of ${inr(o.total)} has been processed.` },
+};
 
 const SHIPPING_FREE_OVER = 1499;
 const SHIPPING_FLAT = 99;
@@ -52,6 +65,19 @@ export const createOrder = asyncHandler(async (req, res) => {
     cart.items = [];
     await cart.save();
   }
+
+  // Fire the "order placed" notification (in-app + email + push).
+  await notify({
+    user: req.user._id,
+    type: 'order_placed',
+    title: 'Order confirmed',
+    message: `Your order of ${inr(total)} has been placed successfully.`,
+    data: { orderId: order._id },
+    link: `/account/orders/${order._id}`,
+    email: true,
+    push: true,
+    emailContext: { order },
+  });
 
   res.status(201).json({ success: true, data: order });
 });
@@ -104,7 +130,25 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Order not found');
   }
+  const changed = order.status !== status;
   order.status = status;
   await order.save();
+
+  // Notify the customer when the status actually changes.
+  const spec = STATUS_NOTIFICATION[status];
+  if (changed && spec) {
+    await notify({
+      user: order.user,
+      type: spec.type,
+      title: spec.title,
+      message: spec.message(order),
+      data: { orderId: order._id },
+      link: `/account/orders/${order._id}`,
+      email: true,
+      push: true,
+      emailContext: { order },
+    });
+  }
+
   res.json({ success: true, data: order });
 });

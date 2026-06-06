@@ -3,7 +3,7 @@ import Product from '../models/Product.js';
 import { buildPagination, buildPaginationMeta, paginationPresets, parseNumber } from '../utils/query.js';
 
 const PRODUCT_LIST_SELECT =
-  'title slug price mrp badge images rating reviewsCount stock isFeatured sales category createdAt';
+  'title slug description price mrp badge images rating reviewsCount stock isFeatured sales category createdAt';
 
 const SORT_MAP = {
   new: { createdAt: -1 },

@@ -5,8 +5,33 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
+const categoryFallbackImage = {
+  'wall-art':
+    'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1200&auto=format&fit=crop&q=70',
+  'gallery-sets':
+    'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&auto=format&fit=crop&q=70',
+  skateboards:
+    'https://images.unsplash.com/photo-1520975922323-a59c2deb1cc1?w=1200&auto=format&fit=crop&q=70',
+  bundles:
+    'https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&auto=format&fit=crop&q=70',
+};
+
+const productFallbackImages = [
+  'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=900&auto=format&fit=crop&q=70',
+  'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&auto=format&fit=crop&q=70',
+  'https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=900&auto=format&fit=crop&q=70',
+  'https://images.unsplash.com/photo-1494526585095-c41746248156?w=900&auto=format&fit=crop&q=70',
+];
+
+function fallbackByKey(key = '') {
+  const normalized = String(key).trim().toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < normalized.length; i += 1) hash = (hash << 5) - hash + normalized.charCodeAt(i);
+  return productFallbackImages[Math.abs(hash) % productFallbackImages.length];
+}
+
 export function formatINR(amount) {
-  if (amount == null || isNaN(amount)) return '—';
+  if (amount == null || isNaN(amount)) return '--';
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
@@ -23,11 +48,13 @@ export function slugify(str) {
     .replace(/^-+|-+$/g, '');
 }
 
-// Normalize a product coming from the API into the flat shape components expect.
-// API shape: { _id, slug, title, price, mrp, images:[{url,alt}], rating, reviewsCount, badge, category:{slug}, ... }
-// UI shape:  { id,  slug, title, price, mrp, image, hover, rating, reviews, badge, category }
 export function normalizeProduct(p) {
   if (!p) return null;
+  const categorySlug = typeof p.category === 'string' ? p.category : p.category?.slug;
+  const baseFallback = categoryFallbackImage[categorySlug] || fallbackByKey(p.slug || p.title);
+  const image = p.images?.[0]?.url || p.image || baseFallback;
+  const hover = p.images?.[1]?.url || p.hover || image;
+
   return {
     id: p._id || p.id,
     slug: p.slug,
@@ -38,24 +65,26 @@ export function normalizeProduct(p) {
     badge: p.badge,
     rating: p.rating ?? 4.8,
     reviews: p.reviewsCount ?? p.reviews ?? 0,
-    image: p.images?.[0]?.url || p.image,
-    hover: p.images?.[1]?.url || p.hover,
+    image,
+    hover,
     images: p.images || [],
     categoryId: typeof p.category === 'object' ? p.category?._id : undefined,
     category: typeof p.category === 'string' ? p.category : p.category?.slug,
     categoryTitle: typeof p.category === 'object' ? p.category?.title : undefined,
     tags: p.tags || [],
     stock: p.stock,
+    variants: p.variants || [],
   };
 }
 
 export function normalizeCategory(c) {
   if (!c) return null;
+  const fallback = categoryFallbackImage[c.slug] || categoryFallbackImage['wall-art'];
   return {
     id: c._id || c.id,
     slug: c.slug,
     title: c.title,
     blurb: c.blurb,
-    image: c.image?.url || c.image,
+    image: c.image?.url || c.image || fallback,
   };
 }

@@ -1,209 +1,231 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
 import ProductGrid from '@/components/common/ProductGrid';
 import ProductGridSkeleton from '@/components/common/ProductGridSkeleton';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import Seo from '@/components/common/Seo';
 import useFetch from '@/hooks/useFetch';
 import { normalizeCategory, normalizeProduct } from '@/lib/utils';
 
 const PAGE_SIZE = 12;
 
 const sortOptions = [
-  { value: 'new', label: 'Newest' },
+  { value: 'new',        label: 'Newest' },
   { value: 'bestselling', label: 'Bestselling' },
-  { value: 'price-asc', label: 'Price - Low to High' },
-  { value: 'price-desc', label: 'Price - High to Low' },
-  { value: 'rating', label: 'Top Rated' },
+  { value: 'price-asc',  label: 'Price: Low to High' },
+  { value: 'price-desc', label: 'Price: High to Low' },
+  { value: 'rating',     label: 'Top Rated' },
 ];
 
 export default function Shop() {
   const { category } = useParams();
+  const navigate     = useNavigate();
   const [params, setParams] = useSearchParams();
-  const [cols, setCols] = useState(4);
 
-  const tag = params.get('tag');
   const sort = params.get('sort') || 'new';
+  const search = (params.get('search') || '').trim();
   const page = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
 
   const categoriesQuery = useFetch('/categories');
-  const categories = (categoriesQuery.data?.data || []).map(normalizeCategory);
-  const currentCat = categories.find((item) => item.slug === category);
+  const categories  = (categoriesQuery.data?.data || []).map(normalizeCategory);
+  const currentCat  = categories.find((c) => c.slug === category);
 
   const query = useMemo(() => {
-    const searchParams = new URLSearchParams();
-    searchParams.set('sort', sort);
-    searchParams.set('page', String(page));
-    searchParams.set('limit', String(PAGE_SIZE));
-
-    if (currentCat?.id) searchParams.set('category', currentCat.id);
-    if (tag) searchParams.set('tag', tag);
-
-    return searchParams.toString();
-  }, [currentCat?.id, page, sort, tag]);
+    const sp = new URLSearchParams();
+    sp.set('sort', sort);
+    sp.set('page', String(page));
+    sp.set('limit', String(PAGE_SIZE));
+    if (currentCat?.id) sp.set('category', currentCat.id);
+    if (search) sp.set('q', search); // backend expects `q` for text search
+    return sp.toString();
+  }, [currentCat?.id, page, sort, search]);
 
   const { data, loading, error } = useFetch(`/products?${query}`, {
     deps: [query],
     skip: Boolean(category) && !currentCat,
   });
 
-  const products = (data?.data || []).map(normalizeProduct);
-  const total = data?.total ?? products.length;
+  const products   = (data?.data || []).map(normalizeProduct);
   const totalPages = Math.max(1, data?.pages || 1);
   const currentPage = Math.min(page, totalPages);
 
+  const seoTitle = currentCat
+    ? `${currentCat.title} — DreamzDecors`
+    : 'Our Collections — DreamzDecors';
+
   useEffect(() => {
     if (page === currentPage) return;
-
-    const nextParams = new URLSearchParams(params);
-    if (currentPage <= 1) nextParams.delete('page');
-    else nextParams.set('page', String(currentPage));
-    setParams(nextParams, { replace: true });
+    const np = new URLSearchParams(params);
+    if (currentPage <= 1) np.delete('page');
+    else np.set('page', String(currentPage));
+    setParams(np, { replace: true });
   }, [currentPage, page, params, setParams]);
 
   const visiblePages = useMemo(() => {
-    if (totalPages <= 5) {
-      return Array.from({ length: totalPages }, (_, index) => index + 1);
-    }
-
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
     return Array.from(
       new Set([1, currentPage - 1, currentPage, currentPage + 1, totalPages])
-    ).filter((pageNumber) => pageNumber >= 1 && pageNumber <= totalPages);
+    ).filter((p) => p >= 1 && p <= totalPages);
   }, [currentPage, totalPages]);
 
-  const updateFilters = (updates) => {
-    const nextParams = new URLSearchParams(params);
-
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value == null || value === '') nextParams.delete(key);
-      else nextParams.set(key, value);
-    });
-
-    nextParams.delete('page');
-    setParams(nextParams);
-  };
-
-  const goToPage = (nextPage) => {
-    const boundedPage = Math.min(Math.max(1, nextPage), totalPages);
-    const nextParams = new URLSearchParams(params);
-
-    if (boundedPage <= 1) nextParams.delete('page');
-    else nextParams.set('page', String(boundedPage));
-
-    setParams(nextParams);
+  const goToPage = (next) => {
+    const bounded = Math.min(Math.max(1, next), totalPages);
+    const np = new URLSearchParams(params);
+    if (bounded <= 1) np.delete('page');
+    else np.set('page', String(bounded));
+    setParams(np);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const setCategory = (slug) => {
+    const basePath = slug ? `/shop/${slug}` : '/shop';
+    const np = new URLSearchParams();
+    if (sort !== 'new') np.set('sort', sort);
+    const qs = np.toString();
+    navigate(qs ? `${basePath}?${qs}` : basePath, { replace: true });
+  };
+
+  const setSort = (value) => {
+    const np = new URLSearchParams(params);
+    if (value === 'new') np.delete('sort');
+    else np.set('sort', value);
+    np.delete('page');
+    setParams(np);
+  };
+
   return (
-    <div className="container-page py-12">
-      <div className="mb-10">
-        <span className="text-xs uppercase tracking-[0.3em] text-accent">
-          {currentCat ? 'Collection' : 'Shop'}
-        </span>
-        <h1 className="mt-3 font-display text-4xl sm:text-5xl">
-          {currentCat ? currentCat.title : 'All Products'}
-        </h1>
-        {currentCat?.blurb && <p className="mt-3 max-w-2xl text-ink/70">{currentCat.blurb}</p>}
-        {tag && (
-          <div className="mt-4 flex items-center gap-2">
-            <Badge variant="outline">Tag: {tag}</Badge>
+    <div className="bg-bone">
+      <Seo
+        title={seoTitle}
+        description="Browse premium wall art, gallery sets, and luxury decor for modern Indian homes."
+        canonical={currentCat ? `/shop/${currentCat.slug}` : '/shop'}
+      />
+
+      {/* ── 1. Hero ───────────────────────────────────────────── */}
+      <div className="border-b border-hairline/60 bg-bone py-10 text-center sm:py-12">
+        <div className="container-page">
+          <p className="eyebrow-gold">{search ? 'Search' : 'Handcrafted in India'}</p>
+          <h1 className="mt-2 font-display text-4xl leading-tight text-ink sm:text-5xl">
+            {search ? `Results for “${search}”` : currentCat ? currentCat.title : 'Our Collections'}
+          </h1>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-ink-soft">
+            {search
+              ? 'Showing matches across the collection.'
+              : currentCat?.blurb ||
+                'Explore our handcrafted luxury art pieces — made in India with careful finishing and secure packaging.'}
+          </p>
+        </div>
+      </div>
+
+      {/* ── 2. Filter bar ─────────────────────────────────────── */}
+      <div className="sticky top-0 z-20 border-b border-hairline/60 bg-bone/95 backdrop-blur-sm">
+        <div className="container-page flex flex-wrap items-center justify-between gap-3 py-3">
+          {/* Category pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setCategory(null)}
+              className={`rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
+                !category
+                  ? 'bg-gold text-ink'
+                  : 'border border-hairline text-ink-soft hover:border-gold/60 hover:text-ink'
+              }`}
+            >
+              All
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.slug}
+                onClick={() => setCategory(cat.slug)}
+                className={`rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
+                  category === cat.slug
+                    ? 'bg-gold text-ink'
+                    : 'border border-hairline text-ink-soft hover:border-gold/60 hover:text-ink'
+                }`}
+              >
+                {cat.title}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort dropdown */}
+          <div className="relative shrink-0">
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="appearance-none cursor-pointer rounded-full border border-hairline bg-bone py-1.5 pl-4 pr-8 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition focus:border-gold focus:outline-none"
+            >
+              {sortOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <ChevronDown
+              size={11}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── 3. Grid ───────────────────────────────────────────── */}
+      <div className="container-page py-10 sm:py-12">
+        {loading ? (
+          <ProductGridSkeleton columns={3} count={PAGE_SIZE} />
+        ) : error ? (
+          <div className="py-24 text-center text-sm text-ink-muted">
+            Could not load products — please try again.
+          </div>
+        ) : products.length > 0 ? (
+          <>
+            <ProductGrid products={products} columns={3} />
+
+            {/* ── Pagination ──────────────────────────────────── */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline text-sm text-ink-soft transition hover:border-gold hover:text-gold disabled:pointer-events-none disabled:opacity-30"
+                >
+                  ←
+                </button>
+
+                {visiblePages.map((pageNum, idx) => {
+                  const prev = visiblePages[idx - 1];
+                  return (
+                    <span key={pageNum} className="flex items-center gap-2">
+                      {prev && pageNum - prev > 1 && (
+                        <span className="text-sm text-ink-muted">…</span>
+                      )}
+                      <button
+                        onClick={() => goToPage(pageNum)}
+                        className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium transition ${
+                          pageNum === currentPage
+                            ? 'bg-gold text-ink'
+                            : 'border border-hairline text-ink-soft hover:border-gold hover:text-gold'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    </span>
+                  );
+                })}
+
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline text-sm text-ink-soft transition hover:border-gold hover:text-gold disabled:pointer-events-none disabled:opacity-30"
+                >
+                  →
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="py-24 text-center text-sm text-ink-muted">
+            No products in this collection yet — check back soon.
           </div>
         )}
       </div>
-
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-y border-ink/8 py-4">
-        <div className="text-xs uppercase tracking-[0.22em] text-ink/60">
-          {loading ? 'Loading...' : `${total} products`}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <label className="text-xs uppercase tracking-[0.22em] text-ink/60">Sort</label>
-          <select
-            value={sort}
-            onChange={(event) => updateFilters({ sort: event.target.value })}
-            className="rounded-md border border-ink/15 bg-bone-soft px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent"
-          >
-            {sortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <div className="hidden gap-1 sm:flex">
-            {[2, 3, 4].map((count) => (
-              <Button
-                key={count}
-                variant={cols === count ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setCols(count)}
-                className="!h-9 !px-3"
-              >
-                {count}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {loading ? (
-        <ProductGridSkeleton columns={cols} count={PAGE_SIZE} />
-      ) : error ? (
-        <div className="py-24 text-center text-ink/60">Could not load products: {error.message}</div>
-      ) : products.length > 0 ? (
-        <>
-          <ProductGrid products={products} columns={cols} />
-
-          <div className="mt-10 flex flex-col items-center gap-4 border-t border-ink/8 pt-6 sm:flex-row sm:justify-between">
-            <div className="text-xs uppercase tracking-[0.18em] text-ink/55">
-              Page {currentPage} of {totalPages}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage <= 1}
-              >
-                Previous
-              </Button>
-
-              {visiblePages.map((pageNumber, index) => {
-                const previousPage = visiblePages[index - 1];
-                const showGap = previousPage && pageNumber - previousPage > 1;
-
-                return (
-                  <div key={pageNumber} className="flex items-center gap-2">
-                    {showGap && <span className="px-1 text-ink/40">...</span>}
-                    <Button
-                      variant={pageNumber === currentPage ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => goToPage(pageNumber)}
-                      className="min-w-10 !px-0"
-                    >
-                      {pageNumber}
-                    </Button>
-                  </div>
-                );
-              })}
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage >= totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="py-24 text-center text-ink/60">
-          No products in this collection yet - check back soon.
-        </div>
-      )}
     </div>
   );
 }

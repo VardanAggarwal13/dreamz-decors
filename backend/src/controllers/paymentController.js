@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import { getRazorpay } from '../config/razorpay.js';
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
+import { notify } from '../services/notificationService.js';
 
 export const createRazorpayOrder = asyncHandler(async (req, res) => {
   const { orderId } = req.body;
@@ -56,7 +57,7 @@ export const verifyRazorpayPayment = asyncHandler(async (req, res) => {
     throw new Error('Invalid payment signature');
   }
 
-  const order = await Order.findById(orderId).select('user status payment');
+  const order = await Order.findById(orderId).select('user status payment total');
   if (!order) {
     res.status(404);
     throw new Error('Order not found');
@@ -69,6 +70,7 @@ export const verifyRazorpayPayment = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Payment order mismatch');
   }
+  const wasUnpaid = order.status !== 'paid';
   order.status = 'paid';
   order.payment.razorpayPaymentId = razorpay_payment_id;
   order.payment.razorpayOrderId = razorpay_order_id;
@@ -77,6 +79,21 @@ export const verifyRazorpayPayment = asyncHandler(async (req, res) => {
   await order.save();
 
   await Cart.findOneAndUpdate({ user: order.user }, { items: [] });
+
+  // Notify on first successful payment (idempotent — no duplicate on retry).
+  if (wasUnpaid) {
+    await notify({
+      user: order.user,
+      type: 'order_paid',
+      title: 'Payment received',
+      message: `We've received your payment of ₹${Number(order.total || 0).toLocaleString('en-IN')}.`,
+      data: { orderId: order._id },
+      link: `/account/orders/${order._id}`,
+      email: true,
+      push: true,
+      emailContext: { order },
+    });
+  }
 
   res.json({ success: true, data: order });
 });

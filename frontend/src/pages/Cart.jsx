@@ -1,100 +1,267 @@
 import { Link } from 'react-router-dom';
-import { FiTrash2, FiArrowRight } from 'react-icons/fi';
+import {
+  FiArrowRight,
+  FiArrowLeft,
+  FiShoppingBag,
+  FiX,
+  FiChevronRight,
+} from 'react-icons/fi';
+import { ShieldCheck, Package, RotateCcw, Truck } from 'lucide-react';
+import Seo from '@/components/common/Seo';
 import { Button } from '@/components/ui/Button';
+import MediaImage from '@/components/ui/MediaImage';
+import ProductGrid from '@/components/common/ProductGrid';
+import ProductGridSkeleton from '@/components/common/ProductGridSkeleton';
+import useFetch from '@/hooks/useFetch';
 import { useCartStore } from '@/store/cartStore';
-import { formatINR } from '@/lib/utils';
+import { formatINR, normalizeProduct } from '@/lib/utils';
+
+const FREE_SHIPPING_THRESHOLD = 1499;
+
+const WHY_SHOP = [
+  { Icon: ShieldCheck, title: 'Secure Payments', text: '100% encrypted & safe checkout' },
+  { Icon: Package, title: 'Premium Packaging', text: 'Each piece carefully wrapped & boxed' },
+  { Icon: RotateCcw, title: 'Easy Returns', text: '7-day hassle-free return policy' },
+  { Icon: Truck, title: 'Free Shipping', text: `On all orders above ${formatINR(FREE_SHIPPING_THRESHOLD)}` },
+];
+
+function QtyButton({ onClick, children, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex h-8 w-8 items-center justify-center rounded-md border border-hairline text-ink-soft transition hover:border-gold/50 hover:bg-gold/10 hover:text-ink"
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function Cart() {
-  const items = useCartStore((s) => s.items);
-  const updateQty = useCartStore((s) => s.updateQty);
-  const removeItem = useCartStore((s) => s.removeItem);
-  const subtotal = useCartStore((s) => s.subtotal());
+  const items = useCartStore((state) => state.items);
+  const updateQty = useCartStore((state) => state.updateQty);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const clear = useCartStore((state) => state.clear);
+  const subtotal = useCartStore((state) => state.subtotal());
 
-  const shipping = subtotal === 0 ? 0 : subtotal >= 1499 ? 0 : 99;
+  // Popular picks to fill the layout when the cart is sparse.
+  const recos = useFetch('/products?limit=6&sort=bestselling');
+  const cartIds = new Set(items.map((i) => i.id));
+  const recommended = (recos.data?.data || [])
+    .map(normalizeProduct)
+    .filter((p) => !cartIds.has(p.id))
+    .slice(0, 3);
+  const showRecommendations = items.length > 0 && items.length <= 2;
+
+  const count = items.reduce((sum, i) => sum + i.qty, 0);
+  const shipping = subtotal === 0 ? 0 : subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 99;
+  const gstIncluded = Math.round(subtotal - subtotal / 1.18);
   const total = subtotal + shipping;
 
+  const seo = (
+    <Seo title="Cart — DreamzDecors" description="Review your DreamzDecors items before checkout." canonical="/cart" noIndex />
+  );
+
+  // ── Empty state ──
   if (items.length === 0) {
     return (
-      <div className="container-page grid place-items-center py-32 text-center">
-        <h1 className="font-display text-4xl">Your cart is empty</h1>
-        <p className="mt-3 max-w-md text-ink/70">
-          Looks quiet here. Let's fix that — there's a lot to love in our latest drop.
-        </p>
-        <Button asChild variant="primary" size="lg" className="mt-8">
-          <Link to="/shop">Start Shopping <FiArrowRight /></Link>
-        </Button>
+      <div className="bg-bone">
+        {seo}
+        <div className="container-page flex min-h-[60vh] flex-col items-center justify-center py-24 text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-hairline/60 bg-bone-soft text-ink-muted">
+            <FiShoppingBag size={28} />
+          </div>
+          <h1 className="mt-6 font-display text-4xl text-ink">Your cart is empty</h1>
+          <p className="mt-3 max-w-sm text-sm leading-7 text-ink-soft">
+            Looks quiet here — there is a lot to love in our latest collection.
+          </p>
+          <Button asChild variant="primary" size="lg" className="mt-8">
+            <Link to="/shop">Start shopping <FiArrowRight /></Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container-page py-12">
-      <h1 className="font-display text-4xl">Your Cart</h1>
+    <div className="bg-bone">
+      {seo}
 
-      <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <ul className="divide-y divide-ink/8">
-            {items.map((i) => (
-              <li key={i.key} className="flex gap-4 py-6">
-                <div className="aspect-square w-24 shrink-0 overflow-hidden rounded-md bg-bone-muted">
-                  <img src={i.image} alt={i.title} className="h-full w-full object-cover" />
-                </div>
-                <div className="flex flex-1 flex-col">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <Link to={`/product/${i.slug}`} className="text-sm font-medium hover:text-accent">
-                        {i.title}
-                      </Link>
-                      {i.options && Object.values(i.options).filter(Boolean).length > 0 && (
-                        <div className="mt-1 text-xs text-ink/60">
-                          {Object.entries(i.options).filter(([, v]) => v).map(([, v]) => v).join(' · ')}
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => removeItem(i.key)}
-                      aria-label="Remove"
-                      className="text-ink/55 hover:text-accent"
-                    >
-                      <FiTrash2 size={18} />
-                    </button>
-                  </div>
-                  <div className="mt-auto flex items-center justify-between">
-                    <div className="flex items-center rounded-md border border-ink/20">
-                      <button onClick={() => updateQty(i.key, i.qty - 1)} className="px-3 py-1 hover:text-accent">−</button>
-                      <span className="w-8 text-center text-sm">{i.qty}</span>
-                      <button onClick={() => updateQty(i.key, i.qty + 1)} className="px-3 py-1 hover:text-accent">+</button>
-                    </div>
-                    <span className="text-sm font-medium">{formatINR(i.price * i.qty)}</span>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+      {/* ── Breadcrumb ──────────────────────────────────────────── */}
+      <div className="container-page pt-4">
+        <nav className="flex items-center gap-1.5 text-xs text-ink-muted">
+          <Link to="/" className="transition hover:text-gold-deep">Home</Link>
+          <FiChevronRight size={12} />
+          <Link to="/shop" className="transition hover:text-gold-deep">Shop</Link>
+          <FiChevronRight size={12} />
+          <span className="text-ink-soft">Shopping Cart</span>
+        </nav>
+      </div>
+
+      {/* ── Centered header ─────────────────────────────────────── */}
+      <div className="border-b border-hairline/60">
+        <div className="container-page py-6 text-center sm:py-8">
+          <p className="text-[11px] font-medium uppercase tracking-[0.34em] text-gold-deep">Your selection</p>
+          <h1 className="mt-2 font-display text-3xl text-ink sm:text-4xl">Shopping Cart</h1>
+          <p className="mt-2 text-sm text-ink-soft">Review your curated pieces before checkout</p>
         </div>
+      </div>
 
-        <aside className="rounded-md border border-ink/8 bg-bone-soft p-6 shadow-soft">
-          <h2 className="font-display text-2xl">Order Summary</h2>
-          <dl className="mt-6 space-y-3 text-sm">
-            <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatINR(subtotal)}</dd></div>
-            <div className="flex justify-between">
-              <dt>Shipping</dt>
-              <dd>{shipping === 0 ? 'Free' : formatINR(shipping)}</dd>
+      <div className="container-page py-8 sm:py-10">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] xl:gap-8">
+
+          {/* ── Left: items ───────────────────────────────────── */}
+          <div>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">
+                Cart Items <span className="text-ink-muted">({count})</span>
+              </h2>
+              <button
+                type="button"
+                onClick={clear}
+                className="inline-flex items-center gap-1.5 text-xs text-ink-muted transition hover:text-sale"
+              >
+                <FiX size={13} /> Clear All
+              </button>
             </div>
-            {shipping === 0 && subtotal > 0 && (
-              <div className="text-xs text-accent-deep">You unlocked free shipping ✦</div>
+
+            <ul className="mt-4 space-y-3">
+              {items.map((item) => (
+                <li
+                  key={item.key}
+                  className="relative flex gap-4 rounded-2xl border border-hairline/60 bg-bone-soft p-4"
+                >
+                  {/* Thumbnail */}
+                  <Link
+                    to={`/product/${item.slug}`}
+                    className="aspect-square w-24 shrink-0 overflow-hidden rounded-xl bg-bone-muted sm:w-28"
+                  >
+                    <MediaImage src={item.image} alt={item.title} label={item.title} />
+                  </Link>
+
+                  {/* Content */}
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    {item.category && (
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gold-deep">
+                        {item.category}
+                      </span>
+                    )}
+                    <Link
+                      to={`/product/${item.slug}`}
+                      className="mt-1 font-display text-lg leading-snug text-ink transition hover:text-gold-deep sm:text-xl"
+                    >
+                      {item.title}
+                    </Link>
+
+                    <div className="mt-auto flex items-end justify-between gap-3 pt-3">
+                      {/* Qty */}
+                      <div className="flex items-center gap-2">
+                        <QtyButton onClick={() => updateQty(item.key, item.qty - 1)} label="Decrease">−</QtyButton>
+                        <span className="w-8 text-center text-sm font-medium text-ink">{item.qty}</span>
+                        <QtyButton onClick={() => updateQty(item.key, item.qty + 1)} label="Increase">+</QtyButton>
+                      </div>
+
+                      {/* Price */}
+                      <div className="text-right">
+                        <div className="font-display text-lg text-gold-deep sm:text-xl">
+                          {formatINR(item.price * item.qty)}
+                        </div>
+                        <div className="text-[11px] text-ink-muted">
+                          {item.qty > 1 ? `${formatINR(item.price)} × ${item.qty}` : 'per piece'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Remove */}
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item.key)}
+                    aria-label="Remove item"
+                    className="absolute right-4 top-4 text-ink/35 transition hover:text-sale"
+                  >
+                    <FiX size={18} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {/* Recommendations — fills the column when the cart is sparse */}
+            {showRecommendations && (recos.loading || recommended.length > 0) && (
+              <div className="mt-8">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">You may also like</h2>
+                <div className="mt-5">
+                  {recos.loading ? (
+                    <ProductGridSkeleton columns={3} count={3} />
+                  ) : (
+                    <ProductGrid products={recommended} columns={3} />
+                  )}
+                </div>
+              </div>
             )}
-            <div className="border-t border-ink/8 pt-3 flex justify-between text-base font-semibold">
-              <dt>Total</dt><dd>{formatINR(total)}</dd>
+          </div>
+
+          {/* ── Right: summary + why-shop ─────────────────────── */}
+          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+            {/* Order summary */}
+            <div className="rounded-2xl border border-hairline/60 bg-bone-soft p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">Order Summary</h2>
+              <span className="mt-2 block h-0.5 w-10 bg-gold" />
+
+              <dl className="mt-4 space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-ink-soft">Subtotal ({count} item{count === 1 ? '' : 's'})</dt>
+                  <dd className="text-ink">{formatINR(subtotal)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-soft">Shipping</dt>
+                  <dd className={shipping === 0 ? 'font-medium text-gold-deep' : 'text-ink'}>
+                    {shipping === 0 ? 'Free' : formatINR(shipping)}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-soft">GST (18% incl.)</dt>
+                  <dd className="text-ink">{formatINR(gstIncluded)}</dd>
+                </div>
+              </dl>
+
+              <div className="mt-4 flex items-center justify-between border-t border-hairline/70 pt-4">
+                <span className="text-base font-semibold text-ink">Total</span>
+                <span className="font-display text-2xl text-gold-deep">{formatINR(total)}</span>
+              </div>
+
+              <Button
+                variant="primary"
+                size="lg"
+                className="mt-5 w-full bg-gold-deep text-bone hover:bg-gold-deep/90"
+              >
+                <FiShoppingBag size={16} /> Proceed to Checkout
+              </Button>
+              <Button asChild variant="ghost" size="md" className="mt-2 w-full text-gold-deep hover:bg-gold/10">
+                <Link to="/shop"><FiArrowLeft size={14} /> Continue Shopping</Link>
+              </Button>
             </div>
-          </dl>
-          <Button variant="primary" size="lg" className="mt-6 w-full">
-            Proceed to Checkout <FiArrowRight />
-          </Button>
-          <p className="mt-3 text-center text-xs text-ink/50">
-            Razorpay · UPI · Cards · Net Banking · COD
-          </p>
-        </aside>
+
+            {/* Why shop with us */}
+            <div className="rounded-2xl border border-hairline/60 bg-bone-soft p-5">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">Why shop with us</h3>
+              <ul className="mt-4 space-y-3.5">
+                {WHY_SHOP.map(({ Icon, title, text }) => (
+                  <li key={title} className="flex gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold/25 bg-gold/10">
+                      <Icon size={16} className="text-gold-deep" strokeWidth={1.8} />
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-ink">{title}</p>
+                      <p className="mt-0.5 text-xs leading-5 text-ink-soft">{text}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   );

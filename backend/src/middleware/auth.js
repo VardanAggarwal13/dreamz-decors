@@ -1,24 +1,26 @@
-import jwt from 'jsonwebtoken';
 import asyncHandler from 'express-async-handler';
+import { fromNodeHeaders } from 'better-auth/node';
+import { auth } from '../config/auth.js';
 import User from '../models/User.js';
 
+// Validates the Better Auth session (cookie) and loads the app user.
 export const protect = asyncHandler(async (req, res, next) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : req.cookies?.token;
-
-  if (!token) {
+  const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
+  if (!session?.user) {
     res.status(401);
-    throw new Error('Not authorized — no token');
+    throw new Error('Not authorized — please sign in');
   }
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  const user = await User.findById(decoded.id).select(
+  // Better Auth shares the "users" collection (native ObjectId _id), so the
+  // session user id maps straight to our mongoose User document.
+  const user = await User.findById(session.user.id).select(
     'name email role phone addresses wishlist createdAt updatedAt'
   );
   if (!user) {
     res.status(401);
     throw new Error('Not authorized — user not found');
   }
+
   req.user = user;
   next();
 });

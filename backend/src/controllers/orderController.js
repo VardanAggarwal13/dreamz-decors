@@ -1,8 +1,9 @@
 import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
+import Settings from '../models/Settings.js';
 import { buildPagination, buildPaginationMeta, paginationPresets } from '../utils/query.js';
-import { notify } from '../services/notificationService.js';
+import { notify, notifyAdmins } from '../services/notificationService.js';
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 
@@ -46,7 +47,8 @@ export const createOrder = asyncHandler(async (req, res) => {
   }));
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const shipping = subtotal >= SHIPPING_FREE_OVER ? 0 : SHIPPING_FLAT;
+  const { shipping: shipCfg } = await Settings.getSingleton();
+  const shipping = subtotal >= (shipCfg?.freeThreshold ?? SHIPPING_FREE_OVER) ? 0 : (shipCfg?.flatRate ?? SHIPPING_FLAT);
   const total = subtotal + shipping;
 
   const order = await Order.create({
@@ -66,7 +68,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     await cart.save();
   }
 
-  // Fire the "order placed" notification (in-app + email + push).
+  // Fire the "order placed" notification to the customer (in-app + email + push).
   await notify({
     user: req.user._id,
     type: 'order_placed',
@@ -77,6 +79,16 @@ export const createOrder = asyncHandler(async (req, res) => {
     email: true,
     push: true,
     emailContext: { order },
+  });
+
+  // Alert every admin about the new order (bell + email).
+  await notifyAdmins({
+    type: 'admin_new_order',
+    title: 'New order received',
+    message: `${req.user.name || 'A customer'} placed an order of ${inr(total)}.`,
+    data: { orderId: order._id },
+    link: '/admin/orders',
+    emailContext: { order, customerName: req.user.name },
   });
 
   res.status(201).json({ success: true, data: order });

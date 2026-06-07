@@ -1,38 +1,42 @@
 import { Link } from 'react-router-dom';
-import { FiArrowRight, FiAward, FiMapPin, FiPackage, FiTruck } from 'react-icons/fi';
+import { FiArrowRight, FiAward, FiMapPin, FiPackage, FiTruck, FiCheck } from 'react-icons/fi';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
-const FEATURES = [
-  {
-    Icon: FiAward,
-    label: 'Premium quality',
-    desc: 'Artist-grade canvas, archival inks, and refined gold-foil finishing on every piece.',
-  },
-  {
-    Icon: FiMapPin,
-    label: 'Made in India',
-    desc: 'Designed and produced in-house at our studio with strict quality checks before dispatch.',
-  },
-  {
-    Icon: FiPackage,
-    label: 'Secure packaging',
-    desc: 'Foam-cornered and bubble-wrapped so your art arrives without a single mark.',
-  },
-  {
-    Icon: FiTruck,
-    label: 'Pan-India delivery',
-    desc: 'Standard 7–10 day shipping with end-to-end order tracking across India.',
-  },
+// Icon name → component, so feature cards stay editable as plain JSON (admin
+// can't store React components). Unknown names fall back to a check mark.
+const ICONS = {
+  award: FiAward,
+  madeIn: FiMapPin,
+  mapPin: FiMapPin,
+  package: FiPackage,
+  truck: FiTruck,
+  check: FiCheck,
+};
+
+// Built-in defaults — used only if no `points` are supplied/overridden.
+const DEFAULT_POINTS = [
+  { icon: 'award', title: 'Premium quality', text: 'Artist-grade canvas, archival inks, and refined gold-foil finishing on every piece.' },
+  { icon: 'madeIn', title: 'Made in India', text: 'Designed and produced in-house at our studio with strict quality checks before dispatch.' },
+  { icon: 'package', title: 'Secure packaging', text: 'Foam-cornered and bubble-wrapped so your art arrives without a single mark.' },
+  { icon: 'truck', title: 'Pan-India delivery', text: 'Standard 7–10 day shipping with end-to-end order tracking across India.' },
 ];
+
+// Accept either rich objects {icon,title,text} or plain strings (legacy/simple).
+function normalizePoint(p) {
+  if (typeof p === 'string') return { Icon: FiCheck, title: p, text: '' };
+  return { Icon: ICONS[p?.icon] || FiCheck, title: p?.title || '', text: p?.text || '' };
+}
 
 export default function FeatureSplit({
   eyebrow,
   title,
   description,
+  points,
   cta,
   className = '',
 }) {
+  const cards = (Array.isArray(points) && points.length ? points : DEFAULT_POINTS).map(normalizePoint);
   return (
     <section className={cn('bg-bone-muted py-16 sm:py-20', className)}>
       <div className="container-page">
@@ -61,16 +65,16 @@ export default function FeatureSplit({
 
         {/* ── Feature cards ──────────────────────────────────── */}
         <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map(({ Icon, label, desc }) => (
+          {cards.map(({ Icon, title: cardTitle, text }, i) => (
             <div
-              key={label}
+              key={`${cardTitle}-${i}`}
               className="rounded-2xl border border-hairline/60 bg-bone-soft p-7 transition-shadow hover:shadow-card"
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-gold/25 bg-gold/10">
                 <Icon size={20} className="text-gold-deep" />
               </div>
-              <h3 className="mt-5 text-[15px] font-medium text-ink">{label}</h3>
-              <p className="mt-2 text-sm leading-6 text-ink-soft">{desc}</p>
+              <h3 className="mt-5 text-[15px] font-medium text-ink">{cardTitle}</h3>
+              {text && <p className="mt-2 text-sm leading-6 text-ink-soft">{text}</p>}
             </div>
           ))}
         </div>

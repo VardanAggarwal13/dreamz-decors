@@ -94,13 +94,12 @@ export default function OrderDetail() {
   const isClosed = order && ['cancelled', 'refunded'].includes(order.status);
 
   return (
-    <div className="bg-bone-soft">
+    <div>
       <Seo title={`Order ${shortId(id)} — DreamzDecor`} description="Order details" canonical={`/account/orders/${id}`} noIndex />
 
-      <div className="container-page py-10 sm:py-14">
-        <Link to="/account/orders" className="inline-flex items-center gap-2 text-sm text-ink-soft transition hover:text-gold-deep">
-          <FiArrowLeft size={15} /> All orders
-        </Link>
+      <Link to="/account/orders" className="inline-flex items-center gap-2 text-sm text-ink-soft transition hover:text-gold-deep">
+        <FiArrowLeft size={15} /> All orders
+      </Link>
 
         {loading ? (
           <div className="mt-8 h-72 animate-pulse rounded-2xl border border-hairline/60 bg-bone" />
@@ -204,7 +203,6 @@ export default function OrderDetail() {
             </div>
           </>
         )}
-      </div>
     </div>
   );
 }

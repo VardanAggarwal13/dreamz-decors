@@ -3,7 +3,7 @@ import asyncHandler from 'express-async-handler';
 import { getRazorpay } from '../config/razorpay.js';
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
-import { notify } from '../services/notificationService.js';
+import { notify, notifyAdmins } from '../services/notificationService.js';
 
 export const createRazorpayOrder = asyncHandler(async (req, res) => {
   const { orderId } = req.body;
@@ -82,15 +82,26 @@ export const verifyRazorpayPayment = asyncHandler(async (req, res) => {
 
   // Notify on first successful payment (idempotent — no duplicate on retry).
   if (wasUnpaid) {
+    const amount = `₹${Number(order.total || 0).toLocaleString('en-IN')}`;
     await notify({
       user: order.user,
       type: 'order_paid',
       title: 'Payment received',
-      message: `We've received your payment of ₹${Number(order.total || 0).toLocaleString('en-IN')}.`,
+      message: `We've received your payment of ${amount}.`,
       data: { orderId: order._id },
       link: `/account/orders/${order._id}`,
       email: true,
       push: true,
+      emailContext: { order },
+    });
+
+    // Alert every admin that payment came through (bell + email).
+    await notifyAdmins({
+      type: 'admin_order_paid',
+      title: 'Payment received',
+      message: `Payment of ${amount} was confirmed for an order.`,
+      data: { orderId: order._id },
+      link: '/admin/orders',
       emailContext: { order },
     });
   }

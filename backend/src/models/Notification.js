@@ -10,6 +10,9 @@ export const NOTIFICATION_TYPES = [
   'order_cancelled',
   'order_refunded',
   'account_welcome',
+  // Admin-facing alerts
+  'admin_new_order',
+  'admin_order_paid',
   'generic',
 ];
 

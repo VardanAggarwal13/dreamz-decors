@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { FiHeart, FiLogOut, FiMenu, FiSearch, FiShoppingBag, FiUser, FiX } from 'react-icons/fi';
+import { FiHeart, FiMenu, FiSearch, FiShoppingBag, FiUser, FiX } from 'react-icons/fi';
 import { navMenu } from '@/lib/sampleData';
 import { brand } from '@/lib/brand';
 import { useCartStore } from '@/store/cartStore';
@@ -9,6 +9,14 @@ import { useWishlistStore } from '@/store/wishlistStore';
 import Logo from './Logo';
 import MegaMenu from './MegaMenu';
 import NotificationBell from './NotificationBell';
+import AccountMenu from './AccountMenu';
+
+// Shared style for every icon control in the right-hand cluster so they line
+// up on a consistent grid and their badges never collide.
+const iconButton =
+  'relative grid h-9 w-9 place-items-center rounded-full text-ink transition hover:bg-ink/5 hover:text-accent';
+const iconBadge =
+  'absolute right-1 top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-bone';
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -70,44 +78,36 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-4 text-ink lg:flex-none">
+        <div className="flex items-center gap-0.5 text-ink sm:gap-1 lg:flex-none">
           <button
             aria-label="Search"
             onClick={() => setSearchOpen((v) => !v)}
-            className={`transition hover:text-accent ${searchOpen ? 'text-accent' : ''}`}
+            className={`${iconButton} ${searchOpen ? 'text-accent' : ''}`}
           >
             <FiSearch size={18} />
           </button>
-          <Link to={user ? '/account' : '/login'} aria-label="Account" className="hover:text-accent">
-            <FiUser size={18} />
-          </Link>
-          {user && <NotificationBell />}
-          <Link to="/wishlist" aria-label="Wishlist" className="relative hidden hover:text-accent sm:block">
+
+          {user && <NotificationBell buttonClassName={iconButton} badgeClassName={iconBadge} />}
+
+          <Link to="/wishlist" aria-label="Wishlist" className={`hidden sm:grid ${iconButton}`}>
             <FiHeart size={18} />
-            {wishCount > 0 && (
-              <span className="absolute -right-2 -top-2 grid h-4 min-w-[16px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-bone">
-                {wishCount}
-              </span>
-            )}
+            {wishCount > 0 && <span className={iconBadge}>{wishCount}</span>}
           </Link>
-          <Link to="/cart" aria-label="Cart" className="relative hover:text-accent">
+
+          <Link to="/cart" aria-label="Cart" className={iconButton}>
             <FiShoppingBag size={18} />
-            {count > 0 && (
-              <span className="absolute -right-2 -top-2 grid h-4 min-w-[16px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-bone">
-                {count}
-              </span>
-            )}
+            {count > 0 && <span className={iconBadge}>{count}</span>}
           </Link>
-          {user && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              aria-label="Log out"
-              className="hidden items-center gap-2 rounded-full border border-hairline bg-bone-soft px-3 py-2 text-xs uppercase tracking-[0.18em] text-ink-soft transition hover:border-accent hover:text-accent sm:inline-flex"
-            >
-              <FiLogOut size={14} />
-              Logout
-            </button>
+
+          {/* Divider between quick actions and the account control */}
+          <span className="mx-1.5 hidden h-6 w-px bg-hairline sm:block" />
+
+          {user ? (
+            <AccountMenu />
+          ) : (
+            <Link to="/login" aria-label="Sign in" className={iconButton}>
+              <FiUser size={18} />
+            </Link>
           )}
         </div>
       </div>
@@ -163,6 +163,15 @@ export default function Navbar() {
             >
               Wishlist{wishCount > 0 ? ` (${wishCount})` : ''}
             </Link>
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                onClick={() => setOpen(false)}
+                className="py-3 text-sm uppercase tracking-[0.2em] text-gold-deep hover:text-gold"
+              >
+                Admin Dashboard
+              </Link>
+            )}
             {navMenu.map((item) => (
               <Link
                 key={item.label}

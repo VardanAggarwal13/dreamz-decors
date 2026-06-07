@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "sitemap": "node scripts/generate-sitemap.mjs",
+    "build": "node scripts/generate-sitemap.mjs && vite build && node scripts/prerender.mjs",
+    "build:nossg": "node scripts/generate-sitemap.mjs && vite build",
+    "prerender": "node scripts/prerender.mjs",
+    "og": "node scripts/generate-og.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

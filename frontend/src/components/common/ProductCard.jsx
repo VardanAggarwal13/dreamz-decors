@@ -6,6 +6,8 @@ import MediaImage from '@/components/ui/MediaImage';
 import { formatINR } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
+import { useAuthStore } from '@/store/authStore';
+import { useAuthPrompt } from '@/store/authPromptStore';
 
 function BadgeChip({ badge }) {
   if (!badge) return null;
@@ -28,6 +30,17 @@ export default function ProductCard({ product, layout }) {
   const addItem = useCartStore((s) => s.addItem);
   const inWishlist = useWishlistStore((s) => s.items.some((p) => p.id === product.id));
   const toggleWishlist = useWishlistStore((s) => s.toggle);
+  const user = useAuthStore((s) => s.user);
+  const promptAuth = useAuthPrompt((s) => s.show);
+
+  const handleWishlist = (e) => {
+    e.preventDefault();
+    if (!user) {
+      promptAuth('Sign in to save items to your wishlist.');
+      return;
+    }
+    toggleWishlist(product);
+  };
 
   const discount =
     product.mrp && product.price < product.mrp
@@ -117,14 +130,14 @@ export default function ProductCard({ product, layout }) {
         <div className="mt-3 flex items-center gap-2">
           <button
             onClick={() => addItem(product)}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gold py-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-ink transition hover:bg-gold-deep"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gold-deep py-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-bone transition hover:bg-gold"
           >
             <FiShoppingCart size={13} />
             Add to Cart
           </button>
           <button
             aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-            onClick={(e) => { e.preventDefault(); toggleWishlist(product); }}
+            onClick={handleWishlist}
             className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl border transition ${
               inWishlist
                 ? 'border-gold bg-gold/10 text-gold'

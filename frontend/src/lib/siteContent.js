@@ -302,6 +302,24 @@ export const contentPages = {
 };
 
 export const homeContent = {
+  hero: {
+    eyebrow: 'New Collection — Just Arrived',
+    titleLead: 'Walls that',
+    titleHighlight: 'speak.',
+    titleRest: ['Collections that', 'linger.'],
+    description:
+      'Hand-finished canvases, gallery sets, and statement bundles composed for spaces that should feel collected, not crowded.',
+    primaryCta: { label: 'Shop the Collection', href: '/shop' },
+    secondaryCta: { label: 'View Bestsellers', href: '/shop?sort=bestselling' },
+    image:
+      'https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=1400&auto=format&fit=crop&q=85',
+    badge: 'Gold Foil Collection',
+    stats: [
+      { value: '15K+', label: 'Homes Styled' },
+      { value: '4.9★', label: 'Avg Rating' },
+      { value: '100%', label: 'Made in India' },
+    ],
+  },
   collections: [
     {
       eyebrow: 'Wall Art',
@@ -424,11 +442,13 @@ export const homeContent = {
       role: 'Interior designer',
     },
   ],
+  // Homepage "Why DreamzDecors" cards — fully editable from Content → Homepage.
+  // `icon` maps to a name in FeatureSplit's ICONS (award/madeIn/package/truck/check).
   featurePoints: [
-    'Premium materials and refined finishing',
-    'Made in India with in-house quality checks',
-    'Secure packaging for safer delivery',
-    'Fast shipping and simple support',
+    { icon: 'award', title: 'Premium quality', text: 'Artist-grade canvas, archival inks, and refined gold-foil finishing on every piece.' },
+    { icon: 'madeIn', title: 'Made in India', text: 'Designed and produced in-house at our studio with strict quality checks before dispatch.' },
+    { icon: 'package', title: 'Secure packaging', text: 'Foam-cornered and bubble-wrapped so your art arrives without a single mark.' },
+    { icon: 'truck', title: 'Pan-India delivery', text: 'Standard 7–10 day shipping with end-to-end order tracking across India.' },
   ],
   featureTitle: 'Designed to feel curated from the first glance.',
   featureEyebrow: 'Why Dreamz Decor',
@@ -437,4 +457,35 @@ export const homeContent = {
   featureImage:
     'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1600&auto=format&fit=crop&q=70',
   featureCta: { label: 'Browse the collection', href: '/shop' },
+  // Editable section headers (eyebrow / title / description / link label) for each homepage band.
+  sections: {
+    collections: {
+      eyebrow: 'Shop by collection',
+      title: 'Find your aesthetic.',
+      description: 'Wall art, gallery sets, and bundles — the three cleanest entry points into the range.',
+      linkLabel: 'View all',
+      linkHref: '/shop',
+    },
+    bestsellers: {
+      eyebrow: 'Most loved',
+      title: 'Bestsellers right now.',
+      description: '',
+      linkLabel: 'See all bestsellers',
+      linkHref: '/shop?sort=bestselling',
+    },
+    newArrivals: {
+      eyebrow: 'Fresh in',
+      title: 'New this week.',
+      description: '',
+      linkLabel: 'Browse new arrivals',
+      linkHref: '/shop?sort=new',
+    },
+    testimonials: {
+      eyebrow: 'Testimonials',
+      title: 'What customers are saying.',
+      description: 'Honest reviews from homeowners, interior designers, and hotel owners across India.',
+      linkLabel: '',
+      linkHref: '',
+    },
+  },
 };

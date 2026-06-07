@@ -8,12 +8,16 @@ import Seo from '@/components/common/Seo';
 import MediaImage from '@/components/ui/MediaImage';
 import ProductGrid from '@/components/common/ProductGrid';
 import ProductGridSkeleton from '@/components/common/ProductGridSkeleton';
+import ProductReviews from '@/components/common/ProductReviews';
 import SectionHeader from '@/components/common/SectionHeader';
 import useFetch from '@/hooks/useFetch';
 import { productDescriptionFallback, productFeatureHighlights } from '@/lib/siteContent';
+import { breadcrumbSchema, absoluteUrl } from '@/lib/seo';
 import { formatINR, normalizeProduct } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
+import { useAuthStore } from '@/store/authStore';
+import { useAuthPrompt } from '@/store/authPromptStore';
 
 const formatVariantSize = (size = '') => `${String(size).replace('x', '×')}"`;
 
@@ -48,6 +52,16 @@ export default function ProductDetail() {
   const addItem = useCartStore((state) => state.addItem);
   const inWishlist = useWishlistStore((state) => state.items.some((p) => p.id === product?.id));
   const toggleWishlist = useWishlistStore((state) => state.toggle);
+  const user = useAuthStore((state) => state.user);
+  const promptAuth = useAuthPrompt((state) => state.show);
+
+  const handleWishlist = () => {
+    if (!user) {
+      promptAuth('Sign in to save items to your wishlist.');
+      return;
+    }
+    toggleWishlist(product);
+  };
 
   const variants = product?.variants || [];
   const variantSizes = useMemo(
@@ -124,12 +138,14 @@ export default function ProductDetail() {
     image: [currentImage, ...gallery.map((item) => item.url).filter(Boolean)].filter(Boolean),
     description: productDescription,
     brand: { '@type': 'Brand', name: 'DreamzDecors' },
+    sku: product.slug,
     offers: {
       '@type': 'Offer',
       priceCurrency: 'INR',
       price: selectedPrice,
-      availability: 'https://schema.org/InStock',
-      url: `${origin}/product/${product.slug}`,
+      availability:
+        product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+      url: absoluteUrl(`/product/${product.slug}`),
     },
     aggregateRating:
       product.rating && product.reviews
@@ -140,6 +156,13 @@ export default function ProductDetail() {
           }
         : undefined,
   };
+
+  const productBreadcrumb = breadcrumbSchema([
+    { name: 'Home', path: '/' },
+    { name: 'Shop', path: '/shop' },
+    { name: categoryLabel, path: `/shop/${product.category || ''}` },
+    { name: product.title, path: `/product/${product.slug}` },
+  ]);
 
   const handleAdd = () =>
     addItem({ ...product, price: selectedPrice }, qty, {
@@ -153,7 +176,9 @@ export default function ProductDetail() {
         title={`${product.title} - DreamzDecors`}
         description={productDescription}
         canonical={canonicalUrl}
-        schema={productSchema}
+        image={currentImage}
+        type="product"
+        schema={[productSchema, productBreadcrumb]}
       />
 
       <div className="container-page py-8 sm:py-10">
@@ -300,7 +325,7 @@ export default function ProductDetail() {
                 variant="outline"
                 size="lg"
                 className={`w-full ${inWishlist ? 'border-gold text-gold-deep' : ''}`}
-                onClick={() => toggleWishlist(product)}
+                onClick={handleWishlist}
               >
                 <FiHeart size={16} fill={inWishlist ? 'currentColor' : 'none'} />
                 {inWishlist ? 'In Wishlist' : 'Add to Wishlist'}
@@ -385,6 +410,9 @@ export default function ProductDetail() {
             )}
           </div>
         </div>
+
+        {/* ── Reviews ─────────────────────────────────────────── */}
+        <ProductReviews productId={product.id} rating={product.rating} reviews={product.reviews} />
 
         {/* ── You may also like ───────────────────────────────── */}
         {(related.loading || relatedList.length > 0) && (

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import useFetch from '@/hooks/useFetch';
 import { Link, Navigate } from 'react-router-dom';
 import { ChevronDown, ChevronRight, MapPin, Mail, Clock, Phone, Search, MessageCircle, Palette, Sparkles, Award, ShieldCheck } from 'lucide-react';
 import { FiArrowRight, FiCheck } from 'react-icons/fi';
@@ -6,6 +7,8 @@ import Seo from '@/components/common/Seo';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { contentPages } from '@/lib/siteContent';
+import { faqSchema } from '@/lib/seo';
+import { useSettingsStore } from '@/store/settingsStore';
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -85,6 +88,7 @@ function FaqItem({ faq, defaultOpen = false }) {
 
 function FaqPage({ page }) {
   const [query, setQuery] = useState('');
+  const allFaqs = (page.sections || []).flatMap((s) => s.faqs || []);
 
   const visibleSections = query.trim()
     ? page.sections
@@ -101,7 +105,12 @@ function FaqPage({ page }) {
 
   return (
     <div className="bg-bone">
-      <Seo title="FAQ — DreamzDecors" description={page.intro} canonical="/faq" />
+      <Seo
+        title="FAQ — DreamzDecors"
+        description={page.intro}
+        canonical="/faq"
+        schema={allFaqs.length ? faqSchema(allFaqs) : undefined}
+      />
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <div className="border-b border-hairline/60 bg-bone py-10 text-center sm:py-12">
@@ -319,32 +328,26 @@ function AboutPage({ page }) {
 
 // ─── Contact ──────────────────────────────────────────────────────────────────
 
-const CONTACT_DETAIL_CARDS = [
-  {
-    Icon: MapPin,
-    label: 'Our Studio',
-    value: 'Grand Trunk Road, Baba Phoola Singh,\nAmritsar, Punjab',
-  },
-  {
-    Icon: Phone,
-    label: 'Phone',
-    value: '+91 98765 43210',
-    href: 'tel:+919876543210',
-  },
-  {
-    Icon: Mail,
-    label: 'Email',
-    value: 'support@dreamzdecors.com',
-    href: 'mailto:support@dreamzdecors.com',
-  },
-  {
-    Icon: Clock,
-    label: 'Business Hours',
-    value: 'Mon–Sat: 10:00 AM – 7:00 PM\nSunday: Closed',
-  },
-];
+// Build the contact detail cards from admin-editable Settings (with safe
+// fallbacks). Phone/hours cards are omitted when those fields are blank.
+function contactCards(contact = {}) {
+  const tel = (contact.phone || '').replace(/[^+\d]/g, '');
+  return [
+    { Icon: MapPin, label: 'Our Studio', value: contact.address || 'Made in India, delivering pan India' },
+    ...(contact.phone
+      ? [{ Icon: Phone, label: 'Phone', value: contact.phone, href: tel ? `tel:${tel}` : undefined }]
+      : []),
+    ...(contact.email
+      ? [{ Icon: Mail, label: 'Email', value: contact.email, href: `mailto:${contact.email}` }]
+      : []),
+    ...(contact.hours ? [{ Icon: Clock, label: 'Business Hours', value: contact.hours }] : []),
+  ];
+}
 
 function ContactPage({ page }) {
+  const contact = useSettingsStore((s) => s.settings.contact) || {};
+  const cards = contactCards(contact);
+  const mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(contact.address || 'India')}&output=embed`;
   return (
     <div className="bg-bone">
       <Seo title="Contact Us — DreamzDecors" description={page.intro} canonical="/contact" />
@@ -408,7 +411,7 @@ function ContactPage({ page }) {
           <div>
             <h2 className="font-display text-xl text-ink">Our Details</h2>
             <div className="mt-5 space-y-2.5">
-              {CONTACT_DETAIL_CARDS.map(({ Icon, label, value, href }) => (
+              {cards.map(({ Icon, label, value, href }) => (
                 <div
                   key={label}
                   className="flex items-start gap-3 rounded-xl border border-hairline/60 bg-bone-soft p-4 transition hover:border-gold/40"
@@ -453,7 +456,7 @@ function ContactPage({ page }) {
           <div className="mt-7 overflow-hidden rounded-2xl border border-hairline/60 shadow-sm">
             <iframe
               title="DreamzDecors Studio Location"
-              src="https://maps.google.com/maps?q=Grand+Trunk+Road,+Baba+Phoola+Singh,+Amritsar,+Punjab&output=embed"
+              src={mapSrc}
               width="100%"
               height="360"
               style={{ border: 0, display: 'block' }}
@@ -664,7 +667,12 @@ function TermsPage({ page }) {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function ContentPage({ pageKey }) {
-  const page = contentPages[pageKey];
+  // Admin override (if any) is shallow-merged over the built-in default,
+  // so the layout is unchanged and partial edits stay safe.
+  const { data } = useFetch(`/content/${pageKey}`, { deps: [pageKey] });
+  const base = contentPages[pageKey];
+  const override = data?.data;
+  const page = override && Object.keys(override).length ? { ...base, ...override } : base;
   if (!page) return <Navigate to="/404" replace />;
 
   if (pageKey === 'about')    return <AboutPage page={page} />;

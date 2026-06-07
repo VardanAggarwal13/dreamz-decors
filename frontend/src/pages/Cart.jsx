@@ -14,16 +14,8 @@ import ProductGrid from '@/components/common/ProductGrid';
 import ProductGridSkeleton from '@/components/common/ProductGridSkeleton';
 import useFetch from '@/hooks/useFetch';
 import { useCartStore } from '@/store/cartStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { formatINR, normalizeProduct } from '@/lib/utils';
-
-const FREE_SHIPPING_THRESHOLD = 1499;
-
-const WHY_SHOP = [
-  { Icon: ShieldCheck, title: 'Secure Payments', text: '100% encrypted & safe checkout' },
-  { Icon: Package, title: 'Premium Packaging', text: 'Each piece carefully wrapped & boxed' },
-  { Icon: RotateCcw, title: 'Easy Returns', text: '7-day hassle-free return policy' },
-  { Icon: Truck, title: 'Free Shipping', text: `On all orders above ${formatINR(FREE_SHIPPING_THRESHOLD)}` },
-];
 
 function QtyButton({ onClick, children, label }) {
   return (
@@ -54,8 +46,17 @@ export default function Cart() {
     .slice(0, 3);
   const showRecommendations = items.length > 0 && items.length <= 2;
 
+  const { freeThreshold, flatRate } = useSettingsStore((s) => s.settings.shipping);
+
+  const WHY_SHOP = [
+    { Icon: ShieldCheck, title: 'Secure Payments', text: '100% encrypted & safe checkout' },
+    { Icon: Package, title: 'Premium Packaging', text: 'Each piece carefully wrapped & boxed' },
+    { Icon: RotateCcw, title: 'Easy Returns', text: '7-day hassle-free return policy' },
+    { Icon: Truck, title: 'Free Shipping', text: `On all orders above ${formatINR(freeThreshold)}` },
+  ];
+
   const count = items.reduce((sum, i) => sum + i.qty, 0);
-  const shipping = subtotal === 0 ? 0 : subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 99;
+  const shipping = subtotal === 0 ? 0 : subtotal >= freeThreshold ? 0 : flatRate;
   const gstIncluded = Math.round(subtotal - subtotal / 1.18);
   const total = subtotal + shipping;
 
@@ -232,11 +233,14 @@ export default function Cart() {
               </div>
 
               <Button
+                asChild
                 variant="primary"
                 size="lg"
                 className="mt-5 w-full bg-gold-deep text-bone hover:bg-gold-deep/90"
               >
-                <FiShoppingBag size={16} /> Proceed to Checkout
+                <Link to="/checkout">
+                  <FiShoppingBag size={16} /> Proceed to Checkout
+                </Link>
               </Button>
               <Button asChild variant="ghost" size="md" className="mt-2 w-full text-gold-deep hover:bg-gold/10">
                 <Link to="/shop"><FiArrowLeft size={14} /> Continue Shopping</Link>

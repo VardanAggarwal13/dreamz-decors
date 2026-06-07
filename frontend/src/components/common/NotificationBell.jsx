@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiBell, FiCheck } from 'react-icons/fi';
 import { useNotificationStore } from '@/store/notificationStore';
+import { formatDateTime } from '@/lib/utils';
 import {
   isPushSupported,
   isSubscribed,
@@ -9,22 +10,7 @@ import {
   disablePush,
 } from '@/lib/push';
 
-// Compact relative time: "just now", "5m", "3h", "2d", else a date.
-function timeAgo(iso) {
-  if (!iso) return '';
-  const diff = Date.now() - new Date(iso).getTime();
-  const sec = Math.round(diff / 1000);
-  if (sec < 60) return 'just now';
-  const min = Math.round(sec / 60);
-  if (min < 60) return `${min}m`;
-  const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr}h`;
-  const day = Math.round(hr / 24);
-  if (day < 7) return `${day}d`;
-  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-}
-
-export default function NotificationBell() {
+export default function NotificationBell({ buttonClassName, badgeClassName }) {
   const [open, setOpen] = useState(false);
   const [pushOn, setPushOn] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -91,11 +77,16 @@ export default function NotificationBell() {
         type="button"
         aria-label="Notifications"
         onClick={() => setOpen((v) => !v)}
-        className="relative hover:text-accent"
+        className={buttonClassName || 'relative hover:text-accent'}
       >
         <FiBell size={18} />
         {unread > 0 && (
-          <span className="absolute -right-2 -top-2 grid h-4 min-w-[16px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-bone">
+          <span
+            className={
+              badgeClassName ||
+              'absolute -right-2 -top-2 grid h-4 min-w-[16px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-bone'
+            }
+          >
             {unread > 9 ? '9+' : unread}
           </span>
         )}
@@ -144,7 +135,7 @@ export default function NotificationBell() {
                         <span className="flex items-baseline justify-between gap-2">
                           <span className="truncate text-sm font-medium text-ink">{n.title}</span>
                           <span className="shrink-0 text-[10px] uppercase tracking-wide text-ink-muted">
-                            {timeAgo(n.createdAt)}
+                            {formatDateTime(n.createdAt)}
                           </span>
                         </span>
                         <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-ink-soft">

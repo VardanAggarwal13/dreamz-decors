@@ -35,22 +35,12 @@ export default function Orders() {
   }, []);
 
   return (
-    <div className="bg-bone-soft">
+    <div>
       <Seo title="My Orders — DreamzDecor" description="Track your DreamzDecor orders." canonical="/account/orders" noIndex />
 
-      <div className="container-page py-10 sm:py-14">
-        {/* Header */}
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-gold-deep">Account</p>
-            <h1 className="mt-3 font-display text-3xl text-ink sm:text-4xl">My orders</h1>
-          </div>
-          <Link to="/account" className="editorial-link inline-flex">
-            Back to account
-          </Link>
-        </div>
+      <h1 className="font-display text-2xl text-ink sm:text-3xl">My orders</h1>
 
-        <div className="mt-8">
+      <div className="mt-6">
           {loading ? (
             <div className="space-y-4">
               {[0, 1, 2].map((i) => (
@@ -118,7 +108,6 @@ export default function Orders() {
               ))}
             </ul>
           )}
-        </div>
       </div>
     </div>
   );

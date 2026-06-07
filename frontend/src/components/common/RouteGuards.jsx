@@ -34,3 +34,16 @@ export function PublicOnlyRoute({ children }) {
   if (status === 'authenticated') return <Navigate to="/account" replace />;
   return children;
 }
+
+export function RequireAdmin({ children }) {
+  const status = useAuthStore((s) => s.status);
+  const role = useAuthStore((s) => s.user?.role);
+  const location = useLocation();
+
+  if (status === 'loading') return null;
+  if (status !== 'authenticated') {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+  if (role !== 'admin') return <Navigate to="/" replace />;
+  return children;
+}

@@ -1,19 +1,29 @@
 import { useState } from 'react';
 import { FiArrowRight, FiCheck } from 'react-icons/fi';
+import api from '@/lib/api';
 
 export default function NewsletterBand() {
   const [email,  setEmail]  = useState('');
-  const [status, setStatus] = useState('idle'); // idle | success | error
+  const [status, setStatus] = useState('idle'); // idle | loading | success | error
+  const [errorMsg, setErrorMsg] = useState('Please enter a valid email address.');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const val = email.trim();
     if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+      setErrorMsg('Please enter a valid email address.');
       setStatus('error');
       return;
     }
-    setStatus('success');
-    setEmail('');
+    setStatus('loading');
+    try {
+      await api.post('/newsletter/subscribe', { email: val, source: 'website' });
+      setStatus('success');
+      setEmail('');
+    } catch (err) {
+      setErrorMsg(err.message || 'Could not subscribe. Please try again.');
+      setStatus('error');
+    }
   };
 
   return (
@@ -61,27 +71,29 @@ export default function NewsletterBand() {
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setStatus('idle'); }}
                     placeholder="your@email.com"
-                    className="min-w-0 flex-1 rounded-xl border border-hairline bg-bone-soft px-5 py-3.5 text-sm text-ink placeholder:text-ink-muted outline-none transition focus:border-gold/50 focus:ring-2 focus:ring-gold/15"
+                    disabled={status === 'loading'}
+                    className="min-w-0 flex-1 rounded-xl border border-hairline bg-bone-soft px-5 py-3.5 text-sm text-ink placeholder:text-ink-muted outline-none transition focus:border-gold/50 focus:ring-2 focus:ring-gold/15 disabled:opacity-60"
                     style={status === 'error' ? { borderColor: 'rgb(var(--color-sale) / 0.6)' } : {}}
                   />
                   <button
                     type="submit"
-                    className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-gold bg-gold px-7 py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-ink transition hover:bg-gold-light"
+                    disabled={status === 'loading'}
+                    className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-gold-deep bg-gold-deep px-7 py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-bone transition hover:bg-gold disabled:opacity-60"
                   >
-                    Subscribe
-                    <FiArrowRight size={14} />
+                    {status === 'loading' ? 'Subscribing…' : 'Subscribe'}
+                    {status !== 'loading' && <FiArrowRight size={14} />}
                   </button>
                 </div>
 
                 {status === 'error' && (
                   <p className="mt-2 text-center text-xs text-sale">
-                    Please enter a valid email address.
+                    {errorMsg}
                   </p>
                 )}
               </form>
             )}
 
-            <p className="mt-3 text-center text-[11px] text-ink-muted">
+            <p className="mt-3 text-center text-sm text-ink-muted">
               No spam. Unsubscribe anytime.
             </p>
           </div>

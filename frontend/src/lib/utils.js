@@ -39,6 +39,22 @@ export function formatINR(amount) {
   }).format(amount);
 }
 
+// Absolute, human-readable timestamp — e.g. "7 Jun 2026, 3:42 PM" (IST locale).
+// Used for notifications/history where the EXACT time matters, not "5m ago".
+export function formatDateTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 export function slugify(str) {
   return String(str)
     .toLowerCase()

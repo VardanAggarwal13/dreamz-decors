@@ -18,6 +18,11 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
+import accountRoutes from './routes/accountRoutes.js';
+import contentRoutes from './routes/contentRoutes.js';
+import newsletterRoutes from './routes/newsletterRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -62,6 +67,11 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/account', accountRoutes);
+app.use('/api/content', contentRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

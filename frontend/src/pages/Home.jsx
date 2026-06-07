@@ -10,19 +10,33 @@ import Seo from '@/components/common/Seo';
 import useFetch from '@/hooks/useFetch';
 import { homeContent } from '@/lib/siteContent';
 import { normalizeProduct } from '@/lib/utils';
+import { organizationSchema, websiteSchema } from '@/lib/seo';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function Home() {
+  const settings = useSettingsStore((s) => s.settings);
   const bestsellers = useFetch('/products?sort=bestselling&limit=8');
   const newArrivals  = useFetch('/products?sort=new&limit=4');
   const reviewsRes   = useFetch('/reviews');
+
+  // Admin override (key 'home') merged over the built-in defaults — every band is editable.
+  const contentRes = useFetch('/content/home', { deps: [] });
+  const content = { ...homeContent, ...(contentRes.data?.data || {}) };
+  const sections = { ...homeContent.sections, ...(content.sections || {}) };
 
   const bestList     = (bestsellers.data?.data || []).map(normalizeProduct);
   const newList      = (newArrivals.data?.data  || []).map(normalizeProduct);
   const testimonials = reviewsRes.data?.data?.length
     ? reviewsRes.data.data
-    : homeContent.testimonials;
+    : content.testimonials;
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  // Build SectionShell props from an editable header config.
+  const headerProps = (s = {}) => ({
+    eyebrow: s.eyebrow,
+    title: s.title,
+    ...(s.description ? { description: s.description } : {}),
+    ...(s.linkLabel ? { link: { label: s.linkLabel, href: s.linkHref || '/shop' } } : {}),
+  });
 
   return (
     <>
@@ -30,35 +44,19 @@ export default function Home() {
         title="DreamzDecors — Premium Wall Art, Gallery Sets & Bundles"
         description="Shop premium wall art, gallery sets, and bundles designed for modern Indian homes. Gold foil finishing, secure packaging, pan-India delivery."
         canonical="/"
-        schema={{
-          '@context': 'https://schema.org',
-          '@type': 'WebSite',
-          name: 'DreamzDecors',
-          url: origin,
-        }}
+        schema={[organizationSchema(settings), websiteSchema()]}
       />
 
       {/* ① Hero ─────────────────────────────────────────────── */}
       <Hero />
 
       {/* ② Shop by Collection ───────────────────────────────── */}
-      <SectionShell
-        className="bg-bone-soft"
-        eyebrow="Shop by collection"
-        title="Find your aesthetic."
-        description="Wall art, gallery sets, and bundles — the three cleanest entry points into the range."
-        link={{ label: 'View all', href: '/shop' }}
-      >
-        <EditorialGrid items={homeContent.collections} />
+      <SectionShell className="bg-bone-soft" {...headerProps(sections.collections)}>
+        <EditorialGrid items={content.collections} />
       </SectionShell>
 
       {/* ③ Bestsellers ──────────────────────────────────────── */}
-      <SectionShell
-        className="bg-bone"
-        eyebrow="Most loved"
-        title="Bestsellers right now."
-        link={{ label: 'See all bestsellers', href: '/shop?sort=bestselling' }}
-      >
+      <SectionShell className="bg-bone" {...headerProps(sections.bestsellers)}>
         {bestsellers.loading ? (
           <ProductGridSkeleton columns={4} count={8} layout="editorial" />
         ) : bestsellers.error ? (
@@ -72,22 +70,17 @@ export default function Home() {
 
       {/* ④ Why Dreamz Decor ─────────────────────────────────── */}
       <FeatureSplit
-        eyebrow={homeContent.featureEyebrow}
-        title={homeContent.featureTitle}
-        description={homeContent.featureDescription}
-        points={homeContent.featurePoints}
-        image={homeContent.featureImage}
+        eyebrow={content.featureEyebrow}
+        title={content.featureTitle}
+        description={content.featureDescription}
+        points={content.featurePoints}
+        image={content.featureImage}
         imageAlt="Dreamz Decor styled interior"
-        cta={homeContent.featureCta}
+        cta={content.featureCta}
       />
 
       {/* ⑤ New Arrivals ─────────────────────────────────────── */}
-      <SectionShell
-        className="bg-bone-soft"
-        eyebrow="Fresh in"
-        title="New this week."
-        link={{ label: 'Browse new arrivals', href: '/shop?sort=new' }}
-      >
+      <SectionShell className="bg-bone-soft" {...headerProps(sections.newArrivals)}>
         {newArrivals.loading ? (
           <ProductGridSkeleton columns={4} count={4} layout="editorial" />
         ) : newArrivals.error ? (
@@ -100,12 +93,7 @@ export default function Home() {
       </SectionShell>
 
       {/* ⑥ Testimonials ─────────────────────────────────────── */}
-      <SectionShell
-        className="bg-bone"
-        eyebrow="Testimonials"
-        title="What customers are saying."
-        description="Honest reviews from homeowners, interior designers, and hotel owners across India."
-      >
+      <SectionShell className="bg-bone" {...headerProps(sections.testimonials)}>
         <TestimonialGrid items={testimonials} />
       </SectionShell>
 

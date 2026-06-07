@@ -100,6 +100,32 @@ async function dispatchExternal(doc, { user, type, title, message, link, email, 
   if (doc.isModified('channels')) await doc.save().catch(() => {});
 }
 
+/**
+ * Notify EVERY admin user — operational alerts (new order, payment received).
+ * Each admin gets an in-app bell notification and, by default, an email.
+ * Push defaults OFF (admins work at the dashboard). Never throws.
+ *
+ * @param {Object} opts  Same shape as notify(), minus `user`.
+ * @returns {Promise<number>}  How many admins were notified.
+ */
+export async function notifyAdmins({
+  type = 'generic',
+  title,
+  message,
+  data = {},
+  link = '/admin/orders',
+  email = true,
+  push = false,
+  emailContext = {},
+}) {
+  if (!title || !message) return 0;
+  const admins = await User.find({ role: 'admin' }).select('_id').lean();
+  await Promise.allSettled(
+    admins.map((a) => notify({ user: a._id, type, title, message, data, link, email, push, emailContext }))
+  );
+  return admins.length;
+}
+
 // Shape sent to the frontend over sockets / REST.
 export function serialize(doc) {
   return {

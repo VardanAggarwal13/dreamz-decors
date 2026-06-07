@@ -6,6 +6,7 @@ import ProductGridSkeleton from '@/components/common/ProductGridSkeleton';
 import Seo from '@/components/common/Seo';
 import useFetch from '@/hooks/useFetch';
 import { normalizeCategory, normalizeProduct } from '@/lib/utils';
+import { collectionSchema, breadcrumbSchema } from '@/lib/seo';
 
 const PAGE_SIZE = 12;
 
@@ -53,6 +54,16 @@ export default function Shop() {
     ? `${currentCat.title} — DreamzDecors`
     : 'Our Collections — DreamzDecors';
 
+  const shopPath = currentCat ? `/shop/${currentCat.slug}` : '/shop';
+  const shopSchema = [
+    breadcrumbSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Shop', path: '/shop' },
+      ...(currentCat ? [{ name: currentCat.title, path: shopPath }] : []),
+    ]),
+    collectionSchema({ name: seoTitle, path: shopPath, products }),
+  ];
+
   useEffect(() => {
     if (page === currentPage) return;
     const np = new URLSearchParams(params);
@@ -96,9 +107,11 @@ export default function Shop() {
   return (
     <div className="bg-bone">
       <Seo
-        title={seoTitle}
+        title={search ? `Results for “${search}” — DreamzDecors` : seoTitle}
         description="Browse premium wall art, gallery sets, and luxury decor for modern Indian homes."
-        canonical={currentCat ? `/shop/${currentCat.slug}` : '/shop'}
+        canonical={shopPath}
+        noIndex={Boolean(search)}
+        schema={search ? undefined : shopSchema}
       />
 
       {/* ── 1. Hero ───────────────────────────────────────────── */}
@@ -119,7 +132,7 @@ export default function Shop() {
 
       {/* ── 2. Filter bar ─────────────────────────────────────── */}
       <div className="sticky top-0 z-20 border-b border-hairline/60 bg-bone/95 backdrop-blur-sm">
-        <div className="container-page flex flex-wrap items-center justify-between gap-3 py-3">
+        <div className="container-page flex flex-col gap-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           {/* Category pills */}
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -147,12 +160,12 @@ export default function Shop() {
             ))}
           </div>
 
-          {/* Sort dropdown */}
-          <div className="relative shrink-0">
+          {/* Sort dropdown — full-width on mobile so it never crowds the pills */}
+          <div className="relative w-full shrink-0 sm:w-auto">
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="appearance-none cursor-pointer rounded-full border border-hairline bg-bone py-1.5 pl-4 pr-8 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition focus:border-gold focus:outline-none"
+              className="w-full appearance-none cursor-pointer rounded-full border border-hairline bg-bone py-2 pl-4 pr-8 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition focus:border-gold focus:outline-none sm:w-auto sm:py-1.5"
             >
               {sortOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>

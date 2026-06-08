@@ -10,6 +10,14 @@ const db = client.db();
 
 const clientUrl = () => process.env.CLIENT_URL || 'http://localhost:5173';
 
+// CLIENT_URL may list several origins (apex + www), comma-separated. Better Auth
+// checks the request Origin against this list for CSRF protection on sign-in etc.
+const clientUrls = () =>
+  (process.env.CLIENT_URL || 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+
 function resetPasswordEmail(name, url) {
   return `<!doctype html>
 <html><body style="margin:0;background:#f7f3ec;font-family:Helvetica,Arial,sans-serif;color:#161616;">
@@ -31,7 +39,7 @@ export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:5000',
   secret: process.env.BETTER_AUTH_SECRET,
   database: mongodbAdapter(db, { client }),
-  trustedOrigins: [clientUrl()],
+  trustedOrigins: clientUrls(),
 
   // Let MongoDB generate native ObjectId _id so existing ObjectId relations
   // (Order.user, Notification.user, wishlist, …) keep working.

@@ -16,7 +16,11 @@ const roomForUser = (userId) => `user:${userId}`;
 export function initSocket(httpServer) {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:5173',
+      // CLIENT_URL may be a comma-separated list (apex + www); allow each.
+      origin: (process.env.CLIENT_URL || 'http://localhost:5173')
+        .split(',')
+        .map((o) => o.trim().replace(/\/+$/, ''))
+        .filter(Boolean),
       credentials: true,
     },
   });

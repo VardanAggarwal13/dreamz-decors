@@ -27,10 +27,17 @@ import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
+// CLIENT_URL may be a comma-separated list (e.g. apex + www) so both origins
+// pass CORS. Trailing slashes are stripped to match the browser's Origin header.
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: allowedOrigins,
     credentials: true,
   })
 );

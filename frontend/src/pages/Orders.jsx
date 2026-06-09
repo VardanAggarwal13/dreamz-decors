@@ -68,9 +68,9 @@ export default function Orders() {
                     to={`/account/orders/${order._id}`}
                     className="group flex flex-col gap-4 rounded-2xl border border-hairline/60 bg-bone p-5 transition hover:border-gold/40 hover:shadow-card sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex min-w-0 items-center gap-4">
                       {/* item thumbnails */}
-                      <div className="flex -space-x-3">
+                      <div className="flex shrink-0 -space-x-3">
                         {(order.items || []).slice(0, 3).map((it, idx) => (
                           <span
                             key={idx}
@@ -87,8 +87,8 @@ export default function Orders() {
                           </span>
                         )}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-semibold text-ink">{shortId(order._id)}</span>
                           <OrderStatusBadge status={order.status} />
                         </div>

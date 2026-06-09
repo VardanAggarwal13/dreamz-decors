@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { FiBell, FiCheck } from 'react-icons/fi';
 import { useNotificationStore } from '@/store/notificationStore';
@@ -15,7 +16,9 @@ export default function NotificationBell({ buttonClassName, badgeClassName }) {
   const [pushOn, setPushOn] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState('');
-  const panelRef = useRef(null);
+  const btnRef = useRef(null);
+  const popRef = useRef(null);
+  const [coords, setCoords] = useState({ top: 0, right: 16 });
   const navigate = useNavigate();
 
   const items = useNotificationStore((s) => s.items);
@@ -32,11 +35,36 @@ export default function NotificationBell({ buttonClassName, badgeClassName }) {
     }
   }, [open, pushSupported]);
 
-  // Close on outside click / Escape.
+  // Position the dropdown in viewport coords (it's portaled out of the
+  // backdrop-blur header). Align its right edge to the bell, but clamp so it
+  // never spills off-screen on mobile.
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
+    const measure = () => {
+      const r = btnRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const width = Math.min(330, window.innerWidth - 32);
+      let right = window.innerWidth - r.right;
+      if (window.innerWidth - right - width < 16) right = window.innerWidth - width - 16;
+      if (right < 16) right = 16;
+      setCoords({ top: r.bottom + 12, right });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+  }, [open]);
+
+  // Close on outside click / Escape (the panel is portaled, so check both refs).
+  useEffect(() => {
+    if (!open) return undefined;
     const onClick = (e) => {
-      if (panelRef.current && !panelRef.current.contains(e.target)) setOpen(false);
+      if (btnRef.current?.contains(e.target)) return;
+      if (popRef.current?.contains(e.target)) return;
+      setOpen(false);
     };
     const onKey = (e) => e.key === 'Escape' && setOpen(false);
     document.addEventListener('mousedown', onClick);
@@ -46,6 +74,10 @@ export default function NotificationBell({ buttonClassName, badgeClassName }) {
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
+
+  // The bell tray shows only UNREAD notifications, so "Mark all read" empties
+  // it. Full history (read + unread) remains on the Account → Notifications page.
+  const visible = items.filter((n) => !n.read);
 
   const handleItemClick = (notif) => {
     if (!notif.read) markRead(notif._id);
@@ -72,8 +104,9 @@ export default function NotificationBell({ buttonClassName, badgeClassName }) {
   };
 
   return (
-    <div className="relative" ref={panelRef}>
+    <div className="relative">
       <button
+        ref={btnRef}
         type="button"
         aria-label="Notifications"
         onClick={() => setOpen((v) => !v)}
@@ -92,12 +125,16 @@ export default function NotificationBell({ buttonClassName, badgeClassName }) {
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-[330px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-hairline/70 bg-bone-soft shadow-card">
+      {open && createPortal(
+        <div
+          ref={popRef}
+          style={{ top: coords.top, right: coords.right }}
+          className="fixed z-[60] w-[330px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-hairline/70 bg-bone-soft shadow-card"
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-hairline/60 px-4 py-3">
             <p className="text-sm font-semibold text-ink">Notifications</p>
-            {unread > 0 && (
+            {visible.length > 0 && (
               <button
                 type="button"
                 onClick={markAllRead}
@@ -108,31 +145,25 @@ export default function NotificationBell({ buttonClassName, badgeClassName }) {
             )}
           </div>
 
-          {/* List */}
+          {/* List — unread only, so "Mark all read" clears the tray */}
           <div className="max-h-[360px] overflow-y-auto">
-            {items.length === 0 ? (
+            {visible.length === 0 ? (
               <div className="px-4 py-10 text-center">
                 <FiBell size={22} className="mx-auto text-ink-muted/50" />
                 <p className="mt-3 text-sm text-ink-soft">You're all caught up</p>
               </div>
             ) : (
               <ul className="divide-y divide-hairline/50">
-                {items.map((n) => (
+                {visible.map((n) => (
                   <li key={n._id}>
                     <button
                       type="button"
                       onClick={() => handleItemClick(n)}
-                      className={`flex w-full gap-3 px-4 py-3 text-left transition hover:bg-bone-muted/60 ${
-                        n.read ? '' : 'bg-gold/[0.05]'
-                      }`}
+                      className="flex w-full gap-3 bg-gold/[0.05] px-4 py-3 text-left transition hover:bg-bone-muted/60"
                     >
-                      <span
-                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                          n.read ? 'bg-transparent' : 'bg-gold'
-                        }`}
-                      />
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-gold" />
                       <span className="min-w-0 flex-1">
-                        <span className="flex items-baseline justify-between gap-2">
+                        <span className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
                           <span className="truncate text-sm font-medium text-ink">{n.title}</span>
                           <span className="shrink-0 text-[10px] uppercase tracking-wide text-ink-muted">
                             {formatDateTime(n.createdAt)}
@@ -174,7 +205,8 @@ export default function NotificationBell({ buttonClassName, badgeClassName }) {
               {pushError && <p className="mt-2 text-[11px] text-sale">{pushError}</p>}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

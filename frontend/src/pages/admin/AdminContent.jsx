@@ -12,7 +12,18 @@ const KEYS = [
   { key: 'faq', label: 'FAQ' },
   { key: 'contact', label: 'Contact' },
   { key: 'terms', label: 'Terms' },
+  { key: 'product', label: 'Product' },
+  { key: 'navigation', label: 'Navigation' },
 ];
+
+// Short editor hints for keys that use icon-name strings or special structure.
+const HINTS = {
+  home: 'Includes the "Why Dreamz Decor" cards (icon: award/madeIn/package/truck/check) and the newsletter band copy.',
+  about: 'Value cards use icon names: palette, sparkles, award, shield. Edit "stats" for the numbers band.',
+  shipping: 'Edit "steps" for the four "Order\'s Journey" cards.',
+  product: 'Trust badges use icon names: shield, award, mapPin, package, truck, check. (Free-shipping ₹ amount lives in Settings → Shipping.)',
+  navigation: 'Header menu + mega-menu. Each item: { label, href, groups:[{ title, items:[…] }] }.',
+};
 
 // Built-in default content for each key (used as fallback + "reset").
 const defaultFor = (key) => (key === 'home' ? homeContent : contentPages[key] || {});
@@ -90,6 +101,12 @@ export default function AdminContent() {
           </button>
         ))}
       </div>
+
+      {HINTS[activeKey] && (
+        <p className="mt-4 rounded-lg border border-hairline/60 bg-bone-soft px-4 py-2 text-xs leading-5 text-ink-soft">
+          {HINTS[activeKey]}
+        </p>
+      )}
 
       {err && <div className="mt-4 rounded-lg border border-sale/25 bg-sale/8 px-4 py-2 text-sm text-sale">{err}</div>}
 

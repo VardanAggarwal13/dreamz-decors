@@ -87,7 +87,7 @@ export default function AccountNotifications() {
       {/* Browser push settings */}
       <section className="mt-6 rounded-2xl border border-hairline/60 bg-bone p-6 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
+          <div className="flex min-w-0 items-start gap-4">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gold/25 bg-gold/10 text-gold-deep">
               {pushOn ? <FiBell size={18} /> : <FiBellOff size={18} />}
             </span>
@@ -131,7 +131,7 @@ export default function AccountNotifications() {
       {/* Email newsletter */}
       <section className="mt-6 rounded-2xl border border-hairline/60 bg-bone p-6 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
+          <div className="flex min-w-0 items-start gap-4">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gold/25 bg-gold/10 text-gold-deep">
               <FiMail size={18} />
             </span>
@@ -139,7 +139,7 @@ export default function AccountNotifications() {
               <h2 className="font-display text-lg text-ink">Email newsletter</h2>
               <p className="mt-1 max-w-md text-sm leading-6 text-ink-soft">
                 New drops, studio stories and members-only offers{nlEmail ? ', sent to ' : ''}
-                {nlEmail && <span className="font-medium text-ink">{nlEmail}</span>}. No spam — unsubscribe anytime.
+                {nlEmail && <span className="break-words font-medium text-ink">{nlEmail}</span>}. No spam — unsubscribe anytime.
               </p>
             </div>
           </div>
@@ -193,7 +193,7 @@ export default function AccountNotifications() {
                 >
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? 'bg-transparent' : 'bg-gold'}`} />
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-baseline justify-between gap-2">
+                    <span className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
                       <span className="truncate text-sm font-medium text-ink">{n.title}</span>
                       <span className="shrink-0 text-[10px] uppercase tracking-wide text-ink-muted">{formatDateTime(n.createdAt)}</span>
                     </span>

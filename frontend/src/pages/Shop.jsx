@@ -133,11 +133,12 @@ export default function Shop() {
       {/* ── 2. Filter bar ─────────────────────────────────────── */}
       <div className="sticky top-0 z-20 border-b border-hairline/60 bg-bone/95 backdrop-blur-sm">
         <div className="container-page flex flex-col gap-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          {/* Category pills */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Category pills — single swipeable row on mobile (bleeds edge to
+              edge), wraps normally from sm up. */}
+          <div className="scrollbar-hide -mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
             <button
               onClick={() => setCategory(null)}
-              className={`rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
+              className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
                 !category
                   ? 'bg-gold text-ink'
                   : 'border border-hairline text-ink-soft hover:border-gold/60 hover:text-ink'
@@ -149,7 +150,7 @@ export default function Shop() {
               <button
                 key={cat.slug}
                 onClick={() => setCategory(cat.slug)}
-                className={`rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
+                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
                   category === cat.slug
                     ? 'bg-gold text-ink'
                     : 'border border-hairline text-ink-soft hover:border-gold/60 hover:text-ink'

@@ -182,38 +182,19 @@ function FaqPage({ page }) {
 
 // ─── About ────────────────────────────────────────────────────────────────────
 
-const ABOUT_VALUES = [
-  {
-    Icon: Palette,
-    title: 'Premium Quality',
-    text: 'High-grade canvas, premium wooden frames, and durable inks crafted for long-lasting beauty.',
-  },
-  {
-    Icon: Sparkles,
-    title: 'Gold Foil Finishing',
-    text: 'Signature gold detailing adds richness and sophistication to every artwork.',
-  },
-  {
-    Icon: Award,
-    title: 'Made in India',
-    text: 'Every product is proudly crafted in India with superior attention to detail.',
-  },
-  {
-    Icon: ShieldCheck,
-    title: 'Secure Packaging',
-    text: 'Multi-layer protective packaging ensures safe and damage-free delivery.',
-  },
-];
-
-const ABOUT_STATS = [
-  { value: '1,200+', label: 'Happy Customers' },
-  { value: '4+',     label: 'Years of Craft' },
-  { value: '50+',    label: 'Unique Designs' },
-  { value: '100%',   label: 'Made in India' },
-];
+// Value-card icons are stored as names in content (admin-editable); map them
+// back to components here. Unknown/missing names fall back to ShieldCheck.
+const ABOUT_ICONS = {
+  palette: Palette,
+  sparkles: Sparkles,
+  award: Award,
+  shield: ShieldCheck,
+};
 
 function AboutPage({ page }) {
   const [about] = page.sections;
+  const values = Array.isArray(page.values) ? page.values : [];
+  const stats = Array.isArray(page.stats) ? page.stats : [];
 
   return (
     <div className="bg-bone">
@@ -271,15 +252,18 @@ function AboutPage({ page }) {
             <span className="gold-rule-center" />
           </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {ABOUT_VALUES.map(({ Icon, title, text }) => (
-              <div key={title} className="rounded-2xl border border-hairline/60 bg-bone p-6 text-center">
-                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-hairline/60">
-                  <Icon size={18} strokeWidth={1.5} className="text-gold" />
+            {values.map(({ icon, title, text }) => {
+              const Icon = ABOUT_ICONS[icon] || ShieldCheck;
+              return (
+                <div key={title} className="rounded-2xl border border-hairline/60 bg-bone p-6 text-center">
+                  <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-hairline/60">
+                    <Icon size={18} strokeWidth={1.5} className="text-gold" />
+                  </div>
+                  <h3 className="mt-4 text-sm font-semibold text-ink">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-ink-soft">{text}</p>
                 </div>
-                <h3 className="mt-4 text-sm font-semibold text-ink">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">{text}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -313,7 +297,7 @@ function AboutPage({ page }) {
             <span className="gold-rule-center" />
           </div>
           <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {ABOUT_STATS.map(({ value, label }) => (
+            {stats.map(({ value, label }) => (
               <div key={label} className="rounded-2xl border border-hairline/60 p-6 text-center">
                 <p className="font-display text-3xl text-gold sm:text-4xl">{value}</p>
                 <p className="mt-2 text-[10px] uppercase tracking-[0.22em] text-ink-muted">{label}</p>
@@ -419,14 +403,14 @@ function ContactPage({ page }) {
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline/60">
                     <Icon size={15} className="text-gold" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-ink">{label}</p>
                     {href ? (
-                      <a href={href} className="mt-0.5 block text-sm text-ink-soft transition hover:text-accent">
+                      <a href={href} className="mt-0.5 block break-words text-sm text-ink-soft transition hover:text-accent">
                         {value}
                       </a>
                     ) : (
-                      <p className="mt-0.5 whitespace-pre-line text-sm text-ink-soft">{value}</p>
+                      <p className="mt-0.5 whitespace-pre-line break-words text-sm text-ink-soft">{value}</p>
                     )}
                   </div>
                 </div>
@@ -473,15 +457,9 @@ function ContactPage({ page }) {
 
 // ─── Shipping ─────────────────────────────────────────────────────────────────
 
-const SHIP_STEPS = [
-  { title: 'Confirmed',  text: 'Your order is logged and queued for fulfilment.' },
-  { title: 'Processing', text: 'Quality-checked and carefully packed within 1–3 days.' },
-  { title: 'Dispatched', text: 'A tracking ID is sent to you by email or message.' },
-  { title: 'Delivered',  text: 'Your artwork arrives at the doorstep, ready to hang.' },
-];
-
 function ShippingPage({ page }) {
   const [info, deliveryTimes, charges, tracking] = page.sections;
+  const steps = Array.isArray(page.steps) ? page.steps : [];
 
   return (
     <div className="bg-bone">
@@ -516,7 +494,7 @@ function ShippingPage({ page }) {
             <span className="gold-rule-center" />
           </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {SHIP_STEPS.map(({ title, text }, i) => (
+            {steps.map(({ title, text }, i) => (
               <div key={title} className="rounded-xl border border-hairline/60 bg-bone p-5">
                 <span className="font-display text-2xl text-gold/40">0{i + 1}</span>
                 <h3 className="mt-3 text-sm font-semibold uppercase tracking-[0.12em] text-ink">{title}</h3>

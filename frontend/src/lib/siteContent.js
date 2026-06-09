@@ -27,6 +27,37 @@ export const contentPages = {
       'Designed for modern homes and hospitality spaces',
       'Collections curated for a more refined wall story',
     ],
+    // "What We Stand For" value cards. `icon` maps to a name in AboutPage's
+    // ABOUT_ICONS map (palette / sparkles / award / shield).
+    values: [
+      {
+        icon: 'palette',
+        title: 'Premium Quality',
+        text: 'High-grade canvas, premium wooden frames, and durable inks crafted for long-lasting beauty.',
+      },
+      {
+        icon: 'sparkles',
+        title: 'Gold Foil Finishing',
+        text: 'Signature gold detailing adds richness and sophistication to every artwork.',
+      },
+      {
+        icon: 'award',
+        title: 'Made in India',
+        text: 'Every product is proudly crafted in India with superior attention to detail.',
+      },
+      {
+        icon: 'shield',
+        title: 'Secure Packaging',
+        text: 'Multi-layer protective packaging ensures safe and damage-free delivery.',
+      },
+    ],
+    // "Our Journey in Numbers" stat cards.
+    stats: [
+      { value: '1,200+', label: 'Happy Customers' },
+      { value: '4+', label: 'Years of Craft' },
+      { value: '50+', label: 'Unique Designs' },
+      { value: '100%', label: 'Made in India' },
+    ],
     sections: [
       {
         title: 'About Us',
@@ -113,6 +144,13 @@ export const contentPages = {
       'Free shipping on eligible orders',
       'Tracking shared after dispatch',
       'Large formats may need extra handling time',
+    ],
+    // "Your Order's Journey" — the four numbered step cards.
+    steps: [
+      { title: 'Confirmed', text: 'Your order is logged and queued for fulfilment.' },
+      { title: 'Processing', text: 'Quality-checked and carefully packed within 1–3 days.' },
+      { title: 'Dispatched', text: 'A tracking ID is sent to you by email or message.' },
+      { title: 'Delivered', text: 'Your artwork arrives at the doorstep, ready to hang.' },
     ],
     sections: [
       {
@@ -295,6 +333,57 @@ export const contentPages = {
         title: 'Contact Us',
         body: [
           'If you have any questions, concerns, or require clarification regarding these Terms and Conditions, please do not hesitate to reach out to our team. You may contact us by email at support@dreamzdecors.com or write to us at: Dreamz Decor, Grand Trunk Road, Baba Phoola Singh, Amritsar, Punjab. We aim to respond to all enquiries within 5 business days.',
+        ],
+      },
+    ],
+  },
+  // Product-detail page chrome (not a routed page — data only, edited under
+  // Content → Product). `icon` maps to a name in ProductDetail's TRUST_ICONS
+  // map (shield / award / mapPin / package / truck / check).
+  product: {
+    trustBadges: [
+      { icon: 'shield', label: 'Secure Packaging' },
+      { icon: 'award', label: 'Handcrafted' },
+      { icon: 'mapPin', label: 'Made in India' },
+    ],
+  },
+  // Header navigation + mega-menu (not a routed page — data only, edited under
+  // Content → Navigation). Each item: { label, href, groups:[{ title, items:[] }] }.
+  navigation: {
+    menu: [
+      {
+        label: 'Wall Art',
+        href: '/shop/wall-art',
+        groups: [
+          { title: 'By Room', items: ['Living Room', 'Bedroom', 'Office', 'Kids Room', 'Cafe / Restaurant'] },
+          { title: 'By Theme', items: ['Abstract', 'Nature', 'Travel', 'Music', 'Movies', 'Quotes'] },
+          { title: 'By Layout', items: ['Single Panel', 'Triptych', 'Square', 'Round', 'Portrait', 'Landscape'] },
+        ],
+      },
+      {
+        label: 'Gallery Sets',
+        href: '/shop/gallery-sets',
+        groups: [
+          { title: 'Popular', items: ['Pairings', 'Triptychs', 'Series', 'Minimal Sets', 'Nature Sets'] },
+          { title: 'For Spaces', items: ['Bedroom', 'Living Room', 'Office', 'Entryway', 'Dining'] },
+          { title: 'By Mood', items: ['Calm', 'Warm', 'Bold', 'Neutral', 'Layered', 'Statement'] },
+        ],
+      },
+      {
+        label: 'Skateboards',
+        href: '/shop/skateboards',
+        groups: [
+          { title: 'Decks', items: ['Art Decks', 'Limited Edition', 'Pro Series'] },
+          { title: 'Display', items: ['Wall Mount', 'Stand'] },
+        ],
+      },
+      {
+        label: 'Bundles',
+        href: '/shop/bundles',
+        groups: [
+          { title: 'Popular', items: ['Starter Sets', 'Gift Sets', 'Best Value', 'Collector Sets'] },
+          { title: 'For Rooms', items: ['Living Room', 'Bedroom', 'Office', 'Dining'] },
+          { title: 'Occasion', items: ['Housewarming', 'Gifting', 'Refresh', 'Seasonal'] },
         ],
       },
     ],
@@ -487,5 +576,17 @@ export const homeContent = {
       linkLabel: '',
       linkHref: '',
     },
+  },
+  // Newsletter band at the foot of the homepage (Content → Homepage).
+  // `titleHighlight` renders in gold after the main heading.
+  newsletter: {
+    eyebrow: 'Stay in the loop',
+    title: 'New drops. Studio stories.',
+    titleHighlight: 'First access.',
+    description:
+      'Join 4,000+ homeowners and designers who get early access to new collections and limited-edition prints before anyone else.',
+    buttonLabel: 'Subscribe',
+    successText: "You're in — welcome to the inner circle.",
+    footnote: 'No spam. Unsubscribe anytime.',
   },
 };

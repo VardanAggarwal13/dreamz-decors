@@ -58,9 +58,11 @@ export default function AccountAddresses() {
     <div>
       <Seo title="My Addresses — DreamzDecor" canonical="/account/addresses" noIndex />
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-display text-2xl text-ink sm:text-3xl">Addresses</h1>
-        <Button variant="primary" size="md" onClick={openNew}><FiPlus size={15} /> Add address</Button>
+        <Button variant="primary" size="md" onClick={openNew} className="shrink-0 whitespace-nowrap">
+          <FiPlus size={15} /> Add address
+        </Button>
       </div>
 
       {addresses.length === 0 ? (
@@ -102,7 +104,7 @@ export default function AccountAddresses() {
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-ink/50" onClick={close} />
-          <form onSubmit={save} className="relative w-full max-w-md rounded-2xl border border-hairline/60 bg-bone-soft p-6">
+          <form onSubmit={save} className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-hairline/60 bg-bone-soft p-6">
             <button type="button" onClick={close} className="absolute right-4 top-4 text-ink-muted hover:text-ink"><FiX size={18} /></button>
             <h2 className="font-display text-xl text-ink">{editing._id ? 'Edit' : 'Add'} address</h2>
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">

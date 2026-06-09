@@ -136,13 +136,13 @@ export default function Cart() {
                   {/* Thumbnail */}
                   <Link
                     to={`/product/${item.slug}`}
-                    className="aspect-square w-24 shrink-0 overflow-hidden rounded-xl bg-bone-muted sm:w-28"
+                    className="aspect-square w-20 shrink-0 overflow-hidden rounded-xl bg-bone-muted sm:w-28"
                   >
                     <MediaImage src={item.image} alt={item.title} label={item.title} />
                   </Link>
 
-                  {/* Content */}
-                  <div className="flex min-w-0 flex-1 flex-col">
+                  {/* Content (pr-6 reserves space for the absolute remove ✕) */}
+                  <div className="flex min-w-0 flex-1 flex-col pr-6">
                     {item.category && (
                       <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gold-deep">
                         {item.category}
@@ -155,16 +155,16 @@ export default function Cart() {
                       {item.title}
                     </Link>
 
-                    <div className="mt-auto flex items-end justify-between gap-3 pt-3">
+                    <div className="mt-auto flex flex-col items-start gap-3 pt-3 sm:flex-row sm:items-end sm:justify-between">
                       {/* Qty */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex shrink-0 items-center gap-2">
                         <QtyButton onClick={() => updateQty(item.key, item.qty - 1)} label="Decrease">−</QtyButton>
                         <span className="w-8 text-center text-sm font-medium text-ink">{item.qty}</span>
                         <QtyButton onClick={() => updateQty(item.key, item.qty + 1)} label="Increase">+</QtyButton>
                       </div>
 
                       {/* Price */}
-                      <div className="text-right">
+                      <div className="text-left sm:text-right">
                         <div className="font-display text-lg text-gold-deep sm:text-xl">
                           {formatINR(item.price * item.qty)}
                         </div>

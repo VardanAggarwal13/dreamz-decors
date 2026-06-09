@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { FiUser, FiShoppingBag, FiMapPin, FiBell, FiSettings, FiLogOut } from 'react-icons/fi';
 import { useAuthStore } from '@/store/authStore';
@@ -35,6 +36,36 @@ export default function AccountLayout() {
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
 
+  // Custom scroll indicator for the mobile tab strip. Native scrollbars are
+  // overlay/auto-hidden on phones (and in device emulation), so we render our
+  // own always-visible track + thumb that reflects scroll position instead.
+  const stripRef = useRef(null);
+  const [bar, setBar] = useState({ overflow: false, width: 0, left: 0 });
+
+  const updateBar = useCallback(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    const { scrollWidth, clientWidth, scrollLeft } = el;
+    const overflow = scrollWidth - clientWidth > 1;
+    setBar({
+      overflow,
+      width: overflow ? (clientWidth / scrollWidth) * 100 : 0,
+      left: overflow ? (scrollLeft / scrollWidth) * 100 : 0,
+    });
+  }, []);
+
+  useEffect(() => {
+    updateBar();
+    const el = stripRef.current;
+    if (!el) return undefined;
+    el.addEventListener('scroll', updateBar, { passive: true });
+    window.addEventListener('resize', updateBar);
+    return () => {
+      el.removeEventListener('scroll', updateBar);
+      window.removeEventListener('resize', updateBar);
+    };
+  }, [updateBar]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
@@ -52,8 +83,13 @@ export default function AccountLayout() {
 
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[230px_1fr]">
           {/* Sidebar (desktop) / horizontal tabs (mobile) */}
-          <aside className="min-w-0 lg:sticky lg:top-28 lg:self-start">
-            <nav className="scrollbar-hide -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+          {/* lg:h-fit keeps the aside content-height so position:sticky has room
+              to move (a stretched grid item can't stick). */}
+          <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start lg:h-fit">
+            <nav
+              ref={stripRef}
+              className="scrollbar-hide -mx-1 flex gap-1 overflow-x-auto px-1 lg:flex-col lg:overflow-visible"
+            >
               {TABS.map((tab) => (
                 <TabLink key={tab.to} {...tab} />
               ))}
@@ -66,6 +102,17 @@ export default function AccountLayout() {
                 Log out
               </button>
             </nav>
+
+            {/* Always-visible scroll indicator (mobile only, only when the tabs
+                overflow). Reflects scroll position so users know more tabs exist. */}
+            {bar.overflow && (
+              <div className="mt-2.5 h-1 rounded-full bg-hairline/60 lg:hidden" aria-hidden="true">
+                <div
+                  className="h-full rounded-full bg-gold-deep/70"
+                  style={{ width: `${bar.width}%`, marginLeft: `${bar.left}%` }}
+                />
+              </div>
+            )}
           </aside>
 
           {/* Active tab content */}

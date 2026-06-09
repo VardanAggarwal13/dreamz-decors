@@ -98,7 +98,7 @@ export default function Home() {
       </SectionShell>
 
       {/* ⑦ Newsletter ───────────────────────────────────────── */}
-      <NewsletterBand />
+      <NewsletterBand content={content.newsletter} />
     </>
   );
 }

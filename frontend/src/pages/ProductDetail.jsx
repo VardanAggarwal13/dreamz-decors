@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { HiStar } from 'react-icons/hi2';
-import { FiHeart, FiShoppingBag, FiShield, FiAward, FiMapPin, FiChevronRight } from 'react-icons/fi';
+import { FiHeart, FiShoppingBag, FiShield, FiAward, FiMapPin, FiPackage, FiTruck, FiCheck, FiChevronRight } from 'react-icons/fi';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import Seo from '@/components/common/Seo';
@@ -11,21 +11,27 @@ import ProductGridSkeleton from '@/components/common/ProductGridSkeleton';
 import ProductReviews from '@/components/common/ProductReviews';
 import SectionHeader from '@/components/common/SectionHeader';
 import useFetch from '@/hooks/useFetch';
-import { productDescriptionFallback, productFeatureHighlights } from '@/lib/siteContent';
+import { productDescriptionFallback, productFeatureHighlights, contentPages } from '@/lib/siteContent';
 import { breadcrumbSchema, absoluteUrl } from '@/lib/seo';
 import { formatINR, normalizeProduct } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { useAuthStore } from '@/store/authStore';
 import { useAuthPrompt } from '@/store/authPromptStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const formatVariantSize = (size = '') => `${String(size).replace('x', '×')}"`;
 
-const TRUST = [
-  { Icon: FiShield, label: 'Secure Packaging' },
-  { Icon: FiAward, label: 'Handcrafted' },
-  { Icon: FiMapPin, label: 'Made in India' },
-];
+// Trust-badge icons are stored as names in content (admin-editable, Content →
+// Product); map them back to components. Unknown names fall back to FiShield.
+const TRUST_ICONS = {
+  shield: FiShield,
+  award: FiAward,
+  mapPin: FiMapPin,
+  package: FiPackage,
+  truck: FiTruck,
+  check: FiCheck,
+};
 
 const TABS = ['Description', 'Details & Dimensions', 'Shipping & Packaging'];
 
@@ -54,6 +60,14 @@ export default function ProductDetail() {
   const toggleWishlist = useWishlistStore((state) => state.toggle);
   const user = useAuthStore((state) => state.user);
   const promptAuth = useAuthPrompt((state) => state.show);
+
+  // Admin-editable trust badges (Content → Product) + free-shipping threshold
+  // (Settings → Shipping), both with safe fallbacks.
+  const trustRes = useFetch('/content/product', { deps: [] });
+  const trustBadges = trustRes.data?.data?.trustBadges?.length
+    ? trustRes.data.data.trustBadges
+    : contentPages.product.trustBadges;
+  const freeThreshold = useSettingsStore((s) => s.settings.shipping?.freeThreshold) || 1499;
 
   const handleWishlist = () => {
     if (!user) {
@@ -254,12 +268,12 @@ export default function ProductDetail() {
             {variantSizes.length > 0 && (
               <div className="mt-7">
                 <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">Size</div>
-                <div className="mt-3 flex flex-wrap gap-2.5">
+                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {variantSizes.map((option) => (
                     <button
                       key={option}
                       onClick={() => setSize(option)}
-                      className={`rounded-full border px-5 py-2.5 text-sm transition ${
+                      className={`rounded-xl border px-2 py-2.5 text-center text-sm transition ${
                         size === option
                           ? 'border-gold bg-gold/15 font-medium text-gold-deep'
                           : 'border-hairline bg-bone text-ink-soft hover:border-gold/50'
@@ -276,12 +290,12 @@ export default function ProductDetail() {
             {availableFrames.length > 1 && (
               <div className="mt-6">
                 <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">Frame</div>
-                <div className="mt-3 flex flex-wrap gap-2.5">
+                <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                   {availableFrames.map((option) => (
                     <button
                       key={option._id || `${option.size}-${option.frame}`}
                       onClick={() => setFrame(option.frame)}
-                      className={`rounded-full border px-5 py-2.5 text-sm transition ${
+                      className={`rounded-xl border px-3 py-2.5 text-center text-sm transition ${
                         selectedVariant?.frame === option.frame
                           ? 'border-gold bg-gold/15 font-medium text-gold-deep'
                           : 'border-hairline bg-bone text-ink-soft hover:border-gold/50'
@@ -336,14 +350,17 @@ export default function ProductDetail() {
 
             {/* Trust row */}
             <ul className="mt-7 grid grid-cols-3 gap-4 text-center">
-              {TRUST.map(({ Icon, label }) => (
-                <li key={label} className="flex flex-col items-center gap-2">
-                  <Icon size={20} className="text-gold-deep" />
-                  <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-soft">
-                    {label}
-                  </span>
-                </li>
-              ))}
+              {trustBadges.map(({ icon, label }) => {
+                const Icon = TRUST_ICONS[icon] || FiShield;
+                return (
+                  <li key={label} className="flex flex-col items-center gap-2">
+                    <Icon size={20} className="text-gold-deep" />
+                    <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-soft">
+                      {label}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
@@ -401,7 +418,7 @@ export default function ProductDetail() {
                 <p>
                   Standard delivery takes 6–10 business days to metro cities and 10–12 days to other
                   locations across India, with tracking shared once dispatched. Free shipping on eligible
-                  orders over ₹1,499.
+                  orders over {formatINR(freeThreshold)}.
                 </p>
                 <Link to="/shipping" className="inline-block font-medium text-accent underline-offset-2 hover:underline">
                   Read full shipping &amp; delivery policy

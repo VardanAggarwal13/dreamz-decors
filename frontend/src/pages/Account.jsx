@@ -101,10 +101,12 @@ export default function Account() {
               <li key={o._id}>
                 <Link
                   to={`/account/orders/${o._id}`}
-                  className="group flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0"
+                  className="group flex items-center justify-between gap-3 py-3.5 first:pt-0 last:pb-0"
                 >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                  {/* Left column flexes & wraps internally (id + badge); right column
+                      never shrinks so the price stays aligned on the smallest screens. */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="text-sm font-semibold text-ink">{shortId(o._id)}</span>
                       <OrderStatusBadge status={o.status} />
                     </div>
@@ -112,8 +114,8 @@ export default function Account() {
                       {fmtDate(o.createdAt)} · {o.items?.length || 0} item{(o.items?.length || 0) === 1 ? '' : 's'}
                     </p>
                   </div>
-                  <span className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-ink">{formatINR(o.total)}</span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className="whitespace-nowrap text-sm font-semibold text-ink">{formatINR(o.total)}</span>
                     <FiArrowRight className="text-ink-muted transition group-hover:translate-x-0.5 group-hover:text-gold-deep" />
                   </span>
                 </Link>

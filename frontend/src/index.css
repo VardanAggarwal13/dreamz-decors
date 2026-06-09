@@ -27,6 +27,10 @@
 
   body {
     @apply bg-bone text-ink font-sans antialiased;
+    /* Safety net against accidental horizontal overflow (e.g. flex children
+       that won't shrink). `clip` (not `hidden`) clips without creating a scroll
+       container, so it doesn't break the sticky navbar/sidebar. */
+    overflow-x: clip;
   }
 
   ::selection {

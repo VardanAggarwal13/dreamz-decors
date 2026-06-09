@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { FiArrowRight, FiCheck } from 'react-icons/fi';
 import api from '@/lib/api';
+import { homeContent } from '@/lib/siteContent';
 
-export default function NewsletterBand() {
+export default function NewsletterBand({ content }) {
+  // Admin-editable copy (Content → Homepage → newsletter); falls back to defaults.
+  const c = { ...homeContent.newsletter, ...(content || {}) };
   const [email,  setEmail]  = useState('');
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState('Please enter a valid email address.');
@@ -41,19 +44,16 @@ export default function NewsletterBand() {
           />
 
           {/* Eyebrow */}
-          <p className="eyebrow-gold">Stay in the loop</p>
+          <p className="eyebrow-gold">{c.eyebrow}</p>
 
           {/* Heading */}
           <h2 className="mt-3 font-display text-3xl text-balance text-ink sm:text-4xl">
-            New drops. Studio stories.{' '}
-            <em className="not-italic text-gold-deep">First access.</em>
+            {c.title}{' '}
+            {c.titleHighlight && <em className="not-italic text-gold-deep">{c.titleHighlight}</em>}
           </h2>
 
           {/* Sub-copy */}
-          <p className="mt-4 text-sm leading-7 text-ink-soft">
-            Join 4,000+ homeowners and designers who get early access to new
-            collections and limited-edition prints before anyone else.
-          </p>
+          <p className="mt-4 text-sm leading-7 text-ink-soft">{c.description}</p>
 
           {/* Form / Success */}
           {/* Form block — constrained width so input + button + footnote stay aligned */}
@@ -61,7 +61,7 @@ export default function NewsletterBand() {
             {status === 'success' ? (
               <div className="flex items-center justify-center gap-2.5 rounded-xl border border-gold/30 bg-gold/10 px-6 py-4 text-sm font-medium text-gold-deep">
                 <FiCheck size={16} />
-                You're in — welcome to the inner circle.
+                {c.successText}
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
@@ -80,7 +80,7 @@ export default function NewsletterBand() {
                     disabled={status === 'loading'}
                     className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-gold-deep bg-gold-deep px-7 py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-bone transition hover:bg-gold disabled:opacity-60"
                   >
-                    {status === 'loading' ? 'Subscribing…' : 'Subscribe'}
+                    {status === 'loading' ? 'Subscribing…' : c.buttonLabel}
                     {status !== 'loading' && <FiArrowRight size={14} />}
                   </button>
                 </div>
@@ -93,9 +93,7 @@ export default function NewsletterBand() {
               </form>
             )}
 
-            <p className="mt-3 text-center text-sm text-ink-muted">
-              No spam. Unsubscribe anytime.
-            </p>
+            <p className="mt-3 text-center text-sm text-ink-muted">{c.footnote}</p>
           </div>
         </div>
       </div>

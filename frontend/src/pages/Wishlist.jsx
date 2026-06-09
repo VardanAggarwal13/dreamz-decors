@@ -49,14 +49,14 @@ export default function Wishlist() {
       </div>
 
       <div className="container-page py-8 sm:py-10">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <h2 className="min-w-0 text-sm font-semibold uppercase tracking-[0.16em] text-ink">
             Wishlist <span className="text-ink-muted">({items.length})</span>
           </h2>
           <button
             type="button"
             onClick={clear}
-            className="text-xs text-ink-muted transition hover:text-sale"
+            className="shrink-0 text-xs text-ink-muted transition hover:text-sale"
           >
             Clear all
           </button>

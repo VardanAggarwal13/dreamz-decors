@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   FiUser,
   FiShoppingBag,
+  FiShoppingCart,
   FiMapPin,
   FiBell,
   FiGrid,
   FiLogOut,
 } from 'react-icons/fi';
 import { useAuthStore } from '@/store/authStore';
+import { useCartStore } from '@/store/cartStore';
 
 const LINKS = [
   { to: '/account', label: 'My Account', Icon: FiUser, end: true },
@@ -25,6 +27,7 @@ export default function AccountMenu() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const cartCount = useCartStore((s) => s.items.reduce((total, item) => total + item.qty, 0));
 
   const initial = (user?.name || user?.email || '?').trim().charAt(0).toUpperCase();
 
@@ -65,7 +68,7 @@ export default function AccountMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-60 overflow-hidden rounded-2xl border border-hairline/70 bg-bone-soft shadow-card">
+        <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-hairline/70 bg-bone-soft shadow-card">
           {/* Identity */}
           <div className="border-b border-hairline/60 px-4 py-3">
             <p className="truncate text-sm font-semibold text-ink">{user?.name || 'My account'}</p>
@@ -74,6 +77,23 @@ export default function AccountMenu() {
 
           {/* Links */}
           <nav className="py-1.5">
+            {/* Cart — surfaced here on mobile (the bar drops its cart icon to
+                center the logo); desktop keeps the cart icon in the navbar. */}
+            <Link
+              to="/cart"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-ink-soft transition hover:bg-bone-muted/70 hover:text-ink lg:hidden"
+            >
+              <span className="flex items-center gap-3">
+                <FiShoppingCart size={16} className="text-ink-muted" />
+                Cart
+              </span>
+              {cartCount > 0 && (
+                <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-bone">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
             {LINKS.map(({ to, label, Icon }) => (
               <Link
                 key={to}

@@ -84,7 +84,13 @@ export default function App() {
         }}
       />
 
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center bg-bone">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-hairline border-t-gold-deep" />
+          </div>
+        }
+      >
       <Routes>
         {/* ── Auth pages — completely bare (no navbar, no footer) ── */}
         <Route

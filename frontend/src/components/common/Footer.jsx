@@ -46,7 +46,7 @@ export default function Footer() {
   const socialToShow = configured.length ? configured : SOCIAL_LIST;
 
   // Shop column derives from the live, admin-managed categories.
-  const catRes = useFetch('/categories');
+  const catRes = useFetch('/categories', { cache: 'dd:categories' });
   const categories = catRes.data?.data || [];
   const shopLinks = categories.length
     ? categories.slice(0, 6).map((c) => [c.title, `/shop/${c.slug}`])

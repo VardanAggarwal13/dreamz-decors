@@ -4,6 +4,7 @@ import { FiBell, FiBellOff, FiCheck, FiMail } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import api from '@/lib/api';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useNotificationStore } from '@/store/notificationStore';
 import { formatDateTime } from '@/lib/utils';
 import { isPushSupported, isSubscribed, enablePush, disablePush, pushPermission } from '@/lib/push';
@@ -23,6 +24,7 @@ export default function AccountNotifications() {
 
   const items = useNotificationStore((s) => s.items);
   const unread = useNotificationStore((s) => s.unread);
+  const loaded = useNotificationStore((s) => s.loaded);
   const markRead = useNotificationStore((s) => s.markRead);
   const markAllRead = useNotificationStore((s) => s.markAllRead);
 
@@ -175,7 +177,19 @@ export default function AccountNotifications() {
           )}
         </div>
 
-        {items.length === 0 ? (
+        {!loaded && items.length === 0 ? (
+          <ul className="mt-4 divide-y divide-hairline/50">
+            {[0, 1, 2].map((i) => (
+              <li key={i} className="flex gap-3 px-2 py-3">
+                <Skeleton className="mt-1.5 h-2 w-2 shrink-0 rounded-full" />
+                <span className="min-w-0 flex-1">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="mt-1.5 h-3 w-3/4" />
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : items.length === 0 ? (
           <div className="py-10 text-center">
             <FiBell size={22} className="mx-auto text-ink-muted/50" />
             <p className="mt-3 text-sm text-ink-soft">You’re all caught up.</p>

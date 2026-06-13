@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Skeleton } from '@/components/ui/Skeleton';
 import api from '@/lib/api';
 import { loadRazorpay } from '@/lib/loadRazorpay';
 import { formatINR } from '@/lib/utils';
@@ -24,6 +25,7 @@ export default function Checkout() {
   const [method, setMethod] = useState('razorpay');
   const [placing, setPlacing] = useState(false);
   const [saved, setSaved] = useState([]);
+  const [addrLoading, setAddrLoading] = useState(true);
   const [mode, setMode] = useState('new'); // 'new' or a saved address id
   const [addr, setAddr] = useState({
     name: user?.name || '',
@@ -53,7 +55,7 @@ export default function Checkout() {
       setSaved(list);
       const def = list.find((a) => a.isDefault) || list[0];
       if (def) { setMode(def._id); fillFromSaved(def); }
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setAddrLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -180,7 +182,13 @@ export default function Checkout() {
           <div className="rounded-2xl border border-hairline/60 bg-bone-soft p-6 sm:p-7">
             <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">Shipping address</h2>
 
-            {saved.length > 0 && (
+            {addrLoading && (
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {[0, 1].map((i) => <Skeleton key={i} className="h-[68px] rounded-xl" />)}
+              </div>
+            )}
+
+            {!addrLoading && saved.length > 0 && (
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {saved.map((a) => (
                   <button
@@ -209,7 +217,7 @@ export default function Checkout() {
               </div>
             )}
 
-            {mode === 'new' && (
+            {!addrLoading && mode === 'new' && (
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Full name"><Input value={addr.name} onChange={set('name')} placeholder="Your name" /></Field>
               <Field label="Phone"><Input value={addr.phone} onChange={set('phone')} placeholder="10-digit mobile" /></Field>

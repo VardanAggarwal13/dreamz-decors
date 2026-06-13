@@ -8,7 +8,9 @@ import { useSettingsStore, DEFAULT_SETTINGS } from '@/store/settingsStore';
 
 export default function AdminSettings() {
   const setStore = useSettingsStore((s) => s.setSettings);
-  const [form, setForm] = useState(DEFAULT_SETTINGS);
+  // Seed from the (persisted) store so the form opens with the real values
+  // already filled in — no flash from defaults to fetched data.
+  const [form, setForm] = useState(() => ({ ...DEFAULT_SETTINGS, ...useSettingsStore.getState().settings }));
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {

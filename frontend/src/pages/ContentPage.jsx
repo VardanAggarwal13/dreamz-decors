@@ -647,7 +647,7 @@ function TermsPage({ page }) {
 export default function ContentPage({ pageKey }) {
   // Admin override (if any) is shallow-merged over the built-in default,
   // so the layout is unchanged and partial edits stay safe.
-  const { data } = useFetch(`/content/${pageKey}`, { deps: [pageKey] });
+  const { data } = useFetch(`/content/${pageKey}`, { deps: [pageKey], cache: `dd:content:${pageKey}` });
   const base = contentPages[pageKey];
   const override = data?.data;
   const page = override && Object.keys(override).length ? { ...base, ...override } : base;

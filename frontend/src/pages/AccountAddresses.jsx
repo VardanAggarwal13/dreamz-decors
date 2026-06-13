@@ -4,17 +4,20 @@ import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 import api from '@/lib/api';
 
 const empty = { label: '', line1: '', line2: '', city: '', state: '', pincode: '', phone: '', isDefault: false };
 
 export default function AccountAddresses() {
   const [addresses, setAddresses] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
 
-  const load = () => api.get('/account/addresses').then((res) => setAddresses(res.data || []));
+  const load = () =>
+    api.get('/account/addresses').then((res) => setAddresses(res.data || [])).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
 
   const openNew = () => { setForm(empty); setEditing({}); };
@@ -65,7 +68,11 @@ export default function AccountAddresses() {
         </Button>
       </div>
 
-      {addresses.length === 0 ? (
+      {loading ? (
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {[0, 1].map((i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+          </div>
+        ) : addresses.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-hairline/60 bg-bone px-6 py-14 text-center">
             <p className="text-sm text-ink-soft">No saved addresses yet.</p>
           </div>

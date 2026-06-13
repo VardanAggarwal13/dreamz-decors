@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import useBodyScrollLock from '@/hooks/useBodyScrollLock';
 import Modal, { ViewStat } from '@/components/admin/Modal';
+import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
 import ImageInput from '@/components/admin/ImageInput';
 
 const slugify = (s) =>
@@ -16,13 +17,15 @@ const empty = { title: '', slug: '', blurb: '', image: '', order: 0, isActive: t
 
 export default function AdminCategories() {
   const [cats, setCats] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // null = closed, {} = new, {...} = edit
   const [viewing, setViewing] = useState(null);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   useBodyScrollLock(!!editing); // view modal manages its own lock via <Modal/>
 
-  const load = () => api.get('/admin/categories').then((res) => setCats(res.data || []));
+  const load = () =>
+    api.get('/admin/categories').then((res) => setCats(res.data || [])).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
 
   const openNew = () => { setForm(empty); setEditing({}); };
@@ -70,6 +73,7 @@ export default function AdminCategories() {
         <Button variant="primary" size="md" onClick={openNew}><FiPlus size={15} /> New category</Button>
       </div>
 
+      {loading ? <AdminListSkeleton cols={5} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
         {cats.map((c) => (
@@ -132,6 +136,7 @@ export default function AdminCategories() {
           </tbody>
         </table>
       </div>
+      </>)}
 
       {/* Modal */}
       {editing && (

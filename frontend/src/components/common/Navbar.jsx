@@ -8,6 +8,7 @@ import useFetch from '@/hooks/useFetch';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { useWishlistStore } from '@/store/wishlistStore';
+import { Skeleton } from '@/components/ui/Skeleton';
 import Logo from './Logo';
 import MegaMenu from './MegaMenu';
 import NotificationBell from './NotificationBell';
@@ -30,9 +31,10 @@ export default function Navbar() {
   const count = useCartStore((state) => state.items.reduce((total, item) => total + item.qty, 0));
   const wishCount = useWishlistStore((state) => state.items.length);
   // Admin-editable header menu (Content → Navigation); falls back to defaults.
-  const navRes = useFetch('/content/navigation', { deps: [] });
+  const navRes = useFetch('/content/navigation', { deps: [], cache: 'dd:content:navigation' });
   const navMenu = navRes.data?.data?.menu?.length ? navRes.data.data.menu : defaultNavMenu;
   const user = useAuthStore((state) => state.user);
+  const authStatus = useAuthStore((state) => state.status);
   const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
 
@@ -169,7 +171,11 @@ export default function Navbar() {
           {/* Divider between quick actions and the account control */}
           <span className="mx-1.5 hidden h-6 w-px bg-hairline sm:block" />
 
-          {user ? (
+          {authStatus === 'loading' ? (
+            <span className={`${iconButton} pointer-events-none`} aria-hidden>
+              <Skeleton className="h-7 w-7 rounded-full" />
+            </span>
+          ) : user ? (
             <AccountMenu />
           ) : (
             <Link to="/login" aria-label="Sign in" className={iconButton}>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FiBox, FiShoppingBag, FiUsers, FiTrendingUp } from 'react-icons/fi';
 import Seo from '@/components/common/Seo';
 import OrderStatusBadge from '@/components/common/OrderStatusBadge';
+import { Skeleton } from '@/components/ui/Skeleton';
 import api from '@/lib/api';
 import { formatINR } from '@/lib/utils';
 
@@ -39,7 +40,9 @@ export default function Dashboard() {
               <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-ink-muted">{label}</span>
               <Icon size={16} className="text-gold-deep" />
             </div>
-            <div className="mt-3 font-display text-2xl text-ink">{loading ? '…' : value}</div>
+            {loading
+              ? <Skeleton className="mt-3 h-8 w-24" />
+              : <div className="mt-3 font-display text-2xl text-ink">{value}</div>}
           </div>
         ))}
       </div>
@@ -63,6 +66,9 @@ export default function Dashboard() {
         </div>
         {/* Mobile: stacked rows */}
         <div className="mt-4 divide-y divide-hairline/40 sm:hidden">
+          {loading && [0, 1, 2].map((i) => (
+            <div key={i} className="py-3"><Skeleton className="h-12 w-full rounded-lg" /></div>
+          ))}
           {(data?.recentOrders || []).map((o) => (
             <div key={o._id} className="flex items-center justify-between gap-3 py-3">
               <div className="min-w-0">
@@ -93,6 +99,11 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
+              {loading && [0, 1, 2, 3].map((i) => (
+                <tr key={i} className="border-b border-hairline/40 last:border-0">
+                  <td colSpan={5} className="py-3"><Skeleton className="h-5 w-full" /></td>
+                </tr>
+              ))}
               {(data?.recentOrders || []).map((o) => (
                 <tr key={o._id} className="border-b border-hairline/40 last:border-0">
                   <td className="py-3 pr-4 font-medium text-ink">{shortId(o._id)}</td>

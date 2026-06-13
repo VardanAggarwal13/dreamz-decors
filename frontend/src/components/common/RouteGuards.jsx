@@ -40,7 +40,15 @@ export function RequireAdmin({ children }) {
   const role = useAuthStore((s) => s.user?.role);
   const location = useLocation();
 
-  if (status === 'loading') return null;
+  // Full-screen loader while the session resolves — the admin shell replaces the
+  // whole viewport, so a blank `null` would read as a broken page.
+  if (status === 'loading') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bone">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-hairline border-t-gold-deep" />
+      </div>
+    );
+  }
   if (status !== 'authenticated') {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }

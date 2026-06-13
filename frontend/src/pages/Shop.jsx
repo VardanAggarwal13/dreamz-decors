@@ -27,7 +27,7 @@ export default function Shop() {
   const search = (params.get('search') || '').trim();
   const page = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
 
-  const categoriesQuery = useFetch('/categories');
+  const categoriesQuery = useFetch('/categories', { cache: 'dd:categories' });
   const categories  = (categoriesQuery.data?.data || []).map(normalizeCategory);
   const currentCat  = categories.find((c) => c.slug === category);
 

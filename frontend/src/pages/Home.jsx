@@ -20,7 +20,7 @@ export default function Home() {
   const reviewsRes   = useFetch('/reviews');
 
   // Admin override (key 'home') merged over the built-in defaults — every band is editable.
-  const contentRes = useFetch('/content/home', { deps: [] });
+  const contentRes = useFetch('/content/home', { deps: [], cache: 'dd:content:home' });
   const content = { ...homeContent, ...(contentRes.data?.data || {}) };
   const sections = { ...homeContent.sections, ...(content.sections || {}) };
 

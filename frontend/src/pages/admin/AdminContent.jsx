@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 import api from '@/lib/api';
 import { contentPages, homeContent } from '@/lib/siteContent';
 
@@ -29,14 +30,16 @@ const HINTS = {
 const defaultFor = (key) => (key === 'home' ? homeContent : contentPages[key] || {});
 
 export default function AdminContent() {
-  const [activeKey, setActiveKey] = useState('about');
+  const [activeKey, setActiveKey] = useState('home');
   const [text, setText] = useState('');
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
   const loadKey = async (key) => {
     setActiveKey(key);
     setErr('');
+    setLoading(true);
     let effective = defaultFor(key);
     try {
       const res = await api.get(`/content/${key}`);
@@ -47,6 +50,7 @@ export default function AdminContent() {
       /* fall back to default */
     }
     setText(JSON.stringify(effective, null, 2));
+    setLoading(false);
   };
 
   useEffect(() => { loadKey('home'); /* eslint-disable-next-line */ }, []);
@@ -110,12 +114,16 @@ export default function AdminContent() {
 
       {err && <div className="mt-4 rounded-lg border border-sale/25 bg-sale/8 px-4 py-2 text-sm text-sale">{err}</div>}
 
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        spellCheck={false}
-        className="mt-4 h-[58vh] w-full rounded-2xl border border-hairline/60 bg-bone p-4 font-mono text-xs leading-6 text-ink outline-none focus:border-gold"
-      />
+      {loading ? (
+        <Skeleton className="mt-4 h-[58vh] w-full rounded-2xl" />
+      ) : (
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          spellCheck={false}
+          className="mt-4 h-[58vh] w-full rounded-2xl border border-hairline/60 bg-bone p-4 font-mono text-xs leading-6 text-ink outline-none focus:border-gold"
+        />
+      )}
     </div>
   );
 }

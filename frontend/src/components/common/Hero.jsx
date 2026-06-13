@@ -9,7 +9,7 @@ const ctaClass =
 
 export default function Hero() {
   // Admin override (key 'home') merged over the built-in default.
-  const { data } = useFetch('/content/home', { deps: [] });
+  const { data } = useFetch('/content/home', { deps: [], cache: 'dd:content:home' });
   const hero = { ...homeContent.hero, ...(data?.data?.hero || {}) };
   const stats = hero.stats || [];
 

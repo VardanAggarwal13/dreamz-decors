@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import api from '@/lib/api';
 
 // Defaults so the UI renders correctly before/without a fetch.
@@ -18,18 +19,34 @@ export const DEFAULT_SETTINGS = {
   shipping: { freeThreshold: 1499, flatRate: 99 },
 };
 
-export const useSettingsStore = create((set) => ({
-  settings: DEFAULT_SETTINGS,
-  loaded: false,
+export const useSettingsStore = create(
+  persist(
+    (set) => ({
+      settings: DEFAULT_SETTINGS,
+      loaded: false,
 
-  fetch: async () => {
-    try {
-      const res = await api.get('/settings');
-      set({ settings: { ...DEFAULT_SETTINGS, ...res.data }, loaded: true });
-    } catch {
-      set({ loaded: true });
+      fetch: async () => {
+        try {
+          const res = await api.get('/settings');
+          set({ settings: { ...DEFAULT_SETTINGS, ...res.data }, loaded: true });
+        } catch {
+          set({ loaded: true });
+        }
+      },
+
+      setSettings: (settings) => set({ settings }),
+    }),
+    {
+      name: 'dreamzdecors-settings',
+      // Persist only the settings payload — `loaded` always starts false so the
+      // app still refetches fresh values on every load (silently, in place).
+      partialize: (state) => ({ settings: state.settings }),
+      // Keep defaults as the floor so a newly-added settings key is never
+      // missing while the cached (older) payload rehydrates before the refetch.
+      merge: (persisted, current) => ({
+        ...current,
+        settings: { ...DEFAULT_SETTINGS, ...(persisted?.settings || {}) },
+      }),
     }
-  },
-
-  setSettings: (settings) => set({ settings }),
-}));
+  )
+);

@@ -19,7 +19,9 @@ export const useNotificationStore = create((set, get) => ({
         loaded: true,
       });
     } catch {
-      set({ loading: false });
+      // Mark loaded even on failure so the UI falls back to the empty state
+      // instead of showing a loading skeleton forever.
+      set({ loading: false, loaded: true });
     }
   },
 

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import useBodyScrollLock from '@/hooks/useBodyScrollLock';
 import Modal, { ViewStat } from '@/components/admin/Modal';
+import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
 import { formatINR } from '@/lib/utils';
 
 const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -18,6 +19,7 @@ const empty = {
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [cats, setCats] = useState([]);
   const [editing, setEditing] = useState(null);
   const [viewing, setViewing] = useState(null);
@@ -28,7 +30,8 @@ export default function AdminProducts() {
   const fileRef = useRef(null);
   useBodyScrollLock(!!editing); // view modal manages its own lock via <Modal/>
 
-  const load = () => api.get('/admin/products?limit=100').then((res) => setProducts(res.data || []));
+  const load = () =>
+    api.get('/admin/products?limit=100').then((res) => setProducts(res.data || [])).finally(() => setLoading(false));
   useEffect(() => {
     load();
     api.get('/admin/categories').then((res) => setCats(res.data || []));
@@ -131,6 +134,7 @@ export default function AdminProducts() {
         <Button variant="primary" size="md" onClick={openNew}><FiPlus size={15} /> New product</Button>
       </div>
 
+      {loading ? <AdminListSkeleton cols={6} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
         {products.map((p) => (
@@ -208,6 +212,7 @@ export default function AdminProducts() {
           </tbody>
         </table>
       </div>
+      </>)}
 
       {/* Modal */}
       {editing && (

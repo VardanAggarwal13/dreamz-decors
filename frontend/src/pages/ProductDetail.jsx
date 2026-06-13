@@ -63,7 +63,7 @@ export default function ProductDetail() {
 
   // Admin-editable trust badges (Content → Product) + free-shipping threshold
   // (Settings → Shipping), both with safe fallbacks.
-  const trustRes = useFetch('/content/product', { deps: [] });
+  const trustRes = useFetch('/content/product', { deps: [], cache: 'dd:content:product' });
   const trustBadges = trustRes.data?.data?.trustBadges?.length
     ? trustRes.data.data.trustBadges
     : contentPages.product.trustBadges;

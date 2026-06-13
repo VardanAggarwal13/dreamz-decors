@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import api from '@/lib/api';
 import Modal, { ViewStat } from '@/components/admin/Modal';
+import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
 import { formatINR } from '@/lib/utils';
 
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
@@ -37,6 +38,7 @@ export default function AdminCustomers() {
       <Seo title="Admin — Customers" noIndex />
       <h1 className="font-display text-2xl text-ink sm:text-3xl">Customers</h1>
 
+      {loading ? <AdminListSkeleton cols={7} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
         {users.map((u) => (
@@ -116,6 +118,7 @@ export default function AdminCustomers() {
           </tbody>
         </table>
       </div>
+      </>)}
 
       {/* View modal */}
       <Modal

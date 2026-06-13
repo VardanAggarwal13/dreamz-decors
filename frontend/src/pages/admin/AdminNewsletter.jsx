@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import api from '@/lib/api';
 import Modal, { ViewStat } from '@/components/admin/Modal';
+import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
 import ImageInput from '@/components/admin/ImageInput';
 
 const fmtDate = (iso) =>
@@ -161,6 +162,7 @@ export default function AdminNewsletter() {
         </select>
       </div>
 
+      {loading ? <AdminListSkeleton cols={5} withAvatar={false} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
         {subs.map((s) => (
@@ -220,6 +222,7 @@ export default function AdminNewsletter() {
           </tbody>
         </table>
       </div>
+      </>)}
 
       {/* View subscriber modal */}
       <Modal

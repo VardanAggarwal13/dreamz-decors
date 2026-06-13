@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuthStore } from '@/store/authStore';
 import { useAuthPrompt } from '@/store/authPromptStore';
 
@@ -31,13 +32,15 @@ function Stars({ value, size = 14, onSelect }) {
 
 export default function ProductReviews({ productId, rating = 0, reviews = 0 }) {
   const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ rating, count: reviews });
   const [form, setForm] = useState({ rating: 5, title: '', comment: '' });
   const [submitting, setSubmitting] = useState(false);
   const user = useAuthStore((s) => s.user);
   const promptAuth = useAuthPrompt((s) => s.show);
 
-  const load = () => api.get(`/products/${productId}/reviews`).then((res) => setList(res.data || [])).catch(() => {});
+  const load = () =>
+    api.get(`/products/${productId}/reviews`).then((res) => setList(res.data || [])).catch(() => {}).finally(() => setLoading(false));
   useEffect(() => { if (productId) load(); /* eslint-disable-next-line */ }, [productId]);
 
   const submit = async (e) => {
@@ -100,7 +103,21 @@ export default function ProductReviews({ productId, rating = 0, reviews = 0 }) {
 
         {/* List */}
         <div>
-          {list.length === 0 ? (
+          {loading ? (
+            <ul className="space-y-6">
+              {[0, 1, 2].map((i) => (
+                <li key={i} className="border-b border-hairline/50 pb-6 last:border-0">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                  <Skeleton className="mt-2 h-3 w-20" />
+                  <Skeleton className="mt-3 h-4 w-2/3" />
+                  <Skeleton className="mt-2 h-4 w-full" />
+                </li>
+              ))}
+            </ul>
+          ) : list.length === 0 ? (
             <p className="text-sm text-ink-soft">No reviews yet — be the first to share your thoughts.</p>
           ) : (
             <ul className="space-y-6">

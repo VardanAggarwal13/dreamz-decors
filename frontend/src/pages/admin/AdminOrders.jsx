@@ -5,6 +5,7 @@ import Seo from '@/components/common/Seo';
 import OrderStatusBadge from '@/components/common/OrderStatusBadge';
 import api from '@/lib/api';
 import Modal, { ViewStat } from '@/components/admin/Modal';
+import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
 import { formatINR } from '@/lib/utils';
 
 const STATUSES = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
@@ -54,6 +55,7 @@ export default function AdminOrders() {
         </select>
       </div>
 
+      {loading ? <AdminListSkeleton cols={8} withAvatar={false} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 space-y-3 lg:hidden">
         {orders.map((o) => (
@@ -130,6 +132,7 @@ export default function AdminOrders() {
           </tbody>
         </table>
       </div>
+      </>)}
 
       {/* View modal */}
       <Modal

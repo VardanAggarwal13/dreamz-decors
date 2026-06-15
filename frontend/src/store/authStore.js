@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import { authClient } from '@/lib/authClient';
 
 // Auth is now session-cookie based (Better Auth). This store mirrors the
@@ -17,5 +18,6 @@ export const useAuthStore = create((set) => ({
       /* ignore */
     }
     set({ user: null, status: 'unauthenticated' });
+    toast.success('Logged out');
   },
 }));

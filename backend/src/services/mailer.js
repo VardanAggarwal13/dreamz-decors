@@ -42,7 +42,7 @@ function getTransporter() {
  * Send an email. Returns true on success, false if email is disabled or fails.
  * Never throws — notification dispatch must not break on a mail failure.
  */
-export async function sendEmail({ to, subject, html, text }) {
+export async function sendEmail({ to, subject, html, text, replyTo }) {
   const tx = getTransporter();
   if (!tx || !to) return false;
 
@@ -53,6 +53,7 @@ export async function sendEmail({ to, subject, html, text }) {
       subject,
       text,
       html,
+      ...(replyTo ? { replyTo } : {}),
     });
     return true;
   } catch (err) {

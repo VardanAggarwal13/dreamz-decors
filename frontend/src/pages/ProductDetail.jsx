@@ -145,6 +145,19 @@ export default function ProductDetail() {
   const canonicalUrl = `/product/${product.slug}`;
   const categoryLabel = (product.categoryTitle || product.category || 'Collections').replace('-', ' ');
 
+  // Schema price must be a clean number; only emit an Offer when we actually
+  // have one (a 0/missing price + InStock is invalid structured data).
+  const schemaPrice = Number(selectedPrice) || 0;
+  // Google recommends priceValidUntil on every Offer — set ~1 year out (rolling).
+  const priceValidUntil = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    return d.toISOString().split('T')[0];
+  })();
+  // Only claim a rating when real reviews back it; clamp to schema's 1–5 range.
+  const reviewCount = Number(product.reviews) || 0;
+  const ratingValue = Math.min(5, Math.max(1, Number(product.rating) || 0));
+
   const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -153,22 +166,29 @@ export default function ProductDetail() {
     description: productDescription,
     brand: { '@type': 'Brand', name: 'DreamzDecors' },
     sku: product.slug,
-    offers: {
-      '@type': 'Offer',
-      priceCurrency: 'INR',
-      price: selectedPrice,
-      availability:
-        product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
-      url: absoluteUrl(`/product/${product.slug}`),
-    },
-    aggregateRating:
-      product.rating && product.reviews
-        ? {
+    ...(schemaPrice > 0
+      ? {
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'INR',
+            price: schemaPrice,
+            priceValidUntil,
+            itemCondition: 'https://schema.org/NewCondition',
+            availability:
+              product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+            url: absoluteUrl(`/product/${product.slug}`),
+          },
+        }
+      : {}),
+    ...(reviewCount > 0
+      ? {
+          aggregateRating: {
             '@type': 'AggregateRating',
-            ratingValue: Number(product.rating).toFixed(1),
-            reviewCount: product.reviews,
-          }
-        : undefined,
+            ratingValue: ratingValue.toFixed(1),
+            reviewCount,
+          },
+        }
+      : {}),
   };
 
   const productBreadcrumb = breadcrumbSchema([

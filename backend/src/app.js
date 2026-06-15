@@ -23,6 +23,7 @@ import settingsRoutes from './routes/settingsRoutes.js';
 import accountRoutes from './routes/accountRoutes.js';
 import contentRoutes from './routes/contentRoutes.js';
 import newsletterRoutes from './routes/newsletterRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -79,6 +80,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/newsletter', newsletterRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

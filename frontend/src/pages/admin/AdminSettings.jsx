@@ -63,7 +63,7 @@ export default function AdminSettings() {
             <Field label="Tagline"><Input value={form.brand.tagline} onChange={(e) => setGroup('brand', 'tagline', e.target.value)} /></Field>
           </Grid>
           <Field label="Footer description" className="mt-4">
-            <textarea value={form.brand.description} onChange={(e) => setGroup('brand', 'description', e.target.value)} rows={2} className={areaCls} />
+            <textarea value={form.brand.description} onChange={(e) => setGroup('brand', 'description', e.target.value)} rows={3} className={areaCls} />
           </Field>
         </Section>
 
@@ -122,7 +122,7 @@ export default function AdminSettings() {
   );
 }
 
-const areaCls = 'w-full rounded-xl border border-hairline bg-white px-4 py-3 text-sm text-ink outline-none focus:border-gold';
+const areaCls = 'w-full resize-y rounded-xl border border-hairline bg-white px-4 py-3 text-sm text-ink outline-none focus:border-gold';
 
 function Section({ title, children }) {
   return (

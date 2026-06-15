@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import AuthShell from '@/components/common/AuthShell';
 import GoogleButton from '@/components/common/GoogleButton';
@@ -39,6 +40,8 @@ export default function Login() {
       return;
     }
     setSession(data?.user || null);
+    const firstName = data?.user?.name?.trim().split(/\s+/)[0];
+    toast.success(firstName ? `Welcome back, ${firstName}!` : 'Welcome back!');
     navigate(from, { replace: true });
   };
 

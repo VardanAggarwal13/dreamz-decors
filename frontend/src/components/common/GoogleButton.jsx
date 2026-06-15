@@ -8,7 +8,7 @@ export default function GoogleButton({ label = 'Continue with Google' }) {
       // Redirects to Google, then back to callbackURL with a session cookie set.
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: `${window.location.origin}/account`,
+        callbackURL: `${window.location.origin}/account?welcome=1`,
         errorCallbackURL: `${window.location.origin}/login`,
       });
     } catch {

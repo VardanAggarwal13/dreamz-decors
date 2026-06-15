@@ -5,7 +5,7 @@
  * unreachable so a deploy never breaks over a sitemap.
  *
  * Env:
- *   VITE_SITE_URL     canonical site origin   (default https://www.dreamzdecors.com)
+ *   VITE_SITE_URL     canonical site origin   (default https://www.dreamdecords.com)
  *   SITEMAP_API_URL   API base for fetching   (default http://localhost:5000/api)
  */
 import { writeFile, mkdir } from 'node:fs/promises';
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SITE_URL = (process.env.VITE_SITE_URL || 'https://www.dreamzdecors.com').replace(/\/$/, '');
+const SITE_URL = (process.env.VITE_SITE_URL || 'https://www.dreamdecords.com').replace(/\/$/, '');
 const API_URL = (process.env.SITEMAP_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
 const OUT = path.resolve(__dirname, '../public/sitemap.xml');
 

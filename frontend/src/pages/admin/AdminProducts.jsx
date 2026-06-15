@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiUploadCloud, FiEye } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
@@ -8,6 +8,7 @@ import api from '@/lib/api';
 import useBodyScrollLock from '@/hooks/useBodyScrollLock';
 import Modal, { ViewStat } from '@/components/admin/Modal';
 import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
+import AdminSearch from '@/components/admin/AdminSearch';
 import { formatINR } from '@/lib/utils';
 
 const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -20,6 +21,7 @@ const empty = {
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
   const [cats, setCats] = useState([]);
   const [editing, setEditing] = useState(null);
   const [viewing, setViewing] = useState(null);
@@ -36,6 +38,20 @@ export default function AdminProducts() {
     load();
     api.get('/admin/categories').then((res) => setCats(res.data || []));
   }, []);
+
+  // Per-page search: filter the loaded products by title, slug, category,
+  // badge, or tags. Client-side so it's instant.
+  const shown = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return products;
+    return products.filter((p) =>
+      [p.title, p.slug, p.badge, p.category?.title, ...(p.tags || [])]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(term)
+    );
+  }, [products, q]);
 
   const openNew = () => { setForm(empty); setEditing({}); };
   const openEdit = (p) => {
@@ -134,10 +150,14 @@ export default function AdminProducts() {
         <Button variant="primary" size="md" onClick={openNew}><FiPlus size={15} /> New product</Button>
       </div>
 
+      <div className="mt-5">
+        <AdminSearch value={q} onChange={setQ} placeholder="Search products by name, category, tag…" className="sm:max-w-sm" />
+      </div>
+
       {loading ? <AdminListSkeleton cols={6} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
-        {products.map((p) => (
+        {shown.map((p) => (
           <div key={p._id} className="rounded-2xl border border-hairline/60 bg-bone p-4">
             <button type="button" onClick={() => setViewing(p)} className="flex w-full items-start gap-3 text-left">
               <span className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-hairline bg-bone-muted">
@@ -162,8 +182,10 @@ export default function AdminProducts() {
             </div>
           </div>
         ))}
-        {products.length === 0 && (
-          <p className="col-span-full rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">No products yet.</p>
+        {shown.length === 0 && (
+          <p className="col-span-full rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">
+            {q ? `No products match “${q}”.` : 'No products yet.'}
+          </p>
         )}
       </div>
 
@@ -181,7 +203,7 @@ export default function AdminProducts() {
             </tr>
           </thead>
           <tbody>
-            {products.map((p) => (
+            {shown.map((p) => (
               <tr key={p._id} className="border-b border-hairline/40 last:border-0">
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setViewing(p)} className="group flex items-center gap-3 text-left">
@@ -208,7 +230,7 @@ export default function AdminProducts() {
                 </td>
               </tr>
             ))}
-            {products.length === 0 && <tr><td colSpan={6} className="py-10 text-center text-ink-muted">No products yet.</td></tr>}
+            {shown.length === 0 && <tr><td colSpan={6} className="py-10 text-center text-ink-muted">{q ? `No products match “${q}”.` : 'No products yet.'}</td></tr>}
           </tbody>
         </table>
       </div>

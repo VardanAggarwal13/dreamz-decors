@@ -15,4 +15,4 @@ Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /*?*q=
 
-Sitemap: https://www.dreamzdecors.com/sitemap.xml
+Sitemap: https://www.dreamdecords.com/sitemap.xml

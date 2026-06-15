@@ -239,6 +239,54 @@ export function buildEmail(type, ctx = {}) {
   }
 }
 
+// ─── Contact form ──────────────────────────────────────────────────────────────
+
+// Escape user-supplied text before embedding it in HTML email.
+function escapeHtml(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Notifies the store of a customer contact-form submission. The customer's
+// email is set as reply-to (by the controller) so the admin can reply directly.
+export function buildContactMessage({ name, email, subject, message }) {
+  const safeSubject = subject?.trim() || 'New enquiry';
+  const rows = [
+    ['Name', name],
+    ['Email', email],
+    ['Subject', safeSubject],
+  ]
+    .map(
+      ([label, value]) =>
+        `<tr>
+          <td style="padding:6px 0;font-size:13px;color:${COLORS.muted};width:90px;vertical-align:top;">${label}</td>
+          <td style="padding:6px 0;font-size:14px;color:${COLORS.ink};font-weight:600;">${escapeHtml(value)}</td>
+        </tr>`
+    )
+    .join('');
+
+  const bodyHtml = `
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:18px;">
+      ${rows}
+    </table>
+    <div style="padding:16px 18px;background:${COLORS.bone};border:1px solid ${COLORS.line};border-radius:12px;
+                font-size:14px;line-height:1.7;color:${COLORS.ink};white-space:pre-line;">${escapeHtml(message)}</div>`;
+
+  return {
+    subject: `Contact form: ${safeSubject}`,
+    html: renderEmail({
+      preheader: `New message from ${name} (${email})`,
+      heading: 'New contact message',
+      bodyHtml,
+      cta: { label: 'Reply by email', url: `mailto:${email}?subject=${encodeURIComponent('Re: ' + safeSubject)}` },
+      footerNote: `Sent from the ${BRAND} website contact form. Reply directly to respond to the customer.`,
+    }),
+  };
+}
+
 // ─── Newsletter emails ─────────────────────────────────────────────────────────
 
 const NEWSLETTER_NOTE = `You're receiving this because you subscribed to the ${BRAND} newsletter.`;

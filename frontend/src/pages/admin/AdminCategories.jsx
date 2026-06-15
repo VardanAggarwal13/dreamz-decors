@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiEye } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
@@ -8,6 +8,7 @@ import api from '@/lib/api';
 import useBodyScrollLock from '@/hooks/useBodyScrollLock';
 import Modal, { ViewStat } from '@/components/admin/Modal';
 import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
+import AdminSearch from '@/components/admin/AdminSearch';
 import ImageInput from '@/components/admin/ImageInput';
 
 const slugify = (s) =>
@@ -18,6 +19,7 @@ const empty = { title: '', slug: '', blurb: '', image: '', order: 0, isActive: t
 export default function AdminCategories() {
   const [cats, setCats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
   const [editing, setEditing] = useState(null); // null = closed, {} = new, {...} = edit
   const [viewing, setViewing] = useState(null);
   const [form, setForm] = useState(empty);
@@ -27,6 +29,15 @@ export default function AdminCategories() {
   const load = () =>
     api.get('/admin/categories').then((res) => setCats(res.data || [])).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
+
+  // Per-page search: filter loaded categories by title, slug, or blurb.
+  const shown = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return cats;
+    return cats.filter((c) =>
+      [c.title, c.slug, c.blurb].filter(Boolean).join(' ').toLowerCase().includes(term)
+    );
+  }, [cats, q]);
 
   const openNew = () => { setForm(empty); setEditing({}); };
   const openEdit = (c) => { setForm({ ...empty, ...c }); setEditing(c); };
@@ -73,10 +84,14 @@ export default function AdminCategories() {
         <Button variant="primary" size="md" onClick={openNew}><FiPlus size={15} /> New category</Button>
       </div>
 
+      <div className="mt-5">
+        <AdminSearch value={q} onChange={setQ} placeholder="Search categories by title or slug…" className="sm:max-w-sm" />
+      </div>
+
       {loading ? <AdminListSkeleton cols={5} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
-        {cats.map((c) => (
+        {shown.map((c) => (
           <div key={c._id} className="rounded-2xl border border-hairline/60 bg-bone p-4">
             <button type="button" onClick={() => setViewing(c)} className="flex w-full items-start gap-3 text-left">
               <span className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-hairline bg-bone-muted">
@@ -97,8 +112,10 @@ export default function AdminCategories() {
             </div>
           </div>
         ))}
-        {cats.length === 0 && (
-          <p className="col-span-full rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">No categories yet.</p>
+        {shown.length === 0 && (
+          <p className="col-span-full rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">
+            {q ? `No categories match “${q}”.` : 'No categories yet.'}
+          </p>
         )}
       </div>
 
@@ -115,7 +132,7 @@ export default function AdminCategories() {
             </tr>
           </thead>
           <tbody>
-            {cats.map((c) => (
+            {shown.map((c) => (
               <tr key={c._id} className="border-b border-hairline/40 last:border-0">
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setViewing(c)} className="font-medium text-ink hover:text-gold-deep">{c.title}</button>
@@ -132,7 +149,7 @@ export default function AdminCategories() {
                 </td>
               </tr>
             ))}
-            {cats.length === 0 && <tr><td colSpan={5} className="py-10 text-center text-ink-muted">No categories yet.</td></tr>}
+            {shown.length === 0 && <tr><td colSpan={5} className="py-10 text-center text-ink-muted">{q ? `No categories match “${q}”.` : 'No categories yet.'}</td></tr>}
           </tbody>
         </table>
       </div>

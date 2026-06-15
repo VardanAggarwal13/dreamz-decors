@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import useFetch from '@/hooks/useFetch';
+import api from '@/lib/api';
 import { Link, Navigate } from 'react-router-dom';
 import { ChevronDown, ChevronRight, MapPin, Mail, Clock, Phone, Search, MessageCircle, Palette, Sparkles, Award, ShieldCheck } from 'lucide-react';
 import { FiArrowRight, FiCheck } from 'react-icons/fi';
@@ -192,7 +194,8 @@ const ABOUT_ICONS = {
 };
 
 function AboutPage({ page }) {
-  const [about] = page.sections;
+  const about = (page.sections && page.sections[0]) || { body: [] };
+  const body = Array.isArray(about.body) ? about.body : [];
   const values = Array.isArray(page.values) ? page.values : [];
   const stats = Array.isArray(page.stats) ? page.stats : [];
 
@@ -203,12 +206,12 @@ function AboutPage({ page }) {
       {/* ── 1. Centered Hero ──────────────────────────────────── */}
       <div className="border-b border-hairline/60 bg-bone py-14 text-center sm:py-16">
         <div className="container-page">
-          <p className="eyebrow-gold">Our Story</p>
-          <h1 className="mx-auto mt-3 max-w-2xl font-display text-4xl leading-tight text-ink sm:text-5xl lg:text-6xl">
-            Luxury Wall Art,<br />Born in India.
+          <p className="eyebrow-gold">{page.eyebrow}</p>
+          <h1 className="mx-auto mt-3 max-w-2xl whitespace-pre-line font-display text-4xl leading-tight text-ink sm:text-5xl lg:text-6xl">
+            {page.title}
           </h1>
           <p className="mx-auto mt-5 max-w-lg text-sm leading-7 text-ink-soft">
-            Dreamz Decor was founded with a singular vision — to bring premium artistic beauty into every modern Indian home, crafted with care and precision.
+            {page.intro}
           </p>
         </div>
       </div>
@@ -220,7 +223,7 @@ function AboutPage({ page }) {
           <div className="relative">
             <div className="overflow-hidden rounded-2xl" style={{ aspectRatio: '4/5' }}>
               <img
-                src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1200&auto=format&fit=crop&q=80"
+                src={page.storyImage}
                 alt="DreamzDecors craftsmanship"
                 className="h-full w-full object-cover"
               />
@@ -230,12 +233,12 @@ function AboutPage({ page }) {
 
           {/* Text */}
           <div>
-            <p className="eyebrow-gold">Who We Are</p>
-            <h2 className="mt-3 font-display text-3xl leading-tight text-ink sm:text-4xl">
-              Premium Decor,<br />Crafted with Passion.
+            <p className="eyebrow-gold">{page.storyEyebrow}</p>
+            <h2 className="mt-3 whitespace-pre-line font-display text-3xl leading-tight text-ink sm:text-4xl">
+              {page.storyTitle}
             </h2>
             <div className="mt-5 space-y-4">
-              {about.body.map((para, i) => (
+              {body.map((para, i) => (
                 <p key={i} className="text-sm leading-7 text-ink-soft">{para}</p>
               ))}
             </div>
@@ -247,8 +250,8 @@ function AboutPage({ page }) {
       <div className="border-y border-hairline/60 bg-bone-soft/60 py-14 sm:py-16">
         <div className="container-page">
           <div className="text-center">
-            <p className="eyebrow-gold">Our Values</p>
-            <h2 className="mt-2 font-display text-3xl text-ink sm:text-4xl">What We Stand For</h2>
+            <p className="eyebrow-gold">{page.valuesEyebrow}</p>
+            <h2 className="mt-2 font-display text-3xl text-ink sm:text-4xl">{page.valuesTitle}</h2>
             <span className="gold-rule-center" />
           </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -271,12 +274,12 @@ function AboutPage({ page }) {
       {/* ── 4. Dark craft section ─────────────────────────────── */}
       <div className="bg-ink py-16 text-center sm:py-20">
         <div className="container-page">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-gold/60">Our Craft</p>
-          <h2 className="mx-auto mt-4 max-w-2xl font-display text-4xl leading-snug text-bone-soft sm:text-5xl">
-            Every artwork carries<br />a story worth telling.
+          <p className="text-[10px] uppercase tracking-[0.3em] text-gold/60">{page.craftEyebrow}</p>
+          <h2 className="mx-auto mt-4 max-w-2xl whitespace-pre-line font-display text-4xl leading-snug text-bone-soft sm:text-5xl">
+            {page.craftTitle}
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-bone/55">
-            From our in-house studios to doorsteps across India, every piece is built with precision, premium materials, and a deep passion for artistic excellence.
+            {page.craftText}
           </p>
           <Button
             asChild
@@ -284,7 +287,7 @@ function AboutPage({ page }) {
             size="md"
             className="mt-8 border-bone/35 text-bone hover:border-bone/60 hover:bg-bone/10"
           >
-            <Link to="/shop">Shop the Collection <FiArrowRight /></Link>
+            <Link to="/shop">{page.craftCtaLabel} <FiArrowRight /></Link>
           </Button>
         </div>
       </div>
@@ -293,7 +296,7 @@ function AboutPage({ page }) {
       <div className="py-14 sm:py-16">
         <div className="container-page">
           <div className="text-center">
-            <h2 className="font-display text-3xl text-ink sm:text-4xl">Our Journey in Numbers</h2>
+            <h2 className="font-display text-3xl text-ink sm:text-4xl">{page.statsTitle}</h2>
             <span className="gold-rule-center" />
           </div>
           <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -328,10 +331,35 @@ function contactCards(contact = {}) {
   ];
 }
 
+const EMPTY_CONTACT_FORM = { name: '', email: '', subject: '', message: '' };
+
 function ContactPage({ page }) {
   const contact = useSettingsStore((s) => s.settings.contact) || {};
   const cards = contactCards(contact);
   const mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(contact.address || 'India')}&output=embed`;
+
+  const [form, setForm] = useState(EMPTY_CONTACT_FORM);
+  const [sending, setSending] = useState(false);
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      toast.error('Please fill in your name, email, and message.');
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await api.post('/contact', form);
+      toast.success(res?.message || "Thanks for reaching out — we'll get back to you soon.");
+      setForm(EMPTY_CONTACT_FORM);
+    } catch (err) {
+      toast.error(err?.message || 'Could not send your message. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div className="bg-bone">
       <Seo title="Contact Us — DreamzDecors" description={page.intro} canonical="/contact" />
@@ -355,24 +383,24 @@ function ContactPage({ page }) {
           {/* Form — left */}
           <div>
             <h2 className="font-display text-xl text-ink">Send Us a Message</h2>
-            <form onSubmit={e => e.preventDefault()} className="mt-5 space-y-4">
+            <form onSubmit={submit} className="mt-5 space-y-4">
               <div>
                 <label className="text-[10px] uppercase tracking-[0.22em] text-ink-muted" htmlFor="c-name">
                   Full Name
                 </label>
-                <Input id="c-name" placeholder="Your full name" className="mt-1.5" />
+                <Input id="c-name" placeholder="Your full name" className="mt-1.5" value={form.name} onChange={set('name')} required />
               </div>
               <div>
                 <label className="text-[10px] uppercase tracking-[0.22em] text-ink-muted" htmlFor="c-email">
                   Email Address
                 </label>
-                <Input id="c-email" type="email" placeholder="your@email.com" className="mt-1.5" />
+                <Input id="c-email" type="email" placeholder="your@email.com" className="mt-1.5" value={form.email} onChange={set('email')} required />
               </div>
               <div>
                 <label className="text-[10px] uppercase tracking-[0.22em] text-ink-muted" htmlFor="c-subject">
                   Subject
                 </label>
-                <Input id="c-subject" placeholder="How can we help you?" className="mt-1.5" />
+                <Input id="c-subject" placeholder="How can we help you?" className="mt-1.5" value={form.subject} onChange={set('subject')} />
               </div>
               <div>
                 <label className="text-[10px] uppercase tracking-[0.22em] text-ink-muted" htmlFor="c-msg">
@@ -381,12 +409,15 @@ function ContactPage({ page }) {
                 <textarea
                   id="c-msg"
                   rows={5}
+                  required
+                  value={form.message}
+                  onChange={set('message')}
                   placeholder="Tell us about your order, custom request, or query..."
                   className="mt-1.5 w-full rounded-xl border border-hairline bg-bone-soft px-4 py-3 text-sm text-ink outline-none transition placeholder:text-ink-muted focus:border-accent/60"
                 />
               </div>
-              <Button variant="primary" size="md" type="submit" className="w-full justify-center uppercase tracking-[0.14em]">
-                Send Message <FiArrowRight />
+              <Button variant="primary" size="md" type="submit" disabled={sending} className="w-full justify-center uppercase tracking-[0.14em]">
+                {sending ? 'Sending…' : <>Send Message <FiArrowRight /></>}
               </Button>
             </form>
           </div>

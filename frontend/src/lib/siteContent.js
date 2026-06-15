@@ -13,20 +13,27 @@ export const productFeatureHighlights = [
 
 export const contentPages = {
   about: {
-    eyebrow: 'Dreamz Decor',
-    title: 'Luxury wall decor, proudly made in India.',
+    // ── Hero band (top of /about) ──
+    eyebrow: 'Our Story',
+    title: 'Luxury Wall Art,\nBorn in India.',
     intro:
-      'At Dreamz Decor, we believe every wall deserves a touch of luxury, elegance, and artistic expression.',
-    heroStats: [
-      { label: 'Made in India', value: 'In-house production' },
-      { label: 'Packaging', value: 'Multi-layer protected' },
-      { label: 'Support', value: 'Fast and direct' },
-    ],
-    heroHighlights: [
-      'Premium materials with careful finishing',
-      'Designed for modern homes and hospitality spaces',
-      'Collections curated for a more refined wall story',
-    ],
+      'Dreamz Decor was founded with a singular vision — to bring premium artistic beauty into every modern Indian home, crafted with care and precision.',
+    // ── Story band (image + text) ──
+    storyImage:
+      'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1200&auto=format&fit=crop&q=80',
+    storyEyebrow: 'Who We Are',
+    storyTitle: 'Premium Decor,\nCrafted with Passion.',
+    // ── Values band headings (cards come from `values` below) ──
+    valuesEyebrow: 'Our Values',
+    valuesTitle: 'What We Stand For',
+    // ── Dark craft band ──
+    craftEyebrow: 'Our Craft',
+    craftTitle: 'Every artwork carries\na story worth telling.',
+    craftText:
+      'From our in-house studios to doorsteps across India, every piece is built with precision, premium materials, and a deep passion for artistic excellence.',
+    craftCtaLabel: 'Shop the Collection',
+    // ── Stats band heading (numbers come from `stats` below) ──
+    statsTitle: 'Our Journey in Numbers',
     // "What We Stand For" value cards. `icon` maps to a name in AboutPage's
     // ABOUT_ICONS map (palette / sparkles / award / shield).
     values: [
@@ -280,7 +287,7 @@ export const contentPages = {
       {
         title: 'Introduction',
         body: [
-          'Welcome to Dreamz Decor. By accessing or using our website at dreamzdecors.com, you agree to be bound by these Terms and Conditions. These terms govern your use of our platform, including browsing, purchasing, and interacting with our content. Dreamz Decor reserves the right to update these terms at any time, and continued use of the platform constitutes acceptance of any revised terms. If you do not agree with any part of these terms, please discontinue use of our website immediately.',
+          'Welcome to Dreamz Decor. By accessing or using our website at dreamdecords.com, you agree to be bound by these Terms and Conditions. These terms govern your use of our platform, including browsing, purchasing, and interacting with our content. Dreamz Decor reserves the right to update these terms at any time, and continued use of the platform constitutes acceptance of any revised terms. If you do not agree with any part of these terms, please discontinue use of our website immediately.',
         ],
       },
       {
@@ -332,7 +339,7 @@ export const contentPages = {
       {
         title: 'Contact Us',
         body: [
-          'If you have any questions, concerns, or require clarification regarding these Terms and Conditions, please do not hesitate to reach out to our team. You may contact us by email at support@dreamzdecors.com or write to us at: Dreamz Decor, Grand Trunk Road, Baba Phoola Singh, Amritsar, Punjab. We aim to respond to all enquiries within 5 business days.',
+          'If you have any questions, concerns, or require clarification regarding these Terms and Conditions, please do not hesitate to reach out to our team. You may contact us by email at support@dreamdecords.com or write to us at: Dreamz Decor, Grand Trunk Road, Baba Phoola Singh, Amritsar, Punjab. We aim to respond to all enquiries within 5 business days.',
         ],
       },
     ],

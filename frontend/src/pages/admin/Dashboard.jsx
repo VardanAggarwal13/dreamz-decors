@@ -70,15 +70,15 @@ export default function Dashboard() {
             <div key={i} className="py-3"><Skeleton className="h-12 w-full rounded-lg" /></div>
           ))}
           {(data?.recentOrders || []).map((o) => (
-            <div key={o._id} className="flex items-center justify-between gap-3 py-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-ink">{shortId(o._id)}</span>
-                  <OrderStatusBadge status={o.status} />
-                </div>
-                <p className="mt-0.5 truncate text-xs text-ink-muted">{o.user?.name || o.user?.email || '—'} · {fmtDate(o.createdAt)}</p>
+            <div key={o._id} className="py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-medium text-ink">{shortId(o._id)}</span>
+                <span className="shrink-0 text-sm font-medium text-ink">{formatINR(o.total)}</span>
               </div>
-              <span className="shrink-0 text-sm font-medium text-ink">{formatINR(o.total)}</span>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <p className="min-w-0 truncate text-xs text-ink-muted">{o.user?.name || o.user?.email || '—'} · {fmtDate(o.createdAt)}</p>
+                <OrderStatusBadge status={o.status} />
+              </div>
             </div>
           ))}
           {!loading && (data?.recentOrders || []).length === 0 && (

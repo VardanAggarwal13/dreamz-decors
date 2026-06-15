@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FiEye } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import api from '@/lib/api';
 import Modal, { ViewStat } from '@/components/admin/Modal';
 import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
+import AdminSearch from '@/components/admin/AdminSearch';
 import { formatINR } from '@/lib/utils';
 
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
@@ -13,6 +14,7 @@ const initials = (name = '') => name.trim().split(/\s+/).slice(0, 2).map((w) => 
 export default function AdminCustomers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
   const [viewing, setViewing] = useState(null);
 
   const load = () => {
@@ -20,6 +22,15 @@ export default function AdminCustomers() {
     api.get('/admin/customers').then((res) => setUsers(res.data || [])).finally(() => setLoading(false));
   };
   useEffect(load, []);
+
+  // Per-page search: filter loaded customers by name, email, or role.
+  const shown = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return users;
+    return users.filter((u) =>
+      [u.name, u.email, u.role].filter(Boolean).join(' ').toLowerCase().includes(term)
+    );
+  }, [users, q]);
 
   const changeRole = async (id, role) => {
     setUsers((list) => list.map((u) => (u._id === id ? { ...u, role } : u)));
@@ -36,12 +47,15 @@ export default function AdminCustomers() {
   return (
     <div>
       <Seo title="Admin — Customers" noIndex />
-      <h1 className="font-display text-2xl text-ink sm:text-3xl">Customers</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-2xl text-ink sm:text-3xl">Customers</h1>
+        <AdminSearch value={q} onChange={setQ} placeholder="Search by name or email…" className="w-full sm:w-auto sm:min-w-[18rem]" />
+      </div>
 
       {loading ? <AdminListSkeleton cols={7} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
-        {users.map((u) => (
+        {shown.map((u) => (
           <div key={u._id} className="rounded-2xl border border-hairline/60 bg-bone p-4">
             <button type="button" onClick={() => setViewing(u)} className="flex w-full items-center gap-3 text-left">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ink font-display text-sm text-bone">{initials(u.name)}</span>
@@ -68,8 +82,10 @@ export default function AdminCustomers() {
             </div>
           </div>
         ))}
-        {!loading && users.length === 0 && (
-          <p className="col-span-full rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">No customers yet.</p>
+        {!loading && shown.length === 0 && (
+          <p className="col-span-full rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">
+            {q ? `No customers match “${q}”.` : 'No customers yet.'}
+          </p>
         )}
       </div>
 
@@ -88,7 +104,7 @@ export default function AdminCustomers() {
             </tr>
           </thead>
           <tbody>
-            {users.map((u) => (
+            {shown.map((u) => (
               <tr key={u._id} className="border-b border-hairline/40 last:border-0">
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setViewing(u)} className="font-medium text-ink hover:text-gold-deep">{u.name}</button>
@@ -112,8 +128,8 @@ export default function AdminCustomers() {
                 </td>
               </tr>
             ))}
-            {!loading && users.length === 0 && (
-              <tr><td colSpan={7} className="py-10 text-center text-ink-muted">No customers yet.</td></tr>
+            {!loading && shown.length === 0 && (
+              <tr><td colSpan={7} className="py-10 text-center text-ink-muted">{q ? `No customers match “${q}”.` : 'No customers yet.'}</td></tr>
             )}
           </tbody>
         </table>

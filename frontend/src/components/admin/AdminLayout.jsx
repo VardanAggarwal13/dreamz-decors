@@ -95,10 +95,11 @@ export default function AdminLayout() {
           </Link>
           <div className="flex items-center gap-4">
             <NotificationBell
-              buttonClassName="relative text-bone/80 transition hover:text-bone"
+              iconSize={22}
+              buttonClassName="relative flex items-center text-bone/80 transition hover:text-bone"
               badgeClassName={bellBadge}
             />
-            <button onClick={() => setOpen((v) => !v)} className="text-bone" aria-label={open ? 'Close menu' : 'Open menu'}>
+            <button onClick={() => setOpen((v) => !v)} className="flex items-center text-bone" aria-label={open ? 'Close menu' : 'Open menu'}>
               {open ? <FiX size={22} /> : <FiMenu size={22} />}
             </button>
           </div>
@@ -107,14 +108,15 @@ export default function AdminLayout() {
           <>
             {/* Dim backdrop over the page content */}
             <div className="fixed inset-0 z-0 bg-ink/50" onClick={() => setOpen(false)} aria-hidden="true" />
-            {/* Menu panel floats over the content (absolute, not in flow) */}
-            <div className="absolute inset-x-0 top-full z-10 max-h-[calc(100dvh-3.25rem)] overflow-y-auto border-t border-bone/10 bg-ink px-4 pb-4 shadow-2xl">
+            {/* Full-height drawer below the bar — nav at the top, secondary
+                links pinned to the bottom so it reads as a complete panel. */}
+            <div className="absolute inset-x-0 top-full z-10 flex h-[calc(100dvh-3.25rem)] flex-col overflow-y-auto border-t border-bone/10 bg-ink px-4 pb-6 pt-2 shadow-2xl">
               <NavItems onClick={() => setOpen(false)} />
-              <div className="mt-3 space-y-1 border-t border-bone/10 pt-3">
-                <Link to="/" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm text-bone/70">
+              <div className="mt-auto space-y-1 border-t border-bone/10 pt-3">
+                <Link to="/" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm text-bone/70 transition hover:bg-bone/5 hover:text-bone">
                   <FiArrowLeft size={16} /> Back to store
                 </Link>
-                <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm text-bone/70">
+                <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm text-bone/70 transition hover:bg-bone/5 hover:text-bone">
                   <FiLogOut size={16} /> Logout
                 </button>
               </div>

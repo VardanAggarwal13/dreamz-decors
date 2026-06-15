@@ -2,7 +2,7 @@
 // structured data, and the sitemap stay consistent.
 
 // Production site URL. Override per-environment via VITE_SITE_URL.
-export const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://www.dreamzdecors.com').replace(/\/$/, '');
+export const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://www.dreamdecords.com').replace(/\/$/, '');
 export const SITE_NAME = 'DreamzDecors';
 export const SITE_TAGLINE = 'Premium Wall Art, Gallery Sets & Decor';
 export const DEFAULT_DESCRIPTION =

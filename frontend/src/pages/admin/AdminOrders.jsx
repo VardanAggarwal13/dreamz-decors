@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FiEye } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
@@ -6,6 +6,7 @@ import OrderStatusBadge from '@/components/common/OrderStatusBadge';
 import api from '@/lib/api';
 import Modal, { ViewStat } from '@/components/admin/Modal';
 import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
+import AdminSearch from '@/components/admin/AdminSearch';
 import { formatINR } from '@/lib/utils';
 
 const STATUSES = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
@@ -17,6 +18,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
+  const [q, setQ] = useState('');
   const [viewing, setViewing] = useState(null);
 
   const load = () => {
@@ -27,6 +29,20 @@ export default function AdminOrders() {
   };
 
   useEffect(load, [filter]);
+
+  // Per-page search: filter the loaded orders by order id, customer name,
+  // email, or status. Works on top of the server-side status filter.
+  const shown = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return orders;
+    return orders.filter((o) =>
+      [shortId(o._id), o.user?.name, o.user?.email, o.status]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(term)
+    );
+  }, [orders, q]);
 
   const changeStatus = async (id, status) => {
     setOrders((list) => list.map((o) => (o._id === id ? { ...o, status } : o)));
@@ -45,20 +61,23 @@ export default function AdminOrders() {
       <Seo title="Admin — Orders" noIndex />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl text-ink sm:text-3xl">Orders</h1>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="rounded-lg border border-hairline bg-bone px-3 py-2 text-sm text-ink-soft outline-none focus:border-gold"
-        >
-          <option value="">All statuses</option>
-          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
+        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+          <AdminSearch value={q} onChange={setQ} placeholder="Search by order id, customer…" className="flex-1 sm:w-64 sm:flex-none" />
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="rounded-lg border border-hairline bg-bone px-3 py-2.5 text-sm text-ink-soft outline-none focus:border-gold"
+          >
+            <option value="">All statuses</option>
+            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
       </div>
 
       {loading ? <AdminListSkeleton cols={8} withAvatar={false} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 space-y-3 lg:hidden">
-        {orders.map((o) => (
+        {shown.map((o) => (
           <div key={o._id} className="rounded-2xl border border-hairline/60 bg-bone p-4">
             <div className="flex items-start justify-between gap-3">
               <button type="button" onClick={() => setViewing(o)} className="font-medium text-ink hover:text-gold-deep">{shortId(o._id)}</button>
@@ -81,8 +100,10 @@ export default function AdminOrders() {
             </div>
           </div>
         ))}
-        {!loading && orders.length === 0 && (
-          <p className="rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">No orders found.</p>
+        {!loading && shown.length === 0 && (
+          <p className="rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">
+            {q ? `No orders match “${q}”.` : 'No orders found.'}
+          </p>
         )}
       </div>
 
@@ -102,7 +123,7 @@ export default function AdminOrders() {
             </tr>
           </thead>
           <tbody>
-            {orders.map((o) => (
+            {shown.map((o) => (
               <tr key={o._id} className="border-b border-hairline/40 last:border-0">
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setViewing(o)} className="font-medium text-ink hover:text-gold-deep">{shortId(o._id)}</button>
@@ -126,8 +147,8 @@ export default function AdminOrders() {
                 </td>
               </tr>
             ))}
-            {!loading && orders.length === 0 && (
-              <tr><td colSpan={8} className="py-10 text-center text-ink-muted">No orders found.</td></tr>
+            {!loading && shown.length === 0 && (
+              <tr><td colSpan={8} className="py-10 text-center text-ink-muted">{q ? `No orders match “${q}”.` : 'No orders found.'}</td></tr>
             )}
           </tbody>
         </table>

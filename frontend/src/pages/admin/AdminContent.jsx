@@ -20,7 +20,7 @@ const KEYS = [
 // Short editor hints for keys that use icon-name strings or special structure.
 const HINTS = {
   home: 'Includes the "Why Dreamz Decor" cards (icon: award/madeIn/package/truck/check) and the newsletter band copy.',
-  about: 'Value cards use icon names: palette, sparkles, award, shield. Edit "stats" for the numbers band.',
+  about: 'Hero (eyebrow/title/intro), story image + heading, the dark "craft" band, and the values/stats headings are all editable here. Value cards use icon names: palette, sparkles, award, shield. Use \\n in a title for a line break.',
   shipping: 'Edit "steps" for the four "Order\'s Journey" cards.',
   product: 'Trust badges use icon names: shield, award, mapPin, package, truck, check. (Free-shipping ₹ amount lives in Settings → Shipping.)',
   navigation: 'Header menu + mega-menu. Each item: { label, href, groups:[{ title, items:[…] }] }.',

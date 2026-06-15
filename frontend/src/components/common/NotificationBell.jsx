@@ -11,7 +11,7 @@ import {
   disablePush,
 } from '@/lib/push';
 
-export default function NotificationBell({ buttonClassName, badgeClassName }) {
+export default function NotificationBell({ buttonClassName, badgeClassName, iconSize = 18 }) {
   const [open, setOpen] = useState(false);
   const [pushOn, setPushOn] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -112,7 +112,7 @@ export default function NotificationBell({ buttonClassName, badgeClassName }) {
         onClick={() => setOpen((v) => !v)}
         className={buttonClassName || 'relative hover:text-accent'}
       >
-        <FiBell size={18} />
+        <FiBell size={iconSize} />
         {unread > 0 && (
           <span
             className={

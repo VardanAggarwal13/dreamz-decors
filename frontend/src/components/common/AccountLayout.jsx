@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom';
 import { FiUser, FiShoppingBag, FiMapPin, FiBell, FiSettings, FiLogOut } from 'react-icons/fi';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
 
 const TABS = [
@@ -35,6 +36,17 @@ export default function AccountLayout() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Google sign-in redirects back here with ?welcome=1 — show a one-time toast
+  // (the page reload drops any toast queued before the OAuth redirect), then
+  // strip the param so a refresh doesn't re-trigger it.
+  useEffect(() => {
+    if (searchParams.get('welcome') !== '1') return;
+    toast.success('Signed in successfully!');
+    searchParams.delete('welcome');
+    setSearchParams(searchParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Custom scroll indicator for the mobile tab strip. Native scrollbars are
   // overlay/auto-hidden on phones (and in device emulation), so we render our

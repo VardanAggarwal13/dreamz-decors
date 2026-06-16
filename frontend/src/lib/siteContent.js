@@ -148,7 +148,7 @@ export const contentPages = {
       { label: 'Other locations', value: '10-12 business days' },
     ],
     heroHighlights: [
-      'Free shipping on eligible orders',
+      'Free shipping on all orders',
       'Tracking shared after dispatch',
       'Large formats may need extra handling time',
     ],

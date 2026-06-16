@@ -1,8 +1,8 @@
 import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
-import Settings from '../models/Settings.js';
-import { buildPagination, buildPaginationMeta, paginationPresets } from '../utils/query.js';
+import User from '../models/User.js';
+import { buildPagination, buildPaginationMeta, paginationPresets, escapeRegex } from '../utils/query.js';
 import { notify, notifyAdmins } from '../services/notificationService.js';
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
@@ -17,8 +17,6 @@ const STATUS_NOTIFICATION = {
   refunded:   { type: 'order_refunded',   title: 'Refund processed',  message: (o) => `Your refund of ${inr(o.total)} has been processed.` },
 };
 
-const SHIPPING_FREE_OVER = 1499;
-const SHIPPING_FLAT = 99;
 const ORDER_LIST_SELECT = 'items subtotal shipping discount total currency status payment createdAt updatedAt';
 
 export const createOrder = asyncHandler(async (req, res) => {
@@ -47,8 +45,7 @@ export const createOrder = asyncHandler(async (req, res) => {
   }));
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const { shipping: shipCfg } = await Settings.getSingleton();
-  const shipping = subtotal >= (shipCfg?.freeThreshold ?? SHIPPING_FREE_OVER) ? 0 : (shipCfg?.flatRate ?? SHIPPING_FLAT);
+  const shipping = 0; // Free delivery on all orders
   const total = subtotal + shipping;
 
   const order = await Order.create({
@@ -122,6 +119,18 @@ export const listOrders = asyncHandler(async (req, res) => {
   const { status } = req.query;
   const filter = {};
   if (status) filter.status = status;
+
+  // Optional search: by customer name/email, or by the order id text.
+  const q = String(req.query.q || '').trim();
+  if (q) {
+    const rx = new RegExp(escapeRegex(q), 'i');
+    const userIds = await User.find({ $or: [{ name: rx }, { email: rx }] }).distinct('_id');
+    filter.$or = [
+      { user: { $in: userIds } },
+      { $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: escapeRegex(q), options: 'i' } } },
+    ];
+  }
+
   const { page, limit, skip } = buildPagination(req.query.page, req.query.limit, paginationPresets.order);
   const [items, total] = await Promise.all([
     Order.find(filter)

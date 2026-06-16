@@ -133,11 +133,20 @@ export default function AdminNewsletter() {
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-4">
-        <ViewStat label="Subscribed" value={stats.subscribed} />
-        <ViewStat label="Unsubscribed" value={stats.unsubscribed} />
-        <ViewStat label="Total" value={stats.total} />
+      {/* Stats — compact tiles that keep their labels readable even at 320px */}
+      <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-4">
+        {[
+          { label: 'Subscribed', value: stats.subscribed },
+          { label: 'Unsubscribed', value: stats.unsubscribed },
+          { label: 'Total', value: stats.total },
+        ].map((s) => (
+          <div key={s.label} className="rounded-xl border border-hairline/60 bg-bone px-2 py-2.5 sm:px-3">
+            <span className="block text-[9px] font-medium uppercase leading-tight tracking-normal text-ink-muted sm:text-[10px] sm:tracking-[0.16em]">
+              {s.label}
+            </span>
+            <span className="mt-1 block text-base font-semibold text-ink sm:text-sm">{s.value}</span>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
@@ -190,16 +199,22 @@ export default function AdminNewsletter() {
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-hairline/60 text-left text-[11px] uppercase tracking-wide text-ink-muted">
+              <th className="px-4 py-3 font-medium">Actions</th>
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Source</th>
               <th className="px-4 py-3 font-medium">Joined</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {subs.map((s) => (
               <tr key={s._id} className="border-b border-hairline/40 last:border-0">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setViewing(s)} className="text-ink-soft hover:text-ink" aria-label="View"><FiEye size={15} /></button>
+                    <button onClick={() => remove(s._id)} className="text-ink-soft hover:text-sale" aria-label="Delete"><FiTrash2 size={15} /></button>
+                  </div>
+                </td>
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setViewing(s)} className="font-medium text-ink hover:text-gold-deep">
                     {s.email}
@@ -208,12 +223,6 @@ export default function AdminNewsletter() {
                 <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
                 <td className="px-4 py-3 text-ink-muted capitalize">{s.source || '—'}</td>
                 <td className="px-4 py-3 text-ink-muted">{fmtDate(s.createdAt)}</td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-3">
-                    <button onClick={() => setViewing(s)} className="text-ink-soft hover:text-ink" aria-label="View"><FiEye size={15} /></button>
-                    <button onClick={() => remove(s._id)} className="text-ink-soft hover:text-sale" aria-label="Delete"><FiTrash2 size={15} /></button>
-                  </div>
-                </td>
               </tr>
             ))}
             {!loading && subs.length === 0 && (

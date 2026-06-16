@@ -61,8 +61,7 @@ export default function Checkout() {
 
   const selectSaved = (a) => { setMode(a._id); fillFromSaved(a); };
 
-  const { freeThreshold, flatRate } = useSettingsStore((s) => s.settings.shipping);
-  const shipping = subtotal >= freeThreshold ? 0 : flatRate;
+  const shipping = 0; // Free delivery on all orders (matches server-side total)
   const total = subtotal + shipping;
   const set = (k) => (e) => setAddr((a) => ({ ...a, ...field(k, e.target.value) }));
 

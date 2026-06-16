@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiEye } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import useBodyScrollLock from '@/hooks/useBodyScrollLock';
+import useAdminList from '@/hooks/useAdminList';
 import Modal, { ViewStat } from '@/components/admin/Modal';
 import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
 import AdminSearch from '@/components/admin/AdminSearch';
+import AdminPagination from '@/components/admin/AdminPagination';
 import ImageInput from '@/components/admin/ImageInput';
 
 const slugify = (s) =>
@@ -17,8 +19,6 @@ const slugify = (s) =>
 const empty = { title: '', slug: '', blurb: '', image: '', order: 0, isActive: true };
 
 export default function AdminCategories() {
-  const [cats, setCats] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState(null); // null = closed, {} = new, {...} = edit
   const [viewing, setViewing] = useState(null);
@@ -26,18 +26,13 @@ export default function AdminCategories() {
   const [saving, setSaving] = useState(false);
   useBodyScrollLock(!!editing); // view modal manages its own lock via <Modal/>
 
-  const load = () =>
-    api.get('/admin/categories').then((res) => setCats(res.data || [])).finally(() => setLoading(false));
-  useEffect(() => { load(); }, []);
-
-  // Per-page search: filter loaded categories by title, slug, or blurb.
-  const shown = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return cats;
-    return cats.filter((c) =>
-      [c.title, c.slug, c.blurb].filter(Boolean).join(' ').toLowerCase().includes(term)
-    );
-  }, [cats, q]);
+  // Server-side pagination + search.
+  const makePath = ({ page, limit }) => {
+    const sp = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (q.trim()) sp.set('q', q.trim());
+    return `/admin/categories?${sp.toString()}`;
+  };
+  const { items: cats, meta, loading, goTo, reload } = useAdminList(makePath, [q], { limit: 10 });
 
   const openNew = () => { setForm(empty); setEditing({}); };
   const openEdit = (c) => { setForm({ ...empty, ...c }); setEditing(c); };
@@ -56,7 +51,7 @@ export default function AdminCategories() {
       else await api.post('/categories', payload);
       toast.success('Category saved');
       close();
-      load();
+      reload();
     } catch (err) {
       toast.error(err.message || 'Save failed');
     } finally {
@@ -70,7 +65,7 @@ export default function AdminCategories() {
       await api.delete(`/categories/${c._id}`);
       toast.success('Category deleted');
       setViewing(null);
-      load();
+      reload();
     } catch (err) {
       toast.error(err.message || 'Delete failed');
     }
@@ -91,7 +86,7 @@ export default function AdminCategories() {
       {loading ? <AdminListSkeleton cols={5} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
-        {shown.map((c) => (
+        {cats.map((c) => (
           <div key={c._id} className="rounded-2xl border border-hairline/60 bg-bone p-4">
             <button type="button" onClick={() => setViewing(c)} className="flex w-full items-start gap-3 text-left">
               <span className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-hairline bg-bone-muted">
@@ -112,7 +107,7 @@ export default function AdminCategories() {
             </div>
           </div>
         ))}
-        {shown.length === 0 && (
+        {cats.length === 0 && (
           <p className="col-span-full rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">
             {q ? `No categories match “${q}”.` : 'No categories yet.'}
           </p>
@@ -124,35 +119,37 @@ export default function AdminCategories() {
         <table className="w-full min-w-[560px] text-sm">
           <thead>
             <tr className="border-b border-hairline/60 text-left text-[11px] uppercase tracking-wide text-ink-muted">
+              <th className="px-4 py-3 font-medium">Actions</th>
               <th className="px-4 py-3 font-medium">Title</th>
               <th className="px-4 py-3 font-medium">Slug</th>
               <th className="px-4 py-3 font-medium">Order</th>
               <th className="px-4 py-3 font-medium">Active</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {shown.map((c) => (
+            {cats.map((c) => (
               <tr key={c._id} className="border-b border-hairline/40 last:border-0">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <button onClick={() => setViewing(c)} className="text-ink-soft hover:text-ink" aria-label="View"><FiEye size={15} /></button>
+                    <button onClick={() => openEdit(c)} className="text-ink-soft hover:text-gold-deep" aria-label="Edit"><FiEdit2 size={15} /></button>
+                    <button onClick={() => remove(c)} className="text-ink-soft hover:text-sale" aria-label="Delete"><FiTrash2 size={15} /></button>
+                  </div>
+                </td>
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setViewing(c)} className="font-medium text-ink hover:text-gold-deep">{c.title}</button>
                 </td>
                 <td className="px-4 py-3 text-ink-muted">{c.slug}</td>
                 <td className="px-4 py-3 text-ink-soft">{c.order ?? 0}</td>
                 <td className="px-4 py-3">{c.isActive ? '✓' : '—'}</td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-2.5">
-                    <button onClick={() => setViewing(c)} className="text-ink-soft hover:text-ink" aria-label="View"><FiEye size={15} /></button>
-                    <button onClick={() => openEdit(c)} className="text-ink-soft hover:text-gold-deep" aria-label="Edit"><FiEdit2 size={15} /></button>
-                    <button onClick={() => remove(c)} className="text-ink-soft hover:text-sale" aria-label="Delete"><FiTrash2 size={15} /></button>
-                  </div>
-                </td>
               </tr>
             ))}
-            {shown.length === 0 && <tr><td colSpan={5} className="py-10 text-center text-ink-muted">{q ? `No categories match “${q}”.` : 'No categories yet.'}</td></tr>}
+            {cats.length === 0 && <tr><td colSpan={5} className="py-10 text-center text-ink-muted">{q ? `No categories match “${q}”.` : 'No categories yet.'}</td></tr>}
           </tbody>
         </table>
       </div>
+
+      <AdminPagination page={meta.page} pages={meta.pages} total={meta.total} limit={meta.limit} onPage={goTo} />
       </>)}
 
       {/* Modal */}

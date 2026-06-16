@@ -18,7 +18,6 @@ import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { useAuthStore } from '@/store/authStore';
 import { useAuthPrompt } from '@/store/authPromptStore';
-import { useSettingsStore } from '@/store/settingsStore';
 
 const formatVariantSize = (size = '') => `${String(size).replace('x', '×')}"`;
 
@@ -61,13 +60,11 @@ export default function ProductDetail() {
   const user = useAuthStore((state) => state.user);
   const promptAuth = useAuthPrompt((state) => state.show);
 
-  // Admin-editable trust badges (Content → Product) + free-shipping threshold
-  // (Settings → Shipping), both with safe fallbacks.
+  // Admin-editable trust badges (Content → Product), with a safe fallback.
   const trustRes = useFetch('/content/product', { deps: [], cache: 'dd:content:product' });
   const trustBadges = trustRes.data?.data?.trustBadges?.length
     ? trustRes.data.data.trustBadges
     : contentPages.product.trustBadges;
-  const freeThreshold = useSettingsStore((s) => s.settings.shipping?.freeThreshold) || 1499;
 
   const handleWishlist = () => {
     if (!user) {
@@ -437,8 +434,8 @@ export default function ProductDetail() {
                 </p>
                 <p>
                   Standard delivery takes 6–10 business days to metro cities and 10–12 days to other
-                  locations across India, with tracking shared once dispatched. Free shipping on eligible
-                  orders over {formatINR(freeThreshold)}.
+                  locations across India, with tracking shared once dispatched. Free shipping on all
+                  orders.
                 </p>
                 <Link to="/shipping" className="inline-block font-medium text-accent underline-offset-2 hover:underline">
                   Read full shipping &amp; delivery policy

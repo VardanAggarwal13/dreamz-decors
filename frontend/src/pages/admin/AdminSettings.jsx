@@ -103,14 +103,6 @@ export default function AdminSettings() {
             />
           </Field>
         </Section>
-
-        {/* Shipping */}
-        <Section title="Shipping">
-          <Grid>
-            <Field label="Free shipping over (₹)"><Input type="number" value={form.shipping.freeThreshold} onChange={(e) => setGroup('shipping', 'freeThreshold', e.target.value)} /></Field>
-            <Field label="Flat shipping rate (₹)"><Input type="number" value={form.shipping.flatRate} onChange={(e) => setGroup('shipping', 'flatRate', e.target.value)} /></Field>
-          </Grid>
-        </Section>
       </div>
 
       <div className="mt-6">

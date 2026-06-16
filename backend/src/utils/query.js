@@ -33,6 +33,12 @@ export function buildPaginationMeta(total, page, limit) {
   };
 }
 
+// Escape user input so it can be used safely inside a RegExp (for case-
+// insensitive substring search) without special characters breaking the query.
+export function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function parseNumber(value) {
   if (value === undefined || value === null || value === '') return null;
   const parsed = Number(value);

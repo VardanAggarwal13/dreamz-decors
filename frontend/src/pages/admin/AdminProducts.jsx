@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiUploadCloud, FiEye } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import useBodyScrollLock from '@/hooks/useBodyScrollLock';
+import useAdminList from '@/hooks/useAdminList';
 import Modal, { ViewStat } from '@/components/admin/Modal';
 import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
 import AdminSearch from '@/components/admin/AdminSearch';
+import AdminPagination from '@/components/admin/AdminPagination';
 import { formatINR } from '@/lib/utils';
 
 const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -19,8 +21,6 @@ const empty = {
 };
 
 export default function AdminProducts() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [cats, setCats] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -32,26 +32,18 @@ export default function AdminProducts() {
   const fileRef = useRef(null);
   useBodyScrollLock(!!editing); // view modal manages its own lock via <Modal/>
 
-  const load = () =>
-    api.get('/admin/products?limit=100').then((res) => setProducts(res.data || [])).finally(() => setLoading(false));
-  useEffect(() => {
-    load();
-    api.get('/admin/categories').then((res) => setCats(res.data || []));
-  }, []);
+  // Server-side pagination + search (by name / slug / badge / tag).
+  const makePath = ({ page, limit }) => {
+    const sp = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (q.trim()) sp.set('q', q.trim());
+    return `/admin/products?${sp.toString()}`;
+  };
+  const { items: products, meta, loading, goTo, reload } = useAdminList(makePath, [q], { limit: 12 });
 
-  // Per-page search: filter the loaded products by title, slug, category,
-  // badge, or tags. Client-side so it's instant.
-  const shown = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return products;
-    return products.filter((p) =>
-      [p.title, p.slug, p.badge, p.category?.title, ...(p.tags || [])]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-        .includes(term)
-    );
-  }, [products, q]);
+  // Categories for the form's dropdown — fetch all (high limit) just once.
+  useEffect(() => {
+    api.get('/admin/categories?limit=100').then((res) => setCats(res.data || []));
+  }, []);
 
   const openNew = () => { setForm(empty); setEditing({}); };
   const openEdit = (p) => {
@@ -122,7 +114,7 @@ export default function AdminProducts() {
       else await api.post('/products', payload);
       toast.success('Product saved');
       close();
-      load();
+      reload();
     } catch (err) {
       toast.error(err.message || 'Save failed');
     } finally {
@@ -136,7 +128,7 @@ export default function AdminProducts() {
       await api.delete(`/products/${p._id}`);
       toast.success('Product deleted');
       setViewing(null);
-      load();
+      reload();
     } catch (err) {
       toast.error(err.message || 'Delete failed');
     }
@@ -147,17 +139,16 @@ export default function AdminProducts() {
       <Seo title="Admin — Products" noIndex />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl text-ink sm:text-3xl">Products</h1>
-        <Button variant="primary" size="md" onClick={openNew}><FiPlus size={15} /> New product</Button>
-      </div>
-
-      <div className="mt-5">
-        <AdminSearch value={q} onChange={setQ} placeholder="Search products by name, category, tag…" className="sm:max-w-sm" />
+        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+          <AdminSearch value={q} onChange={setQ} placeholder="Search by name, slug, tag…" className="flex-1 sm:w-80 sm:flex-none" />
+          <Button variant="primary" size="md" onClick={openNew}><FiPlus size={15} /> New product</Button>
+        </div>
       </div>
 
       {loading ? <AdminListSkeleton cols={6} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
-        {shown.map((p) => (
+        {products.map((p) => (
           <div key={p._id} className="rounded-2xl border border-hairline/60 bg-bone p-4">
             <button type="button" onClick={() => setViewing(p)} className="flex w-full items-start gap-3 text-left">
               <span className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-hairline bg-bone-muted">
@@ -182,7 +173,7 @@ export default function AdminProducts() {
             </div>
           </div>
         ))}
-        {shown.length === 0 && (
+        {products.length === 0 && (
           <p className="col-span-full rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">
             {q ? `No products match “${q}”.` : 'No products yet.'}
           </p>
@@ -194,17 +185,24 @@ export default function AdminProducts() {
         <table className="w-full min-w-[680px] text-sm">
           <thead>
             <tr className="border-b border-hairline/60 text-left text-[11px] uppercase tracking-wide text-ink-muted">
+              <th className="px-4 py-3 font-medium">Actions</th>
               <th className="px-4 py-3 font-medium">Product</th>
               <th className="px-4 py-3 font-medium">Category</th>
               <th className="px-4 py-3 font-medium">Price</th>
               <th className="px-4 py-3 font-medium">Stock</th>
               <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {shown.map((p) => (
+            {products.map((p) => (
               <tr key={p._id} className="border-b border-hairline/40 last:border-0">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <button onClick={() => setViewing(p)} className="text-ink-soft hover:text-ink" aria-label="View"><FiEye size={15} /></button>
+                    <button onClick={() => openEdit(p)} className="text-ink-soft hover:text-gold-deep" aria-label="Edit"><FiEdit2 size={15} /></button>
+                    <button onClick={() => remove(p)} className="text-ink-soft hover:text-sale" aria-label="Delete"><FiTrash2 size={15} /></button>
+                  </div>
+                </td>
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setViewing(p)} className="group flex items-center gap-3 text-left">
                     <span className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-hairline bg-bone-muted">
@@ -221,19 +219,14 @@ export default function AdminProducts() {
                     {p.isActive ? 'Active' : 'Hidden'}
                   </span>
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-2.5">
-                    <button onClick={() => setViewing(p)} className="text-ink-soft hover:text-ink" aria-label="View"><FiEye size={15} /></button>
-                    <button onClick={() => openEdit(p)} className="text-ink-soft hover:text-gold-deep" aria-label="Edit"><FiEdit2 size={15} /></button>
-                    <button onClick={() => remove(p)} className="text-ink-soft hover:text-sale" aria-label="Delete"><FiTrash2 size={15} /></button>
-                  </div>
-                </td>
               </tr>
             ))}
-            {shown.length === 0 && <tr><td colSpan={6} className="py-10 text-center text-ink-muted">{q ? `No products match “${q}”.` : 'No products yet.'}</td></tr>}
+            {products.length === 0 && <tr><td colSpan={6} className="py-10 text-center text-ink-muted">{q ? `No products match “${q}”.` : 'No products yet.'}</td></tr>}
           </tbody>
         </table>
       </div>
+
+      <AdminPagination page={meta.page} pages={meta.pages} total={meta.total} limit={meta.limit} onPage={goTo} />
       </>)}
 
       {/* Modal */}

@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { FiEye } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import OrderStatusBadge from '@/components/common/OrderStatusBadge';
 import api from '@/lib/api';
+import useAdminList from '@/hooks/useAdminList';
 import Modal, { ViewStat } from '@/components/admin/Modal';
 import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
 import AdminSearch from '@/components/admin/AdminSearch';
+import AdminPagination from '@/components/admin/AdminPagination';
 import { formatINR } from '@/lib/utils';
 
 const STATUSES = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
@@ -15,34 +17,18 @@ const fmtDateLong = (iso) => (iso ? new Date(iso).toLocaleString('en-IN', { day:
 const shortId = (id) => (id ? `#${String(id).slice(-8).toUpperCase()}` : '');
 
 export default function AdminOrders() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [q, setQ] = useState('');
   const [viewing, setViewing] = useState(null);
 
-  const load = () => {
-    setLoading(true);
-    api.get(`/orders${filter ? `?status=${filter}` : ''}`)
-      .then((res) => setOrders(res.data || []))
-      .finally(() => setLoading(false));
+  // Server-side pagination + status filter + search (customer name/email/id).
+  const makePath = ({ page, limit }) => {
+    const sp = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (filter) sp.set('status', filter);
+    if (q.trim()) sp.set('q', q.trim());
+    return `/orders?${sp.toString()}`;
   };
-
-  useEffect(load, [filter]);
-
-  // Per-page search: filter the loaded orders by order id, customer name,
-  // email, or status. Works on top of the server-side status filter.
-  const shown = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return orders;
-    return orders.filter((o) =>
-      [shortId(o._id), o.user?.name, o.user?.email, o.status]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-        .includes(term)
-    );
-  }, [orders, q]);
+  const { items: orders, setItems: setOrders, meta, loading, goTo, reload } = useAdminList(makePath, [q, filter], { limit: 10 });
 
   const changeStatus = async (id, status) => {
     setOrders((list) => list.map((o) => (o._id === id ? { ...o, status } : o)));
@@ -52,7 +38,7 @@ export default function AdminOrders() {
       toast.success(`Order marked ${status}`);
     } catch (err) {
       toast.error(err.message || 'Update failed');
-      load();
+      reload();
     }
   };
 
@@ -62,7 +48,7 @@ export default function AdminOrders() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl text-ink sm:text-3xl">Orders</h1>
         <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-          <AdminSearch value={q} onChange={setQ} placeholder="Search by order id, customer…" className="flex-1 sm:w-64 sm:flex-none" />
+          <AdminSearch value={q} onChange={setQ} placeholder="Search by order id, customer…" className="flex-1 sm:w-80 sm:flex-none" />
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
@@ -77,7 +63,7 @@ export default function AdminOrders() {
       {loading ? <AdminListSkeleton cols={8} withAvatar={false} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 space-y-3 lg:hidden">
-        {shown.map((o) => (
+        {orders.map((o) => (
           <div key={o._id} className="rounded-2xl border border-hairline/60 bg-bone p-4">
             <div className="flex items-start justify-between gap-3">
               <button type="button" onClick={() => setViewing(o)} className="font-medium text-ink hover:text-gold-deep">{shortId(o._id)}</button>
@@ -100,7 +86,7 @@ export default function AdminOrders() {
             </div>
           </div>
         ))}
-        {!loading && shown.length === 0 && (
+        {!loading && orders.length === 0 && (
           <p className="rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">
             {q ? `No orders match “${q}”.` : 'No orders found.'}
           </p>
@@ -112,6 +98,7 @@ export default function AdminOrders() {
         <table className="w-full min-w-[680px] text-sm">
           <thead>
             <tr className="border-b border-hairline/60 text-left text-[11px] uppercase tracking-wide text-ink-muted">
+              <th className="px-4 py-3 font-medium">Actions</th>
               <th className="px-4 py-3 font-medium">Order</th>
               <th className="px-4 py-3 font-medium">Customer</th>
               <th className="px-4 py-3 font-medium">Date</th>
@@ -119,12 +106,14 @@ export default function AdminOrders() {
               <th className="px-4 py-3 font-medium">Total</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Update</th>
-              <th className="px-4 py-3 text-right font-medium">View</th>
             </tr>
           </thead>
           <tbody>
-            {shown.map((o) => (
+            {orders.map((o) => (
               <tr key={o._id} className="border-b border-hairline/40 last:border-0">
+                <td className="px-4 py-3">
+                  <button onClick={() => setViewing(o)} className="text-ink-soft hover:text-ink" aria-label="View"><FiEye size={15} /></button>
+                </td>
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setViewing(o)} className="font-medium text-ink hover:text-gold-deep">{shortId(o._id)}</button>
                 </td>
@@ -142,17 +131,16 @@ export default function AdminOrders() {
                     {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </td>
-                <td className="px-4 py-3 text-right">
-                  <button onClick={() => setViewing(o)} className="text-ink-soft hover:text-ink" aria-label="View"><FiEye size={15} /></button>
-                </td>
               </tr>
             ))}
-            {!loading && shown.length === 0 && (
+            {!loading && orders.length === 0 && (
               <tr><td colSpan={8} className="py-10 text-center text-ink-muted">{q ? `No orders match “${q}”.` : 'No orders found.'}</td></tr>
             )}
           </tbody>
         </table>
       </div>
+
+      <AdminPagination page={meta.page} pages={meta.pages} total={meta.total} limit={meta.limit} onPage={goTo} />
       </>)}
 
       {/* View modal */}

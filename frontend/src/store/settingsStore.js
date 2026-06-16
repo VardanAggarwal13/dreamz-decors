@@ -14,9 +14,9 @@ export const DEFAULT_SETTINGS = {
   social: { instagram: '', facebook: '', pinterest: '', youtube: '', whatsapp: '' },
   announcement: {
     enabled: true,
-    messages: ['Free shipping on orders above ₹1,499', 'Handcrafted in India', 'Secure packaging guaranteed'],
+    messages: ['Free shipping on all orders', 'Handcrafted in India', 'Secure packaging guaranteed'],
   },
-  shipping: { freeThreshold: 1499, flatRate: 99 },
+  shipping: { freeThreshold: 0, flatRate: 0 },
 };
 
 export const useSettingsStore = create(

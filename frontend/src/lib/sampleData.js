@@ -157,7 +157,7 @@ export const products = [
 export const trustStrip = [
   '15,000+ Homes Styled',
   '4.9 / 5 from 4,200 Reviews',
-  'Free Shipping over Rs. 1,499',
+  'Free Shipping on all orders',
   'Easy 7-day returns',
   'Made in India / Premium finishing',
 ];

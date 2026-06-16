@@ -30,15 +30,15 @@ const settingsSchema = new mongoose.Schema(
       messages: {
         type: [String],
         default: [
-          'Free shipping on orders above ₹1,499',
+          'Free shipping on all orders',
           'Handcrafted in India',
           'Secure packaging guaranteed',
         ],
       },
     },
     shipping: {
-      freeThreshold: { type: Number, default: 1499 },
-      flatRate: { type: Number, default: 99 },
+      freeThreshold: { type: Number, default: 0 },
+      flatRate: { type: Number, default: 0 },
     },
   },
   { timestamps: true, minimize: false }

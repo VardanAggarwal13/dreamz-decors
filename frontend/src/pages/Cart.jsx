@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiArrowRight,
@@ -13,8 +14,8 @@ import MediaImage from '@/components/ui/MediaImage';
 import ProductGrid from '@/components/common/ProductGrid';
 import ProductGridSkeleton from '@/components/common/ProductGridSkeleton';
 import useFetch from '@/hooks/useFetch';
+import api from '@/lib/api';
 import { useCartStore } from '@/store/cartStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { formatINR, normalizeProduct } from '@/lib/utils';
 
 function QtyButton({ onClick, children, label }) {
@@ -34,8 +35,23 @@ export default function Cart() {
   const items = useCartStore((state) => state.items);
   const updateQty = useCartStore((state) => state.updateQty);
   const removeItem = useCartStore((state) => state.removeItem);
+  const patchItem = useCartStore((state) => state.patchItem);
   const clear = useCartStore((state) => state.clear);
   const subtotal = useCartStore((state) => state.subtotal());
+
+  // Backfill descriptions onto items saved before we started capturing them,
+  // so older carts show the product blurb without needing a re-add.
+  useEffect(() => {
+    items
+      .filter((i) => i.slug && i.description === undefined)
+      .forEach((i) => {
+        api
+          .get(`/products/${i.slug}`)
+          .then((res) => patchItem(i.key, { description: res.data?.data?.description || '' }))
+          .catch(() => patchItem(i.key, { description: '' }));
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
 
   // Popular picks to fill the layout when the cart is sparse.
   const recos = useFetch('/products?limit=6&sort=bestselling');
@@ -46,17 +62,16 @@ export default function Cart() {
     .slice(0, 3);
   const showRecommendations = items.length > 0 && items.length <= 2;
 
-  const { freeThreshold, flatRate } = useSettingsStore((s) => s.settings.shipping);
-
   const WHY_SHOP = [
     { Icon: ShieldCheck, title: 'Secure Payments', text: '100% encrypted & safe checkout' },
     { Icon: Package, title: 'Premium Packaging', text: 'Each piece carefully wrapped & boxed' },
     { Icon: RotateCcw, title: 'Easy Returns', text: '7-day hassle-free return policy' },
-    { Icon: Truck, title: 'Free Shipping', text: `On all orders above ${formatINR(freeThreshold)}` },
+    { Icon: Truck, title: 'Free Shipping', text: 'Free delivery on all orders' },
   ];
 
   const count = items.reduce((sum, i) => sum + i.qty, 0);
-  const shipping = subtotal === 0 ? 0 : subtotal >= freeThreshold ? 0 : flatRate;
+  const shipping = 0; // Free delivery on all orders
+
   const gstIncluded = Math.round(subtotal - subtotal / 1.18);
   const total = subtotal + shipping;
 
@@ -155,6 +170,12 @@ export default function Cart() {
                       {item.title}
                     </Link>
 
+                    {item.description && (
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-ink-soft">
+                        {item.description}
+                      </p>
+                    )}
+
                     <div className="mt-auto flex flex-col items-start gap-3 pt-3 sm:flex-row sm:items-end sm:justify-between">
                       {/* Qty */}
                       <div className="flex shrink-0 items-center gap-2">
@@ -235,7 +256,7 @@ export default function Cart() {
               <Button
                 asChild
                 variant="primary"
-                size="lg"
+                size="md"
                 className="mt-5 w-full bg-gold-deep text-bone hover:bg-gold-deep/90"
               >
                 <Link to="/checkout">

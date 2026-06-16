@@ -7,7 +7,7 @@ import NewsletterSubscriber from '../models/NewsletterSubscriber.js';
 import { sendEmail } from '../services/mailer.js';
 import { buildNewsletterCampaign } from '../services/emailTemplates.js';
 import { unsubscribeUrlFor } from './newsletterController.js';
-import { buildPagination, buildPaginationMeta } from '../utils/query.js';
+import { buildPagination, buildPaginationMeta, escapeRegex } from '../utils/query.js';
 
 // GET /api/admin/products — ALL products (incl. inactive), for the admin table
 export const listAllProducts = asyncHandler(async (req, res) => {
@@ -16,7 +16,12 @@ export const listAllProducts = asyncHandler(async (req, res) => {
     maxLimit: 100,
   });
   const filter = {};
-  if (req.query.q) filter.$text = { $search: String(req.query.q).trim() };
+  // Case-insensitive substring search across the fields an admin would type.
+  const q = String(req.query.q || '').trim();
+  if (q) {
+    const rx = new RegExp(escapeRegex(q), 'i');
+    filter.$or = [{ title: rx }, { slug: rx }, { badge: rx }, { tags: rx }];
+  }
 
   const [items, total] = await Promise.all([
     Product.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate('category', 'title slug').lean(),
@@ -25,10 +30,24 @@ export const listAllProducts = asyncHandler(async (req, res) => {
   res.json({ success: true, data: items, ...buildPaginationMeta(total, page, limit) });
 });
 
-// GET /api/admin/categories — ALL categories
+// GET /api/admin/categories — ALL categories (paginated + optional search)
 export const listAllCategories = asyncHandler(async (req, res) => {
-  const cats = await Category.find().sort({ order: 1, title: 1 }).lean();
-  res.json({ success: true, data: cats });
+  const { page, limit, skip } = buildPagination(req.query.page, req.query.limit, {
+    defaultLimit: 20,
+    maxLimit: 100,
+  });
+  const filter = {};
+  const q = String(req.query.q || '').trim();
+  if (q) {
+    const rx = new RegExp(escapeRegex(q), 'i');
+    filter.$or = [{ title: rx }, { slug: rx }, { blurb: rx }];
+  }
+
+  const [items, total] = await Promise.all([
+    Category.find(filter).sort({ order: 1, title: 1 }).skip(skip).limit(limit).lean(),
+    Category.countDocuments(filter),
+  ]);
+  res.json({ success: true, data: items, ...buildPaginationMeta(total, page, limit) });
 });
 
 const PAID_STATUSES = ['paid', 'processing', 'shipped', 'delivered'];
@@ -66,10 +85,16 @@ export const listCustomers = asyncHandler(async (req, res) => {
     defaultLimit: 20,
     maxLimit: 100,
   });
+  const filter = {};
+  const q = String(req.query.q || '').trim();
+  if (q) {
+    const rx = new RegExp(escapeRegex(q), 'i');
+    filter.$or = [{ name: rx }, { email: rx }];
+  }
 
   const [users, total] = await Promise.all([
-    User.find().select('name email role phone createdAt').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-    User.countDocuments(),
+    User.find(filter).select('name email role phone createdAt').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    User.countDocuments(filter),
   ]);
 
   // Attach order count + spend per user.

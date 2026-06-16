@@ -1,36 +1,29 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { FiEye } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import api from '@/lib/api';
+import useAdminList from '@/hooks/useAdminList';
 import Modal, { ViewStat } from '@/components/admin/Modal';
 import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
 import AdminSearch from '@/components/admin/AdminSearch';
+import AdminPagination from '@/components/admin/AdminPagination';
 import { formatINR } from '@/lib/utils';
 
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 const initials = (name = '') => name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
 
 export default function AdminCustomers() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [viewing, setViewing] = useState(null);
 
-  const load = () => {
-    setLoading(true);
-    api.get('/admin/customers').then((res) => setUsers(res.data || [])).finally(() => setLoading(false));
+  // Server-side pagination + search (by name / email).
+  const makePath = ({ page, limit }) => {
+    const sp = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (q.trim()) sp.set('q', q.trim());
+    return `/admin/customers?${sp.toString()}`;
   };
-  useEffect(load, []);
-
-  // Per-page search: filter loaded customers by name, email, or role.
-  const shown = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return users;
-    return users.filter((u) =>
-      [u.name, u.email, u.role].filter(Boolean).join(' ').toLowerCase().includes(term)
-    );
-  }, [users, q]);
+  const { items: users, setItems: setUsers, meta, loading, goTo, reload } = useAdminList(makePath, [q], { limit: 10 });
 
   const changeRole = async (id, role) => {
     setUsers((list) => list.map((u) => (u._id === id ? { ...u, role } : u)));
@@ -40,7 +33,7 @@ export default function AdminCustomers() {
       toast.success(`Role set to ${role}`);
     } catch (err) {
       toast.error(err.message || 'Update failed');
-      load();
+      reload();
     }
   };
 
@@ -55,7 +48,7 @@ export default function AdminCustomers() {
       {loading ? <AdminListSkeleton cols={7} /> : (<>
       {/* Mobile / tablet: cards */}
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
-        {shown.map((u) => (
+        {users.map((u) => (
           <div key={u._id} className="rounded-2xl border border-hairline/60 bg-bone p-4">
             <button type="button" onClick={() => setViewing(u)} className="flex w-full items-center gap-3 text-left">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ink font-display text-sm text-bone">{initials(u.name)}</span>
@@ -82,7 +75,7 @@ export default function AdminCustomers() {
             </div>
           </div>
         ))}
-        {!loading && shown.length === 0 && (
+        {!loading && users.length === 0 && (
           <p className="col-span-full rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">
             {q ? `No customers match “${q}”.` : 'No customers yet.'}
           </p>
@@ -94,18 +87,21 @@ export default function AdminCustomers() {
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-hairline/60 text-left text-[11px] uppercase tracking-wide text-ink-muted">
+              <th className="px-4 py-3 font-medium">Actions</th>
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Orders</th>
               <th className="px-4 py-3 font-medium">Spend</th>
               <th className="px-4 py-3 font-medium">Joined</th>
               <th className="px-4 py-3 font-medium">Role</th>
-              <th className="px-4 py-3 text-right font-medium">View</th>
             </tr>
           </thead>
           <tbody>
-            {shown.map((u) => (
+            {users.map((u) => (
               <tr key={u._id} className="border-b border-hairline/40 last:border-0">
+                <td className="px-4 py-3">
+                  <button onClick={() => setViewing(u)} className="text-ink-soft hover:text-ink" aria-label="View"><FiEye size={15} /></button>
+                </td>
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setViewing(u)} className="font-medium text-ink hover:text-gold-deep">{u.name}</button>
                 </td>
@@ -123,17 +119,16 @@ export default function AdminCustomers() {
                     <option value="admin">admin</option>
                   </select>
                 </td>
-                <td className="px-4 py-3 text-right">
-                  <button onClick={() => setViewing(u)} className="text-ink-soft hover:text-ink" aria-label="View"><FiEye size={15} /></button>
-                </td>
               </tr>
             ))}
-            {!loading && shown.length === 0 && (
+            {!loading && users.length === 0 && (
               <tr><td colSpan={7} className="py-10 text-center text-ink-muted">{q ? `No customers match “${q}”.` : 'No customers yet.'}</td></tr>
             )}
           </tbody>
         </table>
       </div>
+
+      <AdminPagination page={meta.page} pages={meta.pages} total={meta.total} limit={meta.limit} onPage={goTo} />
       </>)}
 
       {/* View modal */}

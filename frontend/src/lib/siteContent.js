@@ -354,44 +354,25 @@ export const contentPages = {
       { icon: 'mapPin', label: 'Made in India' },
     ],
   },
-  // Header navigation + mega-menu (not a routed page — data only, edited under
-  // Content → Navigation). Each item: { label, href, groups:[{ title, items:[] }] }.
+  // Header navigation (not a routed page — data only, edited under
+  // Content → Navigation). Each item: { label, href }.
   navigation: {
     menu: [
       {
         label: 'Wall Art',
-        href: '/shop/wall-art',
-        groups: [
-          { title: 'By Room', items: ['Living Room', 'Bedroom', 'Office', 'Kids Room', 'Cafe / Restaurant'] },
-          { title: 'By Theme', items: ['Abstract', 'Nature', 'Travel', 'Music', 'Movies', 'Quotes'] },
-          { title: 'By Layout', items: ['Single Panel', 'Triptych', 'Square', 'Round', 'Portrait', 'Landscape'] },
-        ],
+        href: '/wall-art',
       },
       {
         label: 'Gallery Sets',
-        href: '/shop/gallery-sets',
-        groups: [
-          { title: 'Popular', items: ['Pairings', 'Triptychs', 'Series', 'Minimal Sets', 'Nature Sets'] },
-          { title: 'For Spaces', items: ['Bedroom', 'Living Room', 'Office', 'Entryway', 'Dining'] },
-          { title: 'By Mood', items: ['Calm', 'Warm', 'Bold', 'Neutral', 'Layered', 'Statement'] },
-        ],
+        href: '/gallery-sets',
       },
       {
         label: 'Skateboards',
-        href: '/shop/skateboards',
-        groups: [
-          { title: 'Decks', items: ['Art Decks', 'Limited Edition', 'Pro Series'] },
-          { title: 'Display', items: ['Wall Mount', 'Stand'] },
-        ],
+        href: '/skateboards',
       },
       {
         label: 'Bundles',
-        href: '/shop/bundles',
-        groups: [
-          { title: 'Popular', items: ['Starter Sets', 'Gift Sets', 'Best Value', 'Collector Sets'] },
-          { title: 'For Rooms', items: ['Living Room', 'Bedroom', 'Office', 'Dining'] },
-          { title: 'Occasion', items: ['Housewarming', 'Gifting', 'Refresh', 'Seasonal'] },
-        ],
+        href: '/bundles',
       },
     ],
   },
@@ -421,7 +402,7 @@ export const homeContent = {
       eyebrow: 'Wall Art',
       title: 'Statement pieces with a quiet, premium presence.',
       blurb: 'Large-format canvases for the rooms that should feel finished, not filled.',
-      href: '/shop/wall-art',
+      href: '/wall-art',
       image:
         'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1200&auto=format&fit=crop&q=70',
       ctaLabel: 'Shop wall art',
@@ -430,7 +411,7 @@ export const homeContent = {
       eyebrow: 'Gallery Sets',
       title: 'Curated sets designed to work together from day one.',
       blurb: 'Balanced pairings and triptychs that make styling feel effortless.',
-      href: '/shop/gallery-sets',
+      href: '/gallery-sets',
       image:
         'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&auto=format&fit=crop&q=70',
       ctaLabel: 'Shop gallery sets',
@@ -439,7 +420,7 @@ export const homeContent = {
       eyebrow: 'Bundles',
       title: 'The quickest path to a more composed wall.',
       blurb: 'Value-led sets chosen for gifting, refreshing, and easy room upgrades.',
-      href: '/shop/bundles',
+      href: '/bundles',
       image:
         'https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=1200&auto=format&fit=crop&q=70',
       ctaLabel: 'Shop bundles',

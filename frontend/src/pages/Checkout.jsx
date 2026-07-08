@@ -11,7 +11,6 @@ import { loadRazorpay } from '@/lib/loadRazorpay';
 import { formatINR } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
-import { useSettingsStore } from '@/store/settingsStore';
 
 const field = (k, v) => ({ ...{}, [k]: v });
 

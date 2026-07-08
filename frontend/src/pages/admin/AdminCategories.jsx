@@ -49,6 +49,9 @@ export default function AdminCategories() {
     try {
       if (editing._id) await api.patch(`/categories/${editing._id}`, payload);
       else await api.post('/categories', payload);
+      try {
+        localStorage.removeItem('dd:categories');
+      } catch {}
       toast.success('Category saved');
       close();
       reload();
@@ -63,6 +66,9 @@ export default function AdminCategories() {
     if (!window.confirm(`Delete category "${c.title}"?`)) return;
     try {
       await api.delete(`/categories/${c._id}`);
+      try {
+        localStorage.removeItem('dd:categories');
+      } catch {}
       toast.success('Category deleted');
       setViewing(null);
       reload();

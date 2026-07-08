@@ -1,17 +1,22 @@
-import { useId } from 'react';
-import { FiTrash2, FiPlus } from 'react-icons/fi';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { useId, useState } from 'react';
+import { FiTrash2, FiPlus, FiChevronDown } from 'react-icons/fi';
+import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Label } from '@/components/ui/Label';
 import { Switch } from '@/components/ui/Switch';
+import ImageInput from '@/components/admin/ImageInput';
 
 /*
- * Schema-free CMS form built from shadcn-style primitives (Card / Input /
- * Textarea / Label / Switch). It mirrors the content object: scalars become
- * labelled fields in a responsive grid, nested objects/arrays become titled
- * panels, and arrays become add/remove lists (numbered cards for object items,
- * simple rows for primitives). Edits rebuild the object immutably.
+ * Schema-free CMS form built from shadcn-style primitives. It mirrors the
+ * content object: scalars become labelled fields in a responsive grid, nested
+ * objects/arrays become titled panels, and arrays become add/remove lists.
+ *
+ * Two things make it friendly for a non-technical admin:
+ *   • Top-level sections are collapsible — the page opens as a short outline you
+ *     expand one section at a time, instead of one endless wall of fields.
+ *   • Photo fields render a real upload/preview widget (ImageInput) instead of a
+ *     raw URL text box, so adding an image is just "click → choose file".
  */
 
 // camelCase / snake → "Title Case"
@@ -30,6 +35,21 @@ const LONG_TEXT_KEYS = /^(description|intro|body|text|answer|blurb|crafttext|suc
 const isLongText = (key, val) =>
   LONG_TEXT_KEYS.test(String(key)) || (typeof val === 'string' && val.length > 70);
 
+// Photo fields → render the upload/preview widget instead of a URL text box.
+// Matched by key name (…image / photo / banner / logo …) OR by a value that
+// clearly looks like an image URL. NOTE: `icon` is intentionally excluded — those
+// hold short icon-name strings (award / truck …), not image URLs.
+const IMAGE_KEYS = /(image|img|photo|picture|thumbnail|thumb|banner|cover|logo|avatar|poster|hero|bg|background)$/i;
+const looksLikeImageUrl = (v) =>
+  typeof v === 'string' &&
+  (/\.(png|jpe?g|webp|gif|svg|avif)(\?|$)/i.test(v) || /res\.cloudinary\.com|\/image\/upload\//i.test(v));
+const isImageField = (key, val) =>
+  (IMAGE_KEYS.test(String(key)) && (val === '' || typeof val === 'string')) || looksLikeImageUrl(val);
+
+// Short inline hints for keys that aren't self-explanatory.
+const fieldHint = (key) =>
+  /^icon$/i.test(String(key)) ? 'Icon name — e.g. award, truck, shield, package' : '';
+
 // A blank value of the same shape — used as the template when adding list items.
 function blankLike(val) {
   if (Array.isArray(val)) return val.length ? [blankLike(val[0])] : [];
@@ -43,9 +63,10 @@ function blankLike(val) {
 
 const singularOf = (label) => label.replace(/ies$/, 'y').replace(/s$/, '') || 'Item';
 
-// How wide a field sits in the 2-col grid: structured/long content spans full.
+// How wide a field sits in the 2-col grid: structured/long/image content spans full.
 function spanFor(key, val) {
   if (Array.isArray(val) || (val && typeof val === 'object')) return 'sm:col-span-2';
+  if (isImageField(key, val)) return 'sm:col-span-2';
   if (typeof val === 'boolean') return 'sm:col-span-1';
   if (isLongText(key, val)) return 'sm:col-span-2';
   return 'sm:col-span-1';
@@ -71,6 +92,19 @@ function Control({ value, onChange, keyName, id }) {
 
 function Field({ keyName, value, onChange }) {
   const id = useId();
+
+  // Photo → upload/preview widget.
+  if (isImageField(keyName, value)) {
+    return (
+      <ImageInput
+        label={humanize(keyName)}
+        value={value ?? ''}
+        onChange={onChange}
+        hint="Upload a photo or paste an image link."
+      />
+    );
+  }
+
   if (typeof value === 'boolean') {
     return (
       <div className="flex h-full items-center justify-between gap-3 rounded-md border border-ink/12 bg-bone-soft px-4 py-3">
@@ -79,10 +113,13 @@ function Field({ keyName, value, onChange }) {
       </div>
     );
   }
+
+  const hint = fieldHint(keyName);
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>{humanize(keyName)}</Label>
       <Control value={value} onChange={onChange} keyName={keyName} id={id} />
+      {hint && <p className="text-xs text-ink-muted">{hint}</p>}
     </div>
   );
 }
@@ -112,22 +149,8 @@ function Grid({ value, onChange, depth }) {
   );
 }
 
-// depth 0 → elevated section card; deeper → quiet inset sub-group.
-function Panel({ depth, title, count, children }) {
-  if (depth === 0) {
-    return (
-      <Card>
-        <CardHeader className="border-b border-hairline/50">
-          <span className="h-5 w-[3px] shrink-0 rounded-full bg-gold" />
-          <CardTitle className="flex-1">{title}</CardTitle>
-          {count != null && (
-            <span className="rounded-full bg-gold/12 px-2.5 py-0.5 text-xs font-semibold text-gold-deep">{count}</span>
-          )}
-        </CardHeader>
-        <CardContent className="pt-5">{children}</CardContent>
-      </Card>
-    );
-  }
+// Quiet inset sub-group for nested objects/arrays (depth > 0).
+function SubPanel({ title, count, children }) {
   return (
     <div className="rounded-xl bg-bone-soft/50 p-4 ring-1 ring-hairline/50">
       <div className="mb-3 flex items-center gap-2">
@@ -142,13 +165,13 @@ function Panel({ depth, title, count, children }) {
 
 function ObjectField({ keyName, value, onChange, depth }) {
   return (
-    <Panel depth={depth} title={humanize(keyName)}>
+    <SubPanel title={humanize(keyName)}>
       <Grid value={value} onChange={onChange} depth={depth + 1} />
-    </Panel>
+    </SubPanel>
   );
 }
 
-function ArrayField({ keyName, value, onChange, depth }) {
+function ArrayBody({ keyName, value, onChange, depth }) {
   const items = value;
   const itemsAreObjects = items.length > 0 && items.every((it) => it && typeof it === 'object' && !Array.isArray(it));
   const template = items.length ? blankLike(items[0]) : '';
@@ -159,7 +182,7 @@ function ArrayField({ keyName, value, onChange, depth }) {
   const addItem = () => onChange([...items, template]);
 
   return (
-    <Panel depth={depth} title={humanize(keyName)} count={items.length}>
+    <>
       {items.length === 0 && <p className="text-xs text-ink-muted">None yet — add the first one below.</p>}
 
       {itemsAreObjects ? (
@@ -196,7 +219,15 @@ function ArrayField({ keyName, value, onChange, depth }) {
       )}
 
       <AddButton onClick={addItem} label={singular.toLowerCase()} />
-    </Panel>
+    </>
+  );
+}
+
+function ArrayField({ keyName, value, onChange, depth }) {
+  return (
+    <SubPanel title={humanize(keyName)} count={value.length}>
+      <ArrayBody keyName={keyName} value={value} onChange={onChange} depth={depth} />
+    </SubPanel>
   );
 }
 
@@ -204,6 +235,29 @@ function Node({ keyName, value, onChange, depth }) {
   if (Array.isArray(value)) return <ArrayField keyName={keyName} value={value} onChange={onChange} depth={depth} />;
   if (value && typeof value === 'object') return <ObjectField keyName={keyName} value={value} onChange={onChange} depth={depth} />;
   return <Field keyName={keyName} value={value} onChange={onChange} />;
+}
+
+// ── Top-level collapsible section ────────────────────────────────────────────
+function Section({ title, count, badge, defaultOpen, children }) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  return (
+    <Card className="overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 px-5 py-4 text-left transition hover:bg-bone-soft/60"
+      >
+        <span className="h-5 w-[3px] shrink-0 rounded-full bg-gold" />
+        <span className="flex-1 font-display text-lg leading-tight text-ink">{title}</span>
+        {badge != null && (
+          <span className="rounded-full bg-gold/12 px-2.5 py-0.5 text-xs font-semibold text-gold-deep">{badge}</span>
+        )}
+        <FiChevronDown size={18} className={`shrink-0 text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <div className="border-t border-hairline/50 px-5 py-5">{children}</div>}
+    </Card>
+  );
 }
 
 // Splits the top-level object into ordered blocks: runs of loose scalar fields
@@ -238,15 +292,33 @@ export default function ContentForm({ value, onChange }) {
   let scalarSeen = false;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
+      <p className="text-xs text-ink-muted">
+        Click a section to open it. Your changes go live when you press <span className="font-medium text-ink-soft">Save changes</span> below.
+      </p>
+
       {blocks.map((b, bi) => {
+        // First section opens by default so the page isn't fully collapsed.
+        const openByDefault = bi === 0;
+
         if (b.type === 'node') {
-          return <Node key={b.key} keyName={b.key} value={value[b.key]} onChange={(nv) => setKey(b.key, nv)} depth={0} />;
+          const v = value[b.key];
+          const badge = Array.isArray(v) ? v.length : null;
+          return (
+            <Section key={b.key} title={humanize(b.key)} badge={badge} defaultOpen={openByDefault}>
+              {Array.isArray(v) ? (
+                <ArrayBody keyName={b.key} value={v} onChange={(nv) => setKey(b.key, nv)} depth={1} />
+              ) : (
+                <Grid value={v} onChange={(nv) => setKey(b.key, nv)} depth={1} />
+              )}
+            </Section>
+          );
         }
+
         const title = scalarSeen ? 'More details' : 'Page details';
         scalarSeen = true;
         return (
-          <Panel key={`scalars-${bi}`} depth={0} title={title}>
+          <Section key={`scalars-${bi}`} title={title} defaultOpen={openByDefault}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
               {b.keys.map((k) => (
                 <div key={k} className={spanFor(k, value[k])}>
@@ -254,7 +326,7 @@ export default function ContentForm({ value, onChange }) {
                 </div>
               ))}
             </div>
-          </Panel>
+          </Section>
         );
       })}
     </div>

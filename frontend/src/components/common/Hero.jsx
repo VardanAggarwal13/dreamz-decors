@@ -3,6 +3,7 @@ import { FiArrowRight } from 'react-icons/fi';
 import { Button } from '@/components/ui/Button';
 import useFetch from '@/hooks/useFetch';
 import { homeContent } from '@/lib/siteContent';
+import { normalizeHref } from '@/lib/utils';
 
 const ctaClass =
   'h-auto min-h-12 flex-1 px-3 py-2 text-center text-[11px] leading-tight tracking-[0.08em] sm:h-14 sm:min-h-0 sm:flex-none sm:px-8 sm:py-0 sm:text-sm sm:tracking-[0.22em]';
@@ -10,7 +11,12 @@ const ctaClass =
 export default function Hero() {
   // Admin override (key 'home') merged over the built-in default.
   const { data } = useFetch('/content/home', { deps: [], cache: 'dd:content:home' });
-  const hero = { ...homeContent.hero, ...(data?.data?.hero || {}) };
+  const rawHero = { ...homeContent.hero, ...(data?.data?.hero || {}) };
+  const hero = {
+    ...rawHero,
+    primaryCta: rawHero.primaryCta ? { ...rawHero.primaryCta, href: normalizeHref(rawHero.primaryCta.href) } : undefined,
+    secondaryCta: rawHero.secondaryCta ? { ...rawHero.secondaryCta, href: normalizeHref(rawHero.secondaryCta.href) } : undefined,
+  };
   const stats = hero.stats || [];
 
   return (

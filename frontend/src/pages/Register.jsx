@@ -6,6 +6,7 @@ import AuthShell from '@/components/common/AuthShell';
 import GoogleButton from '@/components/common/GoogleButton';
 import { authClient } from '@/lib/authClient';
 import { Input } from '@/components/ui/Input';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
 
@@ -101,8 +102,7 @@ export default function Register() {
 
           <div>
             <FieldLabel>Password</FieldLabel>
-            <Input
-              type="password"
+            <PasswordInput
               required
               minLength={8}
               placeholder="Min. 8 characters"

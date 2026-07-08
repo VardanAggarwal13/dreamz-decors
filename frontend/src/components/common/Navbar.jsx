@@ -9,8 +9,8 @@ import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { normalizeHref } from '@/lib/utils';
 import Logo from './Logo';
-import MegaMenu from './MegaMenu';
 import NotificationBell from './NotificationBell';
 import AccountMenu from './AccountMenu';
 
@@ -23,16 +23,15 @@ const iconBadge =
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const [hovered, setHovered] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [term, setTerm] = useState('');
   const headerRef = useRef(null);
   const [menuTop, setMenuTop] = useState(0);
   const count = useCartStore((state) => state.items.reduce((total, item) => total + item.qty, 0));
   const wishCount = useWishlistStore((state) => state.items.length);
-  // Admin-editable header menu (Content → Navigation); falls back to defaults.
   const navRes = useFetch('/content/navigation', { deps: [], cache: 'dd:content:navigation' });
-  const navMenu = navRes.data?.data?.menu?.length ? navRes.data.data.menu : defaultNavMenu;
+  const rawMenu = navRes.data?.data?.menu?.length ? navRes.data.data.menu : defaultNavMenu;
+  const navMenu = rawMenu.map((item) => ({ ...item, href: normalizeHref(item.href) }));
   const user = useAuthStore((state) => state.user);
   const authStatus = useAuthStore((state) => state.status);
   const logout = useAuthStore((state) => state.logout);
@@ -102,7 +101,6 @@ export default function Navbar() {
     <header
       ref={headerRef}
       className="sticky top-0 z-40 border-b border-ink/8 bg-bone/85 backdrop-blur-md"
-      onMouseLeave={() => setHovered(null)}
     >
       <div className="container-page relative flex h-20 items-center justify-between gap-6 lg:gap-8">
         <button
@@ -132,7 +130,6 @@ export default function Navbar() {
               key={item.label}
               to={item.href}
               className="nav-link"
-              onMouseEnter={() => setHovered(item.label)}
             >
               {item.label}
             </NavLink>
@@ -195,9 +192,7 @@ export default function Navbar() {
         </div>
       )}
 
-      {hovered && navMenu.find((menu) => menu.label === hovered)?.groups && (
-        <MegaMenu menu={navMenu.find((menu) => menu.label === hovered)} />
-      )}
+
 
       {open && createPortal(
         <div

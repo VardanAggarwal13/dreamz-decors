@@ -7,6 +7,7 @@ import Seo from '@/components/common/Seo';
 import useFetch from '@/hooks/useFetch';
 import { normalizeCategory, normalizeProduct } from '@/lib/utils';
 import { collectionSchema, breadcrumbSchema } from '@/lib/seo';
+import NotFound from '@/pages/NotFound';
 
 const PAGE_SIZE = 12;
 
@@ -54,7 +55,7 @@ export default function Shop() {
     ? `${currentCat.title} — DreamzDecors`
     : 'Our Collections — DreamzDecors';
 
-  const shopPath = currentCat ? `/shop/${currentCat.slug}` : '/shop';
+  const shopPath = currentCat ? `/${currentCat.slug}` : '/shop';
   const shopSchema = [
     breadcrumbSchema([
       { name: 'Home', path: '/' },
@@ -89,7 +90,7 @@ export default function Shop() {
   };
 
   const setCategory = (slug) => {
-    const basePath = slug ? `/shop/${slug}` : '/shop';
+    const basePath = slug ? `/${slug}` : '/shop';
     const np = new URLSearchParams();
     if (sort !== 'new') np.set('sort', sort);
     const qs = np.toString();
@@ -103,6 +104,10 @@ export default function Shop() {
     np.delete('page');
     setParams(np);
   };
+
+  if (category && !categoriesQuery.loading && !currentCat) {
+    return <NotFound />;
+  }
 
   return (
     <div className="bg-bone">

@@ -191,7 +191,7 @@ export default function ProductDetail() {
   const productBreadcrumb = breadcrumbSchema([
     { name: 'Home', path: '/' },
     { name: 'Shop', path: '/shop' },
-    { name: categoryLabel, path: `/shop/${product.category || ''}` },
+    { name: categoryLabel, path: product.category ? `/${product.category}` : '/shop' },
     { name: product.title, path: `/product/${product.slug}` },
   ]);
 

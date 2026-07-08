@@ -104,3 +104,11 @@ export function normalizeCategory(c) {
     image: c.image?.url || c.image || fallback,
   };
 }
+
+export function normalizeHref(href) {
+  if (!href) return '';
+  if (href.startsWith('/shop/') && href !== '/shop') {
+    return href.replace('/shop/', '/');
+  }
+  return href;
+}

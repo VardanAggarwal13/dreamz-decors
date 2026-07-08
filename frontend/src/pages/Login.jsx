@@ -6,6 +6,7 @@ import AuthShell from '@/components/common/AuthShell';
 import GoogleButton from '@/components/common/GoogleButton';
 import { authClient } from '@/lib/authClient';
 import { Input } from '@/components/ui/Input';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
 
@@ -100,8 +101,7 @@ export default function Login() {
                 Forgot password?
               </Link>
             </div>
-            <Input
-              type="password"
+            <PasswordInput
               required
               placeholder="••••••••"
               value={form.password}

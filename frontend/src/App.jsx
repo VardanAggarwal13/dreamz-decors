@@ -182,6 +182,7 @@ export default function App() {
           <Route path="/faq" element={<ContentPage pageKey="faq" />} />
           <Route path="/contact" element={<ContentPage pageKey="contact" />} />
           <Route path="/terms" element={<ContentPage pageKey="terms" />} />
+          <Route path="/:category" element={<Shop />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

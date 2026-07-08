@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import api from '@/lib/api';
 import ContentForm from '@/components/admin/ContentForm';
+import NavMenuEditor from '@/components/admin/NavMenuEditor';
 import { contentPages, homeContent } from '@/lib/siteContent';
 
 const KEYS = [
@@ -25,7 +26,7 @@ const HINTS = {
   about: 'Value cards use icon names: palette / sparkles / award / shield. Use \\n in a title for a line break.',
   shipping: 'Edit the four "Order\'s Journey" steps plus the shipping info sections.',
   product: 'Trust badges use icon names: shield / award / mapPin / package / truck / check.',
-  navigation: 'Header menu + mega-menu. Each item has a label, a link, and groups of links.',
+  navigation: 'The links across the top of every page. Each item is a simple link — a label and where it goes.',
 };
 
 // Built-in default content for each key (used as fallback + "reset").
@@ -91,6 +92,12 @@ export default function AdminContent() {
     setErr('');
     try {
       await api.put(`/content/${activeKey}`, { data: payload });
+      // Write the saved content straight through to the public-site cache so the
+      // change shows on the next visit without a hard refresh (useFetch reads
+      // `dd:content:<key>`, storing the full `{ success, data }` response shape).
+      try {
+        localStorage.setItem(`dd:content:${activeKey}`, JSON.stringify({ success: true, data: payload }));
+      } catch { /* quota / private mode — refetch will refresh it anyway */ }
       toast.success('Content saved — live on the site');
     } catch (e) {
       toast.error(e.message || 'Save failed');
@@ -160,6 +167,10 @@ export default function AdminContent() {
           spellCheck={false}
           className="mt-5 h-[58vh] w-full rounded-2xl border border-hairline/60 bg-bone p-4 font-mono text-xs leading-6 text-ink outline-none focus:border-gold"
         />
+      ) : activeKey === 'navigation' ? (
+        <div className="mt-5">
+          <NavMenuEditor value={data} onChange={setData} />
+        </div>
       ) : (
         <div className="mt-5">
           <ContentForm value={data} onChange={setData} />

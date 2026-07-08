@@ -9,7 +9,7 @@ import ProductGridSkeleton from '@/components/common/ProductGridSkeleton';
 import Seo from '@/components/common/Seo';
 import useFetch from '@/hooks/useFetch';
 import { homeContent } from '@/lib/siteContent';
-import { normalizeProduct } from '@/lib/utils';
+import { normalizeProduct, normalizeHref } from '@/lib/utils';
 import { organizationSchema, websiteSchema } from '@/lib/seo';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -21,8 +21,25 @@ export default function Home() {
 
   // Admin override (key 'home') merged over the built-in defaults — every band is editable.
   const contentRes = useFetch('/content/home', { deps: [], cache: 'dd:content:home' });
-  const content = { ...homeContent, ...(contentRes.data?.data || {}) };
-  const sections = { ...homeContent.sections, ...(content.sections || {}) };
+  const rawContent = { ...homeContent, ...(contentRes.data?.data || {}) };
+  const content = {
+    ...rawContent,
+    collections: (rawContent.collections || []).map((col) => ({
+      ...col,
+      href: normalizeHref(col.href),
+    })),
+    featureCta: rawContent.featureCta ? {
+      ...rawContent.featureCta,
+      href: normalizeHref(rawContent.featureCta.href),
+    } : undefined,
+  };
+  const sections = Object.entries({ ...homeContent.sections, ...(content.sections || {}) }).reduce(
+    (acc, [k, v]) => {
+      acc[k] = { ...v, linkHref: normalizeHref(v.linkHref) };
+      return acc;
+    },
+    {}
+  );
 
   const bestList     = (bestsellers.data?.data || []).map(normalizeProduct);
   const newList      = (newArrivals.data?.data  || []).map(normalizeProduct);

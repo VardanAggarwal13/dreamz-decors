@@ -15,10 +15,10 @@ const SOCIAL_LIST = [
 
 // Fallback Shop links if categories haven't loaded / none exist yet.
 const FALLBACK_SHOP_LINKS = [
-  ['Wall Art', '/shop/wall-art'],
-  ['Gallery Sets', '/shop/gallery-sets'],
-  ['Skateboards', '/shop/skateboards'],
-  ['Bundles', '/shop/bundles'],
+  ['Wall Art', '/wall-art'],
+  ['Gallery Sets', '/gallery-sets'],
+  ['Skateboards', '/skateboards'],
+  ['Bundles', '/bundles'],
 ];
 
 // Help / Company columns point to real pages — static navigation, not content.
@@ -49,7 +49,7 @@ export default function Footer() {
   const catRes = useFetch('/categories', { cache: 'dd:categories' });
   const categories = catRes.data?.data || [];
   const shopLinks = categories.length
-    ? categories.slice(0, 6).map((c) => [c.title, `/shop/${c.slug}`])
+    ? categories.slice(0, 6).map((c) => [c.title, `/${c.slug}`])
     : FALLBACK_SHOP_LINKS;
   const navColumns = [{ title: 'Shop', links: shopLinks }, ...STATIC_COLUMNS];
 

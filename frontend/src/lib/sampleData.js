@@ -165,37 +165,18 @@ export const trustStrip = [
 export const navMenu = [
   {
     label: 'Wall Art',
-    href: '/shop/wall-art',
-    groups: [
-      { title: 'By Room', items: ['Living Room', 'Bedroom', 'Office', 'Kids Room', 'Cafe / Restaurant'] },
-      { title: 'By Theme', items: ['Abstract', 'Nature', 'Travel', 'Music', 'Movies', 'Quotes'] },
-      { title: 'By Layout', items: ['Single Panel', 'Triptych', 'Square', 'Round', 'Portrait', 'Landscape'] },
-    ],
+    href: '/wall-art',
   },
   {
     label: 'Gallery Sets',
-    href: '/shop/gallery-sets',
-    groups: [
-      { title: 'Popular', items: ['Pairings', 'Triptychs', 'Series', 'Minimal Sets', 'Nature Sets'] },
-      { title: 'For Spaces', items: ['Bedroom', 'Living Room', 'Office', 'Entryway', 'Dining'] },
-      { title: 'By Mood', items: ['Calm', 'Warm', 'Bold', 'Neutral', 'Layered', 'Statement'] },
-    ],
+    href: '/gallery-sets',
   },
   {
     label: 'Skateboards',
-    href: '/shop/skateboards',
-    groups: [
-      { title: 'Decks', items: ['Art Decks', 'Limited Edition', 'Pro Series'] },
-      { title: 'Display', items: ['Wall Mount', 'Stand'] },
-    ],
+    href: '/skateboards',
   },
   {
     label: 'Bundles',
-    href: '/shop/bundles',
-    groups: [
-      { title: 'Popular', items: ['Starter Sets', 'Gift Sets', 'Best Value', 'Collector Sets'] },
-      { title: 'For Rooms', items: ['Living Room', 'Bedroom', 'Office', 'Dining'] },
-      { title: 'Occasion', items: ['Housewarming', 'Gifting', 'Refresh', 'Seasonal'] },
-    ],
+    href: '/bundles',
   },
 ];

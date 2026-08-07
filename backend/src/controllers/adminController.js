@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
+import WebhookEvent from '../models/WebhookEvent.js';
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 import User from '../models/User.js';
@@ -47,6 +48,99 @@ export const listAllCategories = asyncHandler(async (req, res) => {
     Category.find(filter).sort({ order: 1, title: 1 }).skip(skip).limit(limit).lean(),
     Category.countDocuments(filter),
   ]);
+  res.json({ success: true, data: items, ...buildPaginationMeta(total, page, limit) });
+});
+
+/*
+ * An order belongs in the payments ledger once money has been involved at all:
+ * a Razorpay order was created for it, or its payment has moved past `pending`.
+ * Untouched COD orders are order history, not payment history.
+ */
+const PAYMENT_ACTIVITY = {
+  $or: [{ 'payment.razorpayOrderId': { $exists: true } }, { paymentStatus: { $ne: 'pending' } }],
+};
+
+// GET /api/admin/payments — every payment + refund, with a reconciliation summary.
+export const listPayments = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = buildPagination(req.query.page, req.query.limit, { defaultLimit: 15, maxLimit: 100 });
+
+  const and = [PAYMENT_ACTIVITY];
+  if (req.query.status) and.push({ paymentStatus: req.query.status });
+
+  const q = String(req.query.q || '').trim();
+  if (q) {
+    const rx = new RegExp(escapeRegex(q), 'i');
+    const userIds = await User.find({ $or: [{ name: rx }, { email: rx }] }).distinct('_id');
+    and.push({
+      $or: [
+        { 'payment.razorpayPaymentId': rx },
+        { 'payment.razorpayOrderId': rx },
+        { 'payment.refundId': rx },
+        { user: { $in: userIds } },
+        { $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: escapeRegex(q), options: 'i' } } },
+      ],
+    });
+  }
+
+  const filter = { $and: and };
+
+  const [items, total, summaryAgg] = await Promise.all([
+    Order.find(filter)
+      .select('total currency paymentStatus orderStatus payment user createdAt')
+      .sort({ 'payment.paidAt': -1, createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('user', 'name email')
+      .lean(),
+    Order.countDocuments(filter),
+    // Summary spans ALL payment activity, not just the filtered page, so the
+    // headline numbers don't move around as the admin filters.
+    Order.aggregate([
+      { $match: PAYMENT_ACTIVITY },
+      {
+        $group: {
+          _id: '$paymentStatus',
+          count: { $sum: 1 },
+          amount: { $sum: '$total' },
+          refundedPaise: { $sum: { $ifNull: ['$payment.refundedAmount', 0] } },
+        },
+      },
+    ]),
+  ]);
+
+  const byStatus = summaryAgg.reduce((acc, s) => ({ ...acc, [s._id]: { count: s.count, amount: s.amount } }), {});
+  const refundedPaise = summaryAgg.reduce((sum, s) => sum + (s.refundedPaise || 0), 0);
+
+  res.json({
+    success: true,
+    data: items,
+    ...buildPaginationMeta(total, page, limit),
+    summary: {
+      byStatus,
+      capturedAmount: byStatus.captured?.amount || 0,
+      refundedAmount: refundedPaise / 100,
+      failedCount: byStatus.failed?.count || 0,
+      pendingCount: (byStatus.pending?.count || 0) + (byStatus.refund_initiated?.count || 0),
+    },
+  });
+});
+
+// GET /api/admin/webhook-events — the raw delivery log, for reconciliation/debugging.
+export const listWebhookEvents = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = buildPagination(req.query.page, req.query.limit, { defaultLimit: 15, maxLimit: 100 });
+  const filter = {};
+  if (req.query.status) filter.status = req.query.status;
+
+  const [items, total] = await Promise.all([
+    WebhookEvent.find(filter)
+      .select('eventId event status error order processedAt createdAt')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    WebhookEvent.countDocuments(filter),
+  ]);
+
   res.json({ success: true, data: items, ...buildPaginationMeta(total, page, limit) });
 });
 

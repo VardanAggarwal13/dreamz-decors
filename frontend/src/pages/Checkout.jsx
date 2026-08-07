@@ -104,6 +104,20 @@ export default function Checkout() {
     navigate(`/order-success/${orderId}`, { replace: true });
   };
 
+  /*
+   * Ask the backend what actually happened to this payment. The browser is never
+   * the source of truth: a payment can succeed while the network drops, the tab
+   * closes, or verification fails. The backend re-checks with Razorpay directly.
+   */
+  const isActuallyPaid = async (orderId) => {
+    try {
+      const { data } = await api.get(`/payments/status/${orderId}`);
+      return data.paymentStatus === 'captured';
+    } catch {
+      return false;
+    }
+  };
+
   const placeOrder = async () => {
     if (!validate()) return;
     setPlacing(true);
@@ -143,14 +157,25 @@ export default function Checkout() {
               orderId: order._id,
             });
             finishOrder(order._id);
-          } catch (err) {
-            toast.error(err.message || 'Payment verification failed.');
+          } catch {
+            // Verification failed on our side — but the money may well have left
+            // the customer's account. Confirm with the backend before alarming them.
+            if (await isActuallyPaid(order._id)) {
+              finishOrder(order._id);
+              return;
+            }
+            toast.error('We could not confirm your payment. If you were charged, it will be reconciled shortly.');
             setPlacing(false);
           }
         },
         modal: {
-          ondismiss: () => {
-            toast('Payment cancelled — your order is saved as pending.');
+          ondismiss: async () => {
+            // Closing the modal doesn't mean the payment failed — check first.
+            if (await isActuallyPaid(order._id)) {
+              finishOrder(order._id);
+              return;
+            }
+            toast('Payment cancelled — your order is saved and you can pay for it later.');
             setPlacing(false);
           },
         },

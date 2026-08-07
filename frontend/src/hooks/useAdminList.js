@@ -10,6 +10,9 @@ export default function useAdminList(makePath, deps = [], { limit = 10, debounce
   const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0, limit });
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  // The last full response, for endpoints that return extras alongside `data`
+  // (e.g. the payments ledger's reconciliation `summary`).
+  const [raw, setRaw] = useState(null);
 
   // Always call the latest closure without making fetch identity churn.
   const makePathRef = useRef(makePath);
@@ -21,6 +24,7 @@ export default function useAdminList(makePath, deps = [], { limit = 10, debounce
       return api
         .get(makePathRef.current({ page: p, limit }))
         .then((res) => {
+          setRaw(res);
           setItems(res.data || []);
           setMeta({
             page: res.page || p,
@@ -60,5 +64,5 @@ export default function useAdminList(makePath, deps = [], { limit = 10, debounce
     if ((res?.data?.length ?? 0) === 0 && page > 1) goTo(page - 1);
   }, [fetchPage, page, goTo]);
 
-  return { items, setItems, meta, page, loading, goTo, reload };
+  return { items, setItems, meta, page, loading, goTo, reload, raw };
 }

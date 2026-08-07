@@ -26,7 +26,7 @@ const HINTS = {
   about: 'Value cards use icon names: palette / sparkles / award / shield. Use \\n in a title for a line break.',
   shipping: 'Edit the four "Order\'s Journey" steps plus the shipping info sections.',
   product: 'Trust badges use icon names: shield / award / mapPin / package / truck / check.',
-  navigation: 'The links across the top of every page. Each item is a simple link — a label and where it goes.',
+  navigation: 'The links across the top of every page. Pick a destination from the list — only real pages are offered, so a menu link can never 404.',
 };
 
 // Built-in default content for each key (used as fallback + "reset").

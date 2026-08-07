@@ -47,6 +47,12 @@ export default function Shop() {
     skip: Boolean(category) && !currentCat,
   });
 
+  // While the categories are still in flight we don't yet know this category's id,
+  // so the products request is skipped — and a skipped useFetch reports
+  // `loading: false`. Without folding that in, the grid would flash its empty
+  // state ("no products in this collection") before the real skeleton appears.
+  const gridLoading = loading || (Boolean(category) && !currentCat);
+
   const products   = (data?.data || []).map(normalizeProduct);
   const totalPages = Math.max(1, data?.pages || 1);
   const currentPage = Math.min(page, totalPages);
@@ -187,7 +193,7 @@ export default function Shop() {
 
       {/* ── 3. Grid ───────────────────────────────────────────── */}
       <div className="container-page py-10 sm:py-12">
-        {loading ? (
+        {gridLoading ? (
           <ProductGridSkeleton columns={3} count={PAGE_SIZE} />
         ) : error ? (
           <div className="py-24 text-center text-sm text-ink-muted">

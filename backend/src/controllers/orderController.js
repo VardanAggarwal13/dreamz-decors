@@ -1,23 +1,52 @@
 import asyncHandler from 'express-async-handler';
-import Order from '../models/Order.js';
+import Order, { ORDER_STATUS } from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import User from '../models/User.js';
 import { buildPagination, buildPaginationMeta, paginationPresets, escapeRegex } from '../utils/query.js';
 import { notify, notifyAdmins } from '../services/notificationService.js';
+import { initiateRefund } from '../services/paymentService.js';
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 
-// Map an order status to the notification it should fire.
+/*
+ * Notifications fired when an ADMIN moves the order along. Deliberately absent:
+ *   • `confirmed` — payment notifications are sent by paymentService.markOrderPaid,
+ *     the moment the money is actually captured.
+ *   • `refunded`  — sent only when Razorpay's refund.processed webhook confirms
+ *     the money moved. Telling a customer "refund processed" before that is a lie.
+ */
 const STATUS_NOTIFICATION = {
-  paid:       { type: 'order_paid',       title: 'Payment received',  message: (o) => `We've received your payment of ${inr(o.total)}.` },
   processing: { type: 'order_processing', title: 'Order processing',  message: () => 'Your order is being prepared for dispatch.' },
   shipped:    { type: 'order_shipped',    title: 'Order shipped',     message: () => 'Your order has been dispatched and is on its way.' },
   delivered:  { type: 'order_delivered',  title: 'Order delivered',   message: () => 'Your order has been delivered. We hope you love it!' },
   cancelled:  { type: 'order_cancelled',  title: 'Order cancelled',   message: () => 'Your order has been cancelled.' },
-  refunded:   { type: 'order_refunded',   title: 'Refund processed',  message: (o) => `Your refund of ${inr(o.total)} has been processed.` },
 };
 
-const ORDER_LIST_SELECT = 'items subtotal shipping discount total currency status payment createdAt updatedAt';
+// The admin UI still speaks the legacy vocabulary; translate it to orderStatus.
+const LEGACY_TO_ORDER_STATUS = {
+  pending: 'pending',
+  paid: 'confirmed',
+  processing: 'processing',
+  shipped: 'shipped',
+  delivered: 'delivered',
+  cancelled: 'cancelled',
+  refunded: 'refunded',
+};
+
+const FULFILLMENT_FOR = { shipped: 'shipped', delivered: 'delivered' };
+
+// Two carts are "the same order" when the money and the line items both match.
+const sameCart = (order, items, total) =>
+  Number(order.total) === Number(total) &&
+  order.items.length === items.length &&
+  items.every((it) =>
+    order.items.some(
+      (o) => String(o.product) === String(it.product) && o.qty === it.qty && Number(o.price) === Number(it.price)
+    )
+  );
+
+const ORDER_LIST_SELECT =
+  'items subtotal shipping discount total currency status orderStatus paymentStatus fulfillmentStatus payment createdAt updatedAt';
 
 export const createOrder = asyncHandler(async (req, res) => {
   const { shippingAddress, paymentMethod = 'razorpay', notes } = req.body;
@@ -44,9 +73,31 @@ export const createOrder = asyncHandler(async (req, res) => {
     options: i.options,
   }));
 
+  // Prices always come from the DB, never the request body — a client that tampers
+  // with amounts changes nothing here.
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const shipping = 0; // Free delivery on all orders
   const total = subtotal + shipping;
+
+  // Refreshing checkout, hitting back, or retrying a failed payment must not pile
+  // up pending orders — reuse the open one when the cart hasn't changed.
+  if (paymentMethod === 'razorpay') {
+    const openOrder = await Order.findOne({
+      user: req.user._id,
+      orderStatus: 'pending',
+      paymentStatus: { $in: ['pending', 'failed'] },
+      'payment.method': 'razorpay',
+    }).sort({ createdAt: -1 });
+
+    if (openOrder && sameCart(openOrder, items, total)) {
+      openOrder.shippingAddress = shippingAddress;
+      openOrder.notes = notes;
+      if (openOrder.paymentStatus === 'failed') openOrder.paymentStatus = 'pending';
+      openOrder.events.push({ type: 'order.reused', source: 'api' });
+      await openOrder.save();
+      return res.status(200).json({ success: true, data: openOrder, reused: true });
+    }
+  }
 
   const order = await Order.create({
     user: req.user._id,
@@ -57,7 +108,8 @@ export const createOrder = asyncHandler(async (req, res) => {
     shippingAddress,
     notes,
     payment: { method: paymentMethod },
-    status: paymentMethod === 'cod' ? 'processing' : 'pending',
+    orderStatus: paymentMethod === 'cod' ? 'processing' : 'pending',
+    paymentStatus: 'pending',
   });
 
   if (paymentMethod === 'cod') {
@@ -146,17 +198,53 @@ export const listOrders = asyncHandler(async (req, res) => {
 
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
+  const target = LEGACY_TO_ORDER_STATUS[status] || (ORDER_STATUS.includes(status) ? status : null);
+  if (!target) {
+    res.status(400);
+    throw new Error(`Unknown order status "${status}"`);
+  }
+
   const order = await Order.findById(req.params.id);
   if (!order) {
     res.status(404);
     throw new Error('Order not found');
   }
-  const changed = order.status !== status;
-  order.status = status;
+
+  // "Refunded" is not something an admin can simply declare — money has to move.
+  // Kick off a real Razorpay refund; the webhook flips the order once it lands.
+  if (target === 'refunded') {
+    try {
+      const { amount } = await initiateRefund(order, { byUserId: req.user._id });
+      return res.json({
+        success: true,
+        data: order,
+        message: `Refund of ${inr(amount / 100)} initiated — the order will show as refunded once Razorpay confirms it.`,
+      });
+    } catch (err) {
+      res.status(400);
+      throw err;
+    }
+  }
+
+  const changed = order.orderStatus !== target;
+  order.orderStatus = target;
+  if (FULFILLMENT_FOR[target]) order.fulfillmentStatus = FULFILLMENT_FOR[target];
+  order.events.push({ type: `order.${target}`, source: 'admin', meta: { by: String(req.user._id) } });
+
+  // Cancelling an order that was already paid must return the customer's money.
+  let refundNote;
+  if (target === 'cancelled' && order.paymentStatus === 'captured') {
+    try {
+      const { amount } = await initiateRefund(order, { byUserId: req.user._id });
+      refundNote = `Refund of ${inr(amount / 100)} initiated.`;
+    } catch (err) {
+      refundNote = `Order cancelled, but the refund could not be started: ${err.message}`;
+    }
+  }
+
   await order.save();
 
-  // Notify the customer when the status actually changes.
-  const spec = STATUS_NOTIFICATION[status];
+  const spec = STATUS_NOTIFICATION[target];
   if (changed && spec) {
     await notify({
       user: order.user,
@@ -171,5 +259,5 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     });
   }
 
-  res.json({ success: true, data: order });
+  res.json({ success: true, data: order, ...(refundNote && { message: refundNote }) });
 });

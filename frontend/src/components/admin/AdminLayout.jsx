@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   FiGrid,
   FiBox,
   FiShoppingBag,
+  FiCreditCard,
   FiLayers,
   FiUsers,
   FiMail,
@@ -25,6 +26,7 @@ const NAV = [
   { to: '/admin', label: 'Dashboard', Icon: FiGrid, end: true },
   { to: '/admin/products', label: 'Products', Icon: FiBox },
   { to: '/admin/orders', label: 'Orders', Icon: FiShoppingBag },
+  { to: '/admin/payments', label: 'Payments', Icon: FiCreditCard },
   { to: '/admin/categories', label: 'Categories', Icon: FiLayers },
   { to: '/admin/customers', label: 'Customers', Icon: FiUsers },
   { to: '/admin/newsletter', label: 'Newsletter', Icon: FiMail },
@@ -136,7 +138,16 @@ export default function AdminLayout() {
         </div>
         <div className="px-4 py-6 sm:px-8 sm:py-8">
           <div className="mx-auto max-w-6xl">
-            <Outlet context={{ user }} />
+            {/* Keep the sidebar and header mounted while the page chunk loads. */}
+            <Suspense
+              fallback={
+                <div className="flex min-h-[50vh] items-center justify-center">
+                  <span className="h-8 w-8 animate-spin rounded-full border-2 border-hairline border-t-gold-deep" />
+                </div>
+              }
+            >
+              <Outlet context={{ user }} />
+            </Suspense>
           </div>
         </div>
       </main>

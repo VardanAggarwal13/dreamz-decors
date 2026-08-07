@@ -3,6 +3,7 @@ import { FiEye } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import OrderStatusBadge from '@/components/common/OrderStatusBadge';
+import PaymentStatusBadge from '@/components/common/PaymentStatusBadge';
 import api from '@/lib/api';
 import useAdminList from '@/hooks/useAdminList';
 import Modal, { ViewStat } from '@/components/admin/Modal';
@@ -30,12 +31,20 @@ export default function AdminOrders() {
   };
   const { items: orders, setItems: setOrders, meta, loading, goTo, reload } = useAdminList(makePath, [q, filter], { limit: 10 });
 
+  /*
+   * No optimistic update here: "refunded" doesn't just flip a field — it asks
+   * Razorpay to move money, and the order only becomes refunded once the webhook
+   * confirms it. So we always render whatever the server says came back.
+   */
   const changeStatus = async (id, status) => {
-    setOrders((list) => list.map((o) => (o._id === id ? { ...o, status } : o)));
-    setViewing((v) => (v && v._id === id ? { ...v, status } : v));
     try {
-      await api.patch(`/orders/${id}/status`, { status });
-      toast.success(`Order marked ${status}`);
+      const res = await api.patch(`/orders/${id}/status`, { status });
+      const updated = res.data;
+      // The response isn't populated with the customer, so keep the one we have.
+      const merge = (o) => ({ ...o, ...updated, user: o.user });
+      setOrders((list) => list.map((o) => (o._id === id ? merge(o) : o)));
+      setViewing((v) => (v && v._id === id ? merge(v) : v));
+      toast.success(res.message || `Order marked ${updated.orderStatus || status}`);
     } catch (err) {
       toast.error(err.message || 'Update failed');
       reload();
@@ -105,6 +114,7 @@ export default function AdminOrders() {
               <th className="px-4 py-3 font-medium">Items</th>
               <th className="px-4 py-3 font-medium">Total</th>
               <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Payment</th>
               <th className="px-4 py-3 font-medium">Update</th>
             </tr>
           </thead>
@@ -122,6 +132,7 @@ export default function AdminOrders() {
                 <td className="px-4 py-3 text-ink-soft">{o.items?.length || 0}</td>
                 <td className="px-4 py-3 font-medium text-ink">{formatINR(o.total)}</td>
                 <td className="px-4 py-3"><OrderStatusBadge status={o.status} /></td>
+                <td className="px-4 py-3"><PaymentStatusBadge status={o.paymentStatus} /></td>
                 <td className="px-4 py-3">
                   <select
                     value={o.status}
@@ -134,7 +145,7 @@ export default function AdminOrders() {
               </tr>
             ))}
             {!loading && orders.length === 0 && (
-              <tr><td colSpan={8} className="py-10 text-center text-ink-muted">{q ? `No orders match “${q}”.` : 'No orders found.'}</td></tr>
+              <tr><td colSpan={9} className="py-10 text-center text-ink-muted">{q ? `No orders match “${q}”.` : 'No orders found.'}</td></tr>
             )}
           </tbody>
         </table>
@@ -151,6 +162,7 @@ export default function AdminOrders() {
         subtitle={viewing && (
           <div className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
             <OrderStatusBadge status={viewing.status} />
+            <PaymentStatusBadge status={viewing.paymentStatus} />
             <span>·</span>
             <span>{fmtDateLong(viewing.createdAt)}</span>
           </div>
@@ -176,6 +188,44 @@ export default function AdminOrders() {
               <ViewStat label="Email" value={viewing.user?.email || '—'} />
               <ViewStat label="Payment" value={(viewing.payment?.method || '—').toUpperCase()} />
             </div>
+
+            {/* Payment detail — the money side of the order, straight from Razorpay. */}
+            <div>
+              <span className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-ink-muted">Payment</span>
+              <div className="space-y-1 rounded-xl border border-hairline/60 bg-bone p-4 text-sm">
+                <Row label="Payment status" value={<PaymentStatusBadge status={viewing.paymentStatus} />} />
+                <Row label="Method" value={(viewing.payment?.method || '—').toUpperCase()} />
+                <Row label="Paid at" value={viewing.payment?.paidAt ? fmtDateLong(viewing.payment.paidAt) : '—'} />
+                <Row label="Payment ID" value={<Mono>{viewing.payment?.razorpayPaymentId || '—'}</Mono>} />
+                <Row label="Razorpay order" value={<Mono>{viewing.payment?.razorpayOrderId || '—'}</Mono>} />
+                {viewing.payment?.refundId && (
+                  <>
+                    <Row label="Refund ID" value={<Mono>{viewing.payment.refundId}</Mono>} />
+                    <Row label="Refunded" value={formatINR((viewing.payment.refundedAmount || 0) / 100)} />
+                  </>
+                )}
+                {viewing.payment?.failureReason && (
+                  <Row label="Failure reason" value={<span className="text-sale">{viewing.payment.failureReason}</span>} />
+                )}
+              </div>
+            </div>
+
+            {/* Audit trail — nothing in the payment flow happens silently. */}
+            {viewing.events?.length > 0 && (
+              <div>
+                <span className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-ink-muted">Activity</span>
+                <ol className="space-y-2 rounded-xl border border-hairline/60 bg-bone p-4">
+                  {viewing.events.map((e, i) => (
+                    <li key={i} className="flex items-baseline justify-between gap-3 text-xs">
+                      <span className="font-mono text-ink">{e.type}</span>
+                      <span className="shrink-0 text-ink-muted">
+                        {e.source ? `${e.source} · ` : ''}{fmtDateLong(e.at)}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
             {/* Items */}
             <div>
@@ -227,8 +277,12 @@ export default function AdminOrders() {
 
 function Row({ label, value }) {
   return (
-    <div className="flex items-center justify-between py-0.5 text-ink-soft">
-      <span>{label}</span><span>{value}</span>
+    <div className="flex items-center justify-between gap-3 py-0.5 text-ink-soft">
+      <span className="shrink-0">{label}</span><span className="min-w-0 text-right">{value}</span>
     </div>
   );
+}
+
+function Mono({ children }) {
+  return <span className="break-all font-mono text-xs text-ink">{children}</span>;
 }

@@ -15,6 +15,7 @@ import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import { razorpayWebhook } from './controllers/paymentController.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
@@ -47,6 +48,12 @@ app.use(cookieParser());
 // ⚠️ Better Auth must be mounted BEFORE express.json() — it parses its own body.
 // Handles /api/auth/* (sign-in, sign-up, social, session, password reset, …).
 app.all('/api/auth/*', toNodeHandler(auth));
+
+// ⚠️ The Razorpay webhook must also be mounted BEFORE express.json(): its
+// signature is an HMAC over the exact raw bytes Razorpay sent, so the body must
+// stay an unparsed Buffer. It sits ahead of the rate limiter too — Razorpay's
+// retries must never be throttled.
+app.post('/api/payments/webhook', express.raw({ type: '*/*' }), razorpayWebhook);
 
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));

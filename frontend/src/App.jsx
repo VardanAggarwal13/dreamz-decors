@@ -15,6 +15,7 @@ const AdminOrders = lazy(() => import('@/pages/admin/AdminOrders'));
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'));
 const AdminCustomers = lazy(() => import('@/pages/admin/AdminCustomers'));
 const AdminNewsletter = lazy(() => import('@/pages/admin/AdminNewsletter'));
+const AdminPayments = lazy(() => import('@/pages/admin/AdminPayments'));
 const AdminSettings = lazy(() => import('@/pages/admin/AdminSettings'));
 const AdminContent = lazy(() => import('@/pages/admin/AdminContent'));
 import { NotificationBootstrap } from '@/components/common/NotificationBootstrap';
@@ -44,13 +45,27 @@ import ContentPage from '@/pages/ContentPage';
 import NotFound from '@/pages/NotFound';
 
 /* ── Layout used by every route that has a navbar + footer ── */
+// Shown while a lazy page chunk downloads. Sized to fill the content area rather
+// than the viewport, so it sits *between* the navbar and footer.
+function PageFallback() {
+  return (
+    <div className="flex min-h-[60vh] flex-1 items-center justify-center">
+      <span className="h-8 w-8 animate-spin rounded-full border-2 border-hairline border-t-gold-deep" />
+    </div>
+  );
+}
+
 function MainLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-bone text-ink">
       <AnnouncementBar />
       <Navbar />
       <main className="flex flex-1 flex-col">
-        <Outlet />
+        {/* Suspend only the page, not the chrome — otherwise navigating between
+            routes unmounts the navbar and footer and flashes a bare spinner. */}
+        <Suspense fallback={<PageFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
     </div>
@@ -124,6 +139,7 @@ export default function App() {
           <Route index element={<Dashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="orders" element={<AdminOrders />} />
+          <Route path="payments" element={<AdminPayments />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="customers" element={<AdminCustomers />} />
           <Route path="newsletter" element={<AdminNewsletter />} />

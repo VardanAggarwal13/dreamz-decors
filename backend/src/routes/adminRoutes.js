@@ -9,6 +9,8 @@ import {
   removeSubscriber,
   sendCampaign,
   previewCampaign,
+  listPayments,
+  listWebhookEvents,
 } from '../controllers/adminController.js';
 import { protect, adminOnly } from '../middleware/auth.js';
 
@@ -21,6 +23,9 @@ router.get('/products', listAllProducts);
 router.get('/categories', listAllCategories);
 router.get('/customers', listCustomers);
 router.patch('/customers/:id/role', updateUserRole);
+
+router.get('/payments', listPayments);
+router.get('/webhook-events', listWebhookEvents);
 
 router.get('/newsletter', listSubscribers);
 router.post('/newsletter/send', sendCampaign);

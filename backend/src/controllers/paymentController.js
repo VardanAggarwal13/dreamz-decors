@@ -37,7 +37,7 @@ const assertOwner = (order, req, res) => {
  */
 export const createRazorpayOrder = asyncHandler(async (req, res) => {
   const { orderId } = req.body;
-  const order = await Order.findById(orderId).select('user total currency payment paymentStatus orderStatus');
+  const order = await Order.findById(orderId).select('user total currency payment paymentStatus orderStatus events');
   if (!order) {
     res.status(404);
     throw new Error('Order not found');

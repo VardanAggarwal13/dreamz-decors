@@ -62,6 +62,8 @@ export default function ProductCard({ product, layout }) {
             src={product.image}
             alt={product.title}
             label={product.title}
+            width={640}
+            height={480}
             imgClassName={`h-full w-full object-cover transition-transform duration-500 ${hovered ? 'scale-[1.04]' : 'scale-100'}`}
           />
           {product.hover && product.hover !== product.image && (
@@ -69,6 +71,8 @@ export default function ProductCard({ product, layout }) {
               src={product.hover}
               alt=""
               label={product.title}
+              width={640}
+              height={480}
               className={`absolute inset-0 transition-opacity duration-500 ${hovered ? 'opacity-100' : 'opacity-0'}`}
               imgClassName="h-full w-full object-cover"
             />

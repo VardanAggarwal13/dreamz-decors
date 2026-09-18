@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { cldTransform } from '@/lib/cloudinary';
 
 function fallbackInitials(label = '') {
   return String(label)
@@ -17,9 +18,16 @@ export default function MediaImage({
   className,
   imgClassName,
   fallbackClassName,
+  width,
+  height,
+  crop,
+  gravity,
   ...props
 }) {
   const [failed, setFailed] = useState(!src);
+  // Request an image sized (and smart-cropped) for where it's actually displayed,
+  // instead of shipping the full-resolution original down to a small card/thumbnail.
+  const optimizedSrc = width || height ? cldTransform(src, { width, height, crop, gravity }) : src;
 
   if (!src || failed) {
     return (
@@ -44,9 +52,10 @@ export default function MediaImage({
 
   return (
     <img
-      src={src}
+      src={optimizedSrc}
       alt={alt}
       loading="lazy"
+      decoding="async"
       onError={() => setFailed(true)}
       className={cn('h-full w-full object-cover', className, imgClassName)}
       {...props}

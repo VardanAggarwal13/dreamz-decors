@@ -227,7 +227,7 @@ export default function ProductDetail() {
           {/* Gallery */}
           <div className="space-y-3">
             <div className="aspect-square overflow-hidden rounded-2xl border border-hairline/60 bg-bone-muted">
-              <MediaImage src={currentImage} alt={product.title} label={product.title} />
+              <MediaImage src={currentImage} alt={product.title} label={product.title} width={1000} height={1000} />
             </div>
             {gallery.length > 1 && (
               <div className="grid grid-cols-4 gap-3">
@@ -239,7 +239,7 @@ export default function ProductDetail() {
                       activeImg === index ? 'border-gold ring-1 ring-gold' : 'border-hairline/70 hover:border-gold/50'
                     }`}
                   >
-                    <MediaImage src={img.url} alt="" label={product.title} />
+                    <MediaImage src={img.url} alt="" label={product.title} width={300} height={300} />
                   </button>
                 ))}
               </div>

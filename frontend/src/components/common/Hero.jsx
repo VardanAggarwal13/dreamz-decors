@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import useFetch from '@/hooks/useFetch';
 import { homeContent } from '@/lib/siteContent';
 import { normalizeHref } from '@/lib/utils';
+import { cldTransform } from '@/lib/cloudinary';
 
 const ctaClass =
   'h-auto min-h-12 flex-1 px-3 py-2 text-center text-[11px] leading-tight tracking-[0.08em] sm:h-14 sm:min-h-0 sm:flex-none sm:px-8 sm:py-0 sm:text-sm sm:tracking-[0.22em]';
@@ -21,7 +22,7 @@ export default function Hero() {
 
   return (
     <section className="border-b border-hairline/60 bg-bone">
-      <div className="container-page grid min-h-[60vh] grid-cols-1 items-center gap-10 py-12 sm:py-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14 lg:py-16">
+      <div className="container-page grid grid-cols-1 items-center gap-10 py-12 sm:py-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14 lg:py-12">
 
         {/* ── Left: text ─────────────────────────────────── */}
         <div>
@@ -56,12 +57,9 @@ export default function Hero() {
             )}
           </div>
 
-          <div className="mt-10 flex items-center justify-between gap-2 border-t border-hairline/60 pt-8 sm:flex-wrap sm:justify-start sm:gap-8">
+          <div className="mt-10 grid grid-cols-3 gap-2 border-t border-hairline/60 pt-8 sm:max-w-md sm:gap-8">
             {stats.map(({ value, label }, i) => (
-              <div
-                key={`${label}-${i}`}
-                className={`flex flex-col gap-1 ${i === stats.length - 1 ? 'text-right sm:text-left' : ''}`}
-              >
+              <div key={`${label}-${i}`} className="flex flex-col items-center gap-1 text-center">
                 <span className="font-display text-lg leading-none text-gold sm:text-2xl">{value}</span>
                 <span className="text-[9px] uppercase tracking-[0.18em] text-ink-muted sm:text-[10px] sm:tracking-[0.26em]">
                   {label}
@@ -73,10 +71,15 @@ export default function Hero() {
 
         {/* ── Right: single clean image ─────────────────── */}
         <div className="hidden lg:block">
-          <div className="relative overflow-hidden rounded-3xl" style={{ aspectRatio: '3/4' }}>
+          <div
+            className="relative w-full overflow-hidden rounded-3xl"
+            style={{ aspectRatio: '4/3' }}
+          >
             <img
-              src={hero.image}
+              src={cldTransform(hero.image, { width: 1000, height: 750 })}
               alt="DreamzDecors styled interior"
+              fetchPriority="high"
+              decoding="async"
               className="h-full w-full object-cover motion-safe:animate-hero-pan"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/30 via-transparent to-transparent" />

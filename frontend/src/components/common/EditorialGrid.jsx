@@ -27,6 +27,8 @@ export default function EditorialGrid({ items = [], columns = 3, className = '' 
               src={item.image}
               alt={item.title}
               label={item.title}
+              width={900}
+              height={720}
               imgClassName="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
             />
 

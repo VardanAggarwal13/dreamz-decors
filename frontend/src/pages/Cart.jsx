@@ -153,7 +153,7 @@ export default function Cart() {
                     to={`/product/${item.slug}`}
                     className="aspect-square w-20 shrink-0 overflow-hidden rounded-xl bg-bone-muted sm:w-28"
                   >
-                    <MediaImage src={item.image} alt={item.title} label={item.title} />
+                    <MediaImage src={item.image} alt={item.title} label={item.title} width={220} height={220} />
                   </Link>
 
                   {/* Content (pr-6 reserves space for the absolute remove ✕) */}

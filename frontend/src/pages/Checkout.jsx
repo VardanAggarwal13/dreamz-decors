@@ -255,8 +255,13 @@ export default function Checkout() {
             {/* Payment method */}
             <h2 className="mt-8 text-sm font-semibold uppercase tracking-[0.16em] text-ink">Payment method</h2>
             <div className="mt-4 space-y-3">
-              <PayOption value="razorpay" current={method} onSelect={setMethod} title="Pay online (Razorpay)" desc="UPI, cards, net banking & wallets" />
-              <PayOption value="cod" current={method} onSelect={setMethod} title="Cash on delivery" desc="Pay when your order arrives" />
+              <PayOption 
+                value="razorpay" 
+                current={method} 
+                onSelect={setMethod} 
+                title="Pay Online (100% Secure)" 
+                desc="Instant checkout via UPI (Google Pay, PhonePe, Paytm), Credit/Debit Cards, Net Banking & Wallets" 
+              />
             </div>
           </div>
 

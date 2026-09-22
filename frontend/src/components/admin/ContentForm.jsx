@@ -93,14 +93,25 @@ function Control({ value, onChange, keyName, id }) {
 function Field({ keyName, value, onChange }) {
   const id = useId();
 
-  // Photo → upload/preview widget.
+  // Photo → upload/preview widget with contextual dimension guidance
   if (isImageField(keyName, value)) {
+    const k = keyName.toLowerCase();
+    let dims = '4:5 (2400 × 3000 px) · Min 1600 × 2000 px';
+    if (k.includes('hero') || k.includes('banner')) {
+      dims = '16:9 / 21:9 Widescreen (2560 × 1440 px) · Min 1920 × 1080 px';
+    } else if (k.includes('collection') || k.includes('room')) {
+      dims = '4:5 Vertical (1600 × 2000 px) · Min 1200 × 1500 px';
+    } else if (k.includes('feature')) {
+      dims = '16:9 Landscape (1920 × 1080 px) · Min 1600 × 900 px';
+    }
+
     return (
       <ImageInput
         label={humanize(keyName)}
         value={value ?? ''}
         onChange={onChange}
-        hint="Upload a photo or paste an image link."
+        recommendedDimensions={dims}
+        hint="Upload a photo or paste a direct image link."
       />
     );
   }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { cldTransform } from '@/lib/cloudinary';
+import { FiImage } from 'react-icons/fi';
 
 function fallbackInitials(label = '') {
   return String(label)
@@ -22,43 +23,60 @@ export default function MediaImage({
   height,
   crop,
   gravity,
+  priority = false,
+  fit = 'cover',
   ...props
 }) {
+  const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(!src);
-  // Request an image sized (and smart-cropped) for where it's actually displayed,
-  // instead of shipping the full-resolution original down to a small card/thumbnail.
-  const optimizedSrc = width || height ? cldTransform(src, { width, height, crop, gravity }) : src;
+
+  // When fit is 'contain', use 'limit' crop in Cloudinary so images are scaled without clipping edges
+  const effectiveCrop = crop || (fit === 'contain' ? 'limit' : 'fill');
+  const optimizedSrc = width || height ? cldTransform(src, { width, height, crop: effectiveCrop, gravity }) : src;
 
   if (!src || failed) {
     return (
       <div
         className={cn(
-          'grid h-full w-full place-items-center bg-gradient-to-br from-bone-muted via-bone to-bone-soft text-center',
+          'relative flex h-full w-full flex-col items-center justify-center overflow-hidden border border-hairline/40 bg-gradient-to-br from-bone-muted via-bone to-bone-soft p-4 text-center select-none',
           fallbackClassName
         )}
         aria-label={alt || label}
       >
-        <div className="px-4">
-          <div className="text-lg font-semibold uppercase tracking-[0.28em] text-ink/55">
-            {fallbackInitials(label || alt || 'DreamzDecors')}
-          </div>
-          <div className="mt-2 text-[11px] uppercase tracking-[0.24em] text-ink-soft">
-            Curated piece
-          </div>
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gold/30 bg-gold/10 text-gold shadow-sm">
+          <FiImage size={22} />
+        </div>
+        <div className="mt-2.5 max-w-[85%] text-xs font-semibold uppercase tracking-[0.2em] text-ink/70">
+          {fallbackInitials(label || alt || 'DreamzDecors')}
+        </div>
+        <div className="mt-0.5 text-[10px] uppercase tracking-[0.24em] text-ink-muted">
+          Curated Art
         </div>
       </div>
     );
   }
 
   return (
-    <img
-      src={optimizedSrc}
-      alt={alt}
-      loading="lazy"
-      decoding="async"
-      onError={() => setFailed(true)}
-      className={cn('h-full w-full object-cover', className, imgClassName)}
-      {...props}
-    />
+    <div className={cn('relative h-full w-full overflow-hidden', className)}>
+      {/* Shimmer loading skeleton underneath until image is fully decoded */}
+      {!loaded && (
+        <div className="img-skeleton absolute inset-0 z-0 h-full w-full rounded-lg" />
+      )}
+      <img
+        src={optimizedSrc}
+        alt={alt || label || 'DreamzDecors Art'}
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+        className={cn(
+          'h-full w-full transition-all duration-500',
+          fit === 'contain' ? 'object-contain' : 'object-cover',
+          loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.02]',
+          imgClassName
+        )}
+        {...props}
+      />
+    </div>
   );
-}
+}

@@ -3,7 +3,7 @@ import Product from '../models/Product.js';
 import { buildPagination, buildPaginationMeta, paginationPresets, parseNumber } from '../utils/query.js';
 
 const PRODUCT_LIST_SELECT =
-  'title slug description price mrp badge images rating reviewsCount stock isFeatured sales category createdAt';
+  'title slug description price mrp badge images rating reviewsCount stock isFeatured sales category variants createdAt';
 
 const SORT_MAP = {
   new: { createdAt: -1 },
@@ -71,12 +71,42 @@ export const getProduct = asyncHandler(async (req, res) => {
 });
 
 export const createProduct = asyncHandler(async (req, res) => {
-  const product = await Product.create(req.body);
+  const payload = { ...req.body };
+  if (Array.isArray(payload.variants)) {
+    payload.variants = payload.variants
+      .filter((v) => v && (v.size || v.price != null))
+      .map((v, idx) => ({
+        ...v,
+        sku: v.sku || `${payload.slug || 'item'}-${v.size || idx}`,
+        price: Number(v.price) || 0,
+        mrp: v.mrp ? Number(v.mrp) : undefined,
+        stock: v.stock ? Number(v.stock) : 0,
+      }));
+    if (payload.variants.length > 0 && (!payload.price || payload.price === 0)) {
+      payload.price = payload.variants[0].price;
+    }
+  }
+  const product = await Product.create(payload);
   res.status(201).json({ success: true, data: product });
 });
 
 export const updateProduct = asyncHandler(async (req, res) => {
-  const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+  const payload = { ...req.body };
+  if (Array.isArray(payload.variants)) {
+    payload.variants = payload.variants
+      .filter((v) => v && (v.size || v.price != null))
+      .map((v, idx) => ({
+        ...v,
+        sku: v.sku || `${payload.slug || 'item'}-${v.size || idx}`,
+        price: Number(v.price) || 0,
+        mrp: v.mrp ? Number(v.mrp) : undefined,
+        stock: v.stock ? Number(v.stock) : 0,
+      }));
+    if (payload.variants.length > 0 && (!payload.price || payload.price === 0)) {
+      payload.price = payload.variants[0].price;
+    }
+  }
+  const product = await Product.findByIdAndUpdate(req.params.id, payload, {
     new: true,
     runValidators: true,
   });

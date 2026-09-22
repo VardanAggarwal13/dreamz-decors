@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const variantSchema = new mongoose.Schema(
   {
-    sku: { type: String, required: true },
+    sku: { type: String, default: () => `SKU-${new mongoose.Types.ObjectId().toString().slice(-6).toUpperCase()}` },
     size: String,
     frame: String,
     color: String,

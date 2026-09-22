@@ -41,8 +41,8 @@ export default function Home() {
     {}
   );
 
-  const bestList     = (bestsellers.data?.data || []).map(normalizeProduct);
-  const newList      = (newArrivals.data?.data  || []).map(normalizeProduct);
+  const bestList = (bestsellers.data?.data || []).map(normalizeProduct);
+  const newList = (newArrivals.data?.data || []).map(normalizeProduct);
   const testimonials = reviewsRes.data?.data?.length
     ? reviewsRes.data.data
     : content.testimonials;
@@ -76,12 +76,12 @@ export default function Home() {
       <SectionShell className="bg-bone" {...headerProps(sections.bestsellers)}>
         {bestsellers.loading ? (
           <ProductGridSkeleton columns={4} count={8} layout="editorial" />
-        ) : bestsellers.error ? (
-          <p className="py-10 text-center text-sm text-ink/50">
-            Could not load products — {bestsellers.error.message}
-          </p>
-        ) : (
+        ) : bestList.length > 0 ? (
           <ProductGrid products={bestList} columns={4} layout="editorial" />
+        ) : (
+          <p className="py-10 text-center text-sm text-ink/50">
+            No products available at the moment.
+          </p>
         )}
       </SectionShell>
 
@@ -100,12 +100,12 @@ export default function Home() {
       <SectionShell className="bg-bone-soft" {...headerProps(sections.newArrivals)}>
         {newArrivals.loading ? (
           <ProductGridSkeleton columns={4} count={4} layout="editorial" />
-        ) : newArrivals.error ? (
-          <p className="py-10 text-center text-sm text-ink/50">
-            Could not load products — {newArrivals.error.message}
-          </p>
-        ) : (
+        ) : newList.length > 0 ? (
           <ProductGrid products={newList} columns={4} layout="editorial" />
+        ) : (
+          <p className="py-10 text-center text-sm text-ink/50">
+            No products available at the moment.
+          </p>
         )}
       </SectionShell>
 

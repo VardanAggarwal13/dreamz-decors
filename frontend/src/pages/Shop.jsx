@@ -192,16 +192,23 @@ export default function Shop() {
       </div>
 
       {/* ── 3. Grid ───────────────────────────────────────────── */}
-      <div className="container-page py-10 sm:py-12">
+      <div className="container-page py-8 sm:py-12">
         {gridLoading ? (
-          <ProductGridSkeleton columns={3} count={PAGE_SIZE} />
+          <ProductGridSkeleton columns={4} count={PAGE_SIZE} />
         ) : error ? (
-          <div className="py-24 text-center text-sm text-ink-muted">
-            Could not load products — please try again.
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-base font-medium text-ink">Could not load products</p>
+            <p className="mt-1 text-sm text-ink-muted">Please check your connection and try again.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-5 rounded-full bg-gold-deep px-6 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-bone transition hover:bg-gold"
+            >
+              Retry
+            </button>
           </div>
         ) : products.length > 0 ? (
           <>
-            <ProductGrid products={products} columns={3} />
+            <ProductGrid products={products} columns={4} />
 
             {/* ── Pagination ──────────────────────────────────── */}
             {totalPages > 1 && (
@@ -225,7 +232,7 @@ export default function Shop() {
                         onClick={() => goToPage(pageNum)}
                         className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium transition ${
                           pageNum === currentPage
-                            ? 'bg-gold text-ink'
+                            ? 'bg-gold text-ink font-bold'
                             : 'border border-hairline text-ink-soft hover:border-gold hover:text-gold'
                         }`}
                       >

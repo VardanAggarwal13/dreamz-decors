@@ -1,43 +1,33 @@
-// Builds a right-sized delivery URL for Cloudinary- or Unsplash-hosted images (the two
-// sources used across the site — product photos on Cloudinary, fallback marketing imagery
-// from Unsplash in siteContent.js). Product photos are uploaded at full camera resolution
-// (see backend cloudinaryUpload.js), so without this every card/thumbnail was downloading
-// the original multi-MB file and letting the browser scale + crop it in CSS — slow to load.
+// Builds a right-sized delivery URL for Cloudinary-hosted images.
+// Product photos are uploaded at full camera resolution (see backend cloudinaryUpload.js),
+// so without this every card/thumbnail was downloading the original multi-MB file.
 //
-// Gravity defaults to "center" (same crop position the browser's object-cover was already
-// using) rather than Cloudinary's "auto" saliency detection — auto guesses a focal point per
-// image and can shift the crop off-center in ways that don't match the original composition.
-export function cldTransform(url, { width, height, crop = 'fill', gravity = 'center', quality = 'auto', format = 'auto' } = {}) {
+// Gravity defaults to "auto" for smart framing when cropped.
+export function cldTransform(url, { width, height, crop = 'fill', gravity = 'auto', quality = 'auto', format = 'auto', dpr = 'auto' } = {}) {
   if (!url || typeof url !== 'string') return url;
 
-  // Cloudinary: insert a transformation segment right after "/upload/" — no re-upload needed.
+  // Cloudinary: strip any stale manual c_crop segment first so the full original artwork is used
+  let normalizedUrl = url;
+  if (normalizedUrl.includes('/c_crop')) {
+    normalizedUrl = normalizedUrl.replace(/\/upload\/c_crop[^/]+\//, '/upload/');
+  }
+
   const marker = '/upload/';
-  const idx = url.indexOf(marker);
+  const idx = normalizedUrl.indexOf(marker);
   if (idx !== -1) {
     const parts = [`q_${quality}`, `f_${format}`];
+    if (dpr) parts.push(`dpr_${dpr}`);
     if (width) parts.push(`w_${Math.round(width)}`);
     if (height) parts.push(`h_${Math.round(height)}`);
-    if (width || height) parts.push(`c_${crop}`, `g_${gravity}`);
-    return `${url.slice(0, idx + marker.length)}${parts.join(',')}/${url.slice(idx + marker.length)}`;
-  }
-
-  // Unsplash: same idea via its own query-param imaging API.
-  if (url.includes('images.unsplash.com')) {
-    try {
-      const u = new URL(url);
-      if (width) u.searchParams.set('w', Math.round(width));
-      if (height) u.searchParams.set('h', Math.round(height));
-      if (width || height) {
-        u.searchParams.set('fit', 'crop');
-        u.searchParams.set('crop', gravity === 'center' ? 'center' : 'entropy');
+    if (width || height) {
+      parts.push(`c_${crop}`);
+      const isCropMode = ['fill', 'crop', 'thumb', 'lfill'].includes(crop);
+      if (isCropMode && gravity) {
+        parts.push(`g_${gravity}`);
       }
-      u.searchParams.set('auto', 'format');
-      u.searchParams.set('q', '80');
-      return u.toString();
-    } catch {
-      return url; // malformed URL — leave untouched rather than throw
     }
+    return `${normalizedUrl.slice(0, idx + marker.length)}${parts.join(',')}/${normalizedUrl.slice(idx + marker.length)}`;
   }
 
-  return url; // not a source we know how to resize (e.g. local placeholder) — leave untouched
+  return url;
 }

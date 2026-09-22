@@ -17,14 +17,26 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://127.0.0.1:5000',
         changeOrigin: true,
+        secure: false,
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, res) => {
+            if (err.code === 'ECONNREFUSED') {
+              if (res && !res.headersSent) {
+                res.writeHead(503, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Backend server is starting up, please refresh.' }));
+              }
+            }
+          });
+        },
       },
       // Proxy the Socket.IO connection (incl. WebSocket upgrade) to the API.
       '/socket.io': {
-        target: 'http://localhost:5000',
+        target: 'http://127.0.0.1:5000',
         ws: true,
         changeOrigin: true,
+        secure: false,
       },
     },
   },

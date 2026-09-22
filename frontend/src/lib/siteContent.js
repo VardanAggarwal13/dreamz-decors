@@ -20,7 +20,7 @@ export const contentPages = {
       'Dreamz Decor was founded with a singular vision — to bring premium artistic beauty into every modern Indian home, crafted with care and precision.',
     // ── Story band (image + text) ──
     storyImage:
-      'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1200&auto=format&fit=crop&q=80',
+      'https://res.cloudinary.com/dif6u5314/image/upload/v1790006408/dreamzdecors/products/lord-ganesha-handcrafted-relief-art.jpg',
     storyEyebrow: 'Who We Are',
     storyTitle: 'Premium Decor,\nCrafted with Passion.',
     // ── Values band headings (cards come from `values` below) ──
@@ -215,12 +215,14 @@ export const contentPages = {
             answer: 'Selected artworks include premium wooden framing and ready-to-hang support.',
           },
           {
-            question: 'Do you offer cash on delivery?',
-            answer: 'No. Online payment is currently available, and Cash on Delivery is not supported yet.',
+            question: 'What payment methods do you accept?',
+            answer:
+              'We accept 100% secure online payments via Razorpay, including UPI (Google Pay, PhonePe, Paytm), Credit & Debit Cards, Net Banking, and digital wallets.',
           },
           {
-            question: 'Can I order a different size?',
-            answer: 'Different sizes are not available right now. Please choose from the listed variants.',
+            question: 'Are multiple size options available?',
+            answer:
+              'Yes, our artworks are available in standard and gallery dimensions listed on each product page with transparent size-based pricing.',
           },
         ],
       },
@@ -350,7 +352,7 @@ export const contentPages = {
   product: {
     trustBadges: [
       { icon: 'shield', label: 'Secure Packaging' },
-      { icon: 'award', label: 'Handcrafted' },
+      { icon: 'award', label: 'Premium Quality' },
       { icon: 'mapPin', label: 'Made in India' },
     ],
   },
@@ -389,7 +391,7 @@ export const homeContent = {
     primaryCta: { label: 'Shop the Collection', href: '/shop' },
     secondaryCta: { label: 'View Bestsellers', href: '/shop?sort=bestselling' },
     image:
-      'https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=1400&auto=format&fit=crop&q=85',
+      'https://res.cloudinary.com/dif6u5314/image/upload/v1790006432/dreamzdecors/products/ten-gurus-handcrafted-art.jpg',
     badge: 'Gold Foil Collection',
     stats: [
       { value: '15K+', label: 'Homes Styled' },
@@ -401,29 +403,27 @@ export const homeContent = {
     {
       eyebrow: 'Wall Art',
       title: 'Statement pieces with a quiet, premium presence.',
-      blurb: 'Large-format canvases for the rooms that should feel finished, not filled.',
+      blurb: 'Large-format canvases crafted to transform living spaces into modern sanctuaries.',
       href: '/wall-art',
-      image:
-        'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1200&auto=format&fit=crop&q=70',
-      ctaLabel: 'Shop wall art',
+      image: '',
+      ctaLabel: 'Shop Wall Art',
     },
     {
       eyebrow: 'Gallery Sets',
-      title: 'Curated sets designed to work together from day one.',
-      blurb: 'Balanced pairings and triptychs that make styling feel effortless.',
+      title: 'Curated sets designed to work together.',
+      blurb: 'Harmonious multi-panel triptychs and balanced pairings for effortless gallery walls.',
       href: '/gallery-sets',
-      image:
-        'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&auto=format&fit=crop&q=70',
-      ctaLabel: 'Shop gallery sets',
+      image: '',
+      ctaLabel: 'Shop Gallery Sets',
     },
     {
-      eyebrow: 'Bundles',
-      title: 'The quickest path to a more composed wall.',
-      blurb: 'Value-led sets chosen for gifting, refreshing, and easy room upgrades.',
-      href: '/bundles',
+      eyebrow: 'Religious Art',
+      title: 'Sacred devotion & timeless spiritual serenity.',
+      blurb: 'Devotional masterpieces with rich serene detailing for home temples and living rooms.',
+      href: '/religious',
       image:
-        'https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=1200&auto=format&fit=crop&q=70',
-      ctaLabel: 'Shop bundles',
+        'https://res.cloudinary.com/dif6u5314/image/upload/v1790043148/dreamzdecors/banners/religious-art-collection-banner-v2.jpg',
+      ctaLabel: 'Shop Religious Art',
     },
   ],
   rooms: [
@@ -432,8 +432,7 @@ export const homeContent = {
       title: 'The living room edit',
       blurb: 'Anchor the most visible wall with one strong focal piece.',
       href: '/shop?tag=living-room',
-      image:
-        'https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&auto=format&fit=crop&q=70',
+      image: '',
       ctaLabel: 'Shop living room',
     },
     {
@@ -441,8 +440,7 @@ export const homeContent = {
       title: 'The bedroom edit',
       blurb: 'Soft tones and calmer compositions for a restful feel.',
       href: '/shop?tag=bedroom',
-      image:
-        'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&auto=format&fit=crop&q=70',
+      image: '',
       ctaLabel: 'Shop bedroom',
     },
     {
@@ -450,8 +448,7 @@ export const homeContent = {
       title: 'The office edit',
       blurb: 'A sharper visual language for productive work zones.',
       href: '/shop?tag=office',
-      image:
-        'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&auto=format&fit=crop&q=70',
+      image: '',
       ctaLabel: 'Shop office',
     },
     {
@@ -459,8 +456,7 @@ export const homeContent = {
       title: 'The dining edit',
       blurb: 'Warm, layered pieces that add depth around shared spaces.',
       href: '/shop?tag=dining',
-      image:
-        'https://images.unsplash.com/photo-1449247709967-d4461a6a6103?w=1200&auto=format&fit=crop&q=70',
+      image: '',
       ctaLabel: 'Shop dining',
     },
   ],
@@ -470,8 +466,7 @@ export const homeContent = {
       title: 'Modern minimalism',
       blurb: 'Clean forms, warm neutrals, and an easy premium feel.',
       href: '/shop?tag=abstract',
-      image:
-        'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?w=1200&auto=format&fit=crop&q=70',
+      image: '',
       ctaLabel: 'Explore abstract',
     },
     {
@@ -479,8 +474,7 @@ export const homeContent = {
       title: 'Nature-inspired calm',
       blurb: 'Organic movement and earthy tones that soften a room.',
       href: '/shop?tag=nature',
-      image:
-        'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&auto=format&fit=crop&q=70',
+      image: '',
       ctaLabel: 'Explore nature',
     },
     {
@@ -488,8 +482,7 @@ export const homeContent = {
       title: 'Portrait-led statements',
       blurb: 'Graphic, art-forward pieces with a gallery sensibility.',
       href: '/shop?tag=portrait',
-      image:
-        'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?w=1200&auto=format&fit=crop&q=70',
+      image: '',
       ctaLabel: 'Explore portrait',
     },
     {
@@ -497,8 +490,7 @@ export const homeContent = {
       title: 'Limited-run favorites',
       blurb: 'A small edit of the most distinctive items in the range.',
       href: '/shop?sort=bestselling',
-      image:
-        'https://images.unsplash.com/photo-1522794485894-27ffd7f3d44d?w=1200&auto=format&fit=crop&q=70',
+      image: '',
       ctaLabel: 'Explore favorites',
     },
   ],
@@ -532,7 +524,7 @@ export const homeContent = {
   featureDescription:
     'Every piece is built to look composed on arrival, with a quieter palette, sharper typography, and less clutter across the experience.',
   featureImage:
-    'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1600&auto=format&fit=crop&q=70',
+    'https://res.cloudinary.com/dif6u5314/image/upload/v1790006432/dreamzdecors/products/ten-gurus-handcrafted-art.jpg',
   featureCta: { label: 'Browse the collection', href: '/shop' },
   // Editable section headers (eyebrow / title / description / link label) for each homepage band.
   sections: {

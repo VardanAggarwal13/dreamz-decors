@@ -174,7 +174,7 @@ export default function AdminCategories() {
               <Field label="Title"><Input value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Wall Art" /></Field>
               <Field label="Slug (auto if blank)"><Input value={form.slug} onChange={(e) => set('slug', e.target.value)} placeholder={slugify(form.title) || 'wall-art'} /></Field>
               <Field label="Blurb"><Input value={form.blurb} onChange={(e) => set('blurb', e.target.value)} placeholder="Short description" /></Field>
-              <ImageInput label="Image" value={form.image} onChange={(url) => set('image', url)} hint="Upload a file or paste an image link." />
+              <ImageInput label="Category Image" value={form.image} onChange={(url) => set('image', url)} recommendedDimensions="4:5 Portrait (2400 × 3000 px) · Min 1600 × 2000 px" hint="Upload a category photo or paste direct link." />
               <div className="flex items-center gap-4">
                 <Field label="Order"><Input type="number" value={form.order} onChange={(e) => set('order', e.target.value)} className="w-24" /></Field>
                 <label className="mt-6 flex items-center gap-2 text-sm text-ink">

@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { FiHeart, FiMenu, FiSearch, FiShoppingBag, FiUser, FiX, FiChevronRight } from 'react-icons/fi';
-import { navMenu as defaultNavMenu } from '@/lib/sampleData';
+const defaultNavMenu = [
+  { label: 'Wall Art', href: '/wall-art' },
+  { label: 'Gallery Sets', href: '/gallery-sets' },
+  { label: 'Religious Art', href: '/religious' },
+];
 import { brand } from '@/lib/brand';
 import useFetch from '@/hooks/useFetch';
 import { useCartStore } from '@/store/cartStore';
@@ -136,8 +140,8 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-0.5 text-ink sm:gap-1 lg:flex-none">
-          {/* Search lives in the hamburger menu on mobile; icon shows from lg up. */}
+        <div className="flex items-center gap-1 text-ink sm:gap-1.5 lg:flex-none">
+          {/* Search lives in the search bar on mobile; icon toggles search on desktop */}
           <button
             aria-label="Search"
             onClick={() => setSearchOpen((v) => !v)}
@@ -148,25 +152,23 @@ export default function Navbar() {
 
           {user && <NotificationBell buttonClassName={iconButton} badgeClassName={iconBadge} />}
 
-          <Link to="/wishlist" aria-label="Wishlist" className={`hidden sm:grid ${iconButton}`}>
+          <Link to="/wishlist" aria-label="Wishlist" className={iconButton}>
             <FiHeart size={18} />
             {wishCount > 0 && <span className={iconBadge}>{wishCount}</span>}
           </Link>
 
-          {/* Cart: logged-in users access it from the profile menu on mobile, so
-              hide the bar icon there; guests (no profile menu) keep it. Desktop
-              always shows it. */}
+          {/* Cart: Always visible on both mobile and desktop */}
           <Link
             to="/cart"
             aria-label="Cart"
-            className={`${iconButton} ${user ? 'hidden lg:grid' : ''}`}
+            className={iconButton}
           >
             <FiShoppingBag size={18} />
             {count > 0 && <span className={iconBadge}>{count}</span>}
           </Link>
 
           {/* Divider between quick actions and the account control */}
-          <span className="mx-1.5 hidden h-6 w-px bg-hairline sm:block" />
+          <span className="mx-1 hidden h-6 w-px bg-hairline sm:block" />
 
           {authStatus === 'loading' ? (
             <span className={`${iconButton} pointer-events-none`} aria-hidden>
@@ -182,8 +184,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Search bar — always visible on mobile; toggled by the icon on desktop. */}
-      <div className="border-t border-hairline/60 bg-bone lg:hidden">
+      {/* Search bar — always accessible on mobile; toggled by the icon on desktop. */}
+      <div className="border-t border-hairline/60 bg-bone/95 py-0.5 backdrop-blur-sm lg:hidden">
         {searchForm()}
       </div>
       {searchOpen && (

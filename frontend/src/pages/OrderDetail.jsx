@@ -186,7 +186,7 @@ export default function OrderDetail() {
                   <p className="mt-4 text-sm text-ink-soft">
                     Method:{' '}
                     <span className="font-medium uppercase text-ink">
-                      {order.payment?.method === 'cod' ? 'Cash on delivery' : 'Razorpay'}
+                      {order.payment?.method === 'cod' ? 'Online Payment' : 'Online Payment (Razorpay)'}
                     </span>
                   </p>
                   {order.payment?.paidAt && (

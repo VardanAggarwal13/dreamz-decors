@@ -294,11 +294,11 @@ export default function AdminNewsletter() {
               <input value={campaign.heading} onChange={set('heading')} placeholder="Fresh on the wall" className={inputCls} />
             </Field>
 
-            {/* Banner image — upload a file or paste a link */}
             <ImageInput
               label="Banner image"
               value={campaign.imageUrl}
               onChange={(url) => setCampaign((c) => ({ ...c, imageUrl: url }))}
+              recommendedDimensions="16:9 / 2:1 Email Header (1200 × 600 px) · Min 800 × 400 px"
               hint="Shown full-width at the top of the email."
             />
 

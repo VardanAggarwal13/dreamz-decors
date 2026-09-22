@@ -18,13 +18,18 @@ import api from '@/lib/api';
 import { useCartStore } from '@/store/cartStore';
 import { formatINR, normalizeProduct } from '@/lib/utils';
 
-function QtyButton({ onClick, children, label }) {
+function QtyButton({ onClick, children, label, disabled = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-label={label}
-      className="flex h-8 w-8 items-center justify-center rounded-md border border-hairline text-ink-soft transition hover:border-gold/50 hover:bg-gold/10 hover:text-ink"
+      className={`flex h-8 w-8 items-center justify-center rounded-md border text-ink-soft transition ${
+        disabled
+          ? 'border-hairline/40 opacity-30 cursor-not-allowed'
+          : 'border-hairline hover:border-gold/50 hover:bg-gold/10 hover:text-ink'
+      }`}
     >
       {children}
     </button>
@@ -146,14 +151,14 @@ export default function Cart() {
               {items.map((item) => (
                 <li
                   key={item.key}
-                  className="relative flex gap-4 rounded-2xl border border-hairline/60 bg-bone-soft p-4"
+                  className="relative flex gap-3.5 rounded-2xl border border-hairline/60 bg-bone-soft p-3.5 sm:gap-4 sm:p-4"
                 >
                   {/* Thumbnail */}
                   <Link
                     to={`/product/${item.slug}`}
-                    className="aspect-square w-20 shrink-0 overflow-hidden rounded-xl bg-bone-muted sm:w-28"
+                    className="aspect-[4/5] w-20 shrink-0 overflow-hidden rounded-xl bg-bone-muted sm:w-24 md:w-28"
                   >
-                    <MediaImage src={item.image} alt={item.title} label={item.title} width={220} height={220} />
+                    <MediaImage src={item.image} alt={item.title} label={item.title} width={240} height={300} />
                   </Link>
 
                   {/* Content (pr-6 reserves space for the absolute remove ✕) */}
@@ -178,10 +183,23 @@ export default function Cart() {
 
                     <div className="mt-auto flex flex-col items-start gap-3 pt-3 sm:flex-row sm:items-end sm:justify-between">
                       {/* Qty */}
-                      <div className="flex shrink-0 items-center gap-2">
-                        <QtyButton onClick={() => updateQty(item.key, item.qty - 1)} label="Decrease">−</QtyButton>
-                        <span className="w-8 text-center text-sm font-medium text-ink">{item.qty}</span>
-                        <QtyButton onClick={() => updateQty(item.key, item.qty + 1)} label="Increase">+</QtyButton>
+                      <div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <QtyButton onClick={() => updateQty(item.key, item.qty - 1)} label="Decrease">−</QtyButton>
+                          <span className="w-8 text-center text-sm font-medium text-ink">{item.qty}</span>
+                          <QtyButton
+                            onClick={() => updateQty(item.key, item.qty + 1)}
+                            disabled={item.stock != null && item.qty >= item.stock}
+                            label="Increase"
+                          >
+                            +
+                          </QtyButton>
+                        </div>
+                        {item.stock != null && item.qty >= item.stock && (
+                          <span className="mt-1 block text-[10px] font-semibold text-amber-700">
+                            Max stock reached ({item.stock})
+                          </span>
+                        )}
                       </div>
 
                       {/* Price */}

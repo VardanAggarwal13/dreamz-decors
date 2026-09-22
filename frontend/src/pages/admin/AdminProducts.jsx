@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiUploadCloud, FiEye } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiUploadCloud, FiEye, FiHelpCircle } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import { Input } from '@/components/ui/Input';
@@ -11,14 +11,18 @@ import Modal, { ViewStat } from '@/components/admin/Modal';
 import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
 import AdminSearch from '@/components/admin/AdminSearch';
 import AdminPagination from '@/components/admin/AdminPagination';
+import DimensionGuideModal from '@/components/admin/DimensionGuideModal';
 import { formatINR } from '@/lib/utils';
 
 const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 const empty = {
   title: '', slug: '', description: '', category: '', price: '', mrp: '',
-  stock: 0, badge: '', tags: '', images: [], isActive: true, isFeatured: false,
+  stock: 10, badge: '', tags: '', images: [], isActive: true, isFeatured: false,
+  variants: [{ size: '18x36', price: '', mrp: '', stock: 10 }],
 };
+
+const SUGGESTED_SIZES = ['18x36', '24x24', '12x18', '20x30', '24x36', '30x40'];
 
 export default function AdminProducts() {
   const [q, setQ] = useState('');
@@ -29,6 +33,7 @@ export default function AdminProducts() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imgLink, setImgLink] = useState('');
+  const [guideOpen, setGuideOpen] = useState(false);
   const fileRef = useRef(null);
   useBodyScrollLock(!!editing); // view modal manages its own lock via <Modal/>
 
@@ -45,20 +50,86 @@ export default function AdminProducts() {
     api.get('/admin/categories?limit=100').then((res) => setCats(res.data || []));
   }, []);
 
-  const openNew = () => { setForm(empty); setEditing({}); };
+  const openNew = () => {
+    setForm({
+      ...empty,
+      variants: [{ size: '18x36', price: '', mrp: '', stock: 10 }],
+    });
+    setEditing({});
+  };
+
   const openEdit = (p) => {
+    const initialVariants = (p.variants && p.variants.length > 0)
+      ? p.variants.map((v) => ({
+          size: v.size || '',
+          price: v.price != null ? v.price : '',
+          mrp: v.mrp != null ? v.mrp : '',
+          stock: v.stock != null ? v.stock : 10,
+        }))
+      : [{ size: '18x36', price: p.price != null ? p.price : '', mrp: p.mrp != null ? p.mrp : '', stock: p.stock ?? 10 }];
+
     setForm({
       ...empty,
       ...p,
+      price: p.price != null ? p.price : (initialVariants[0]?.price || ''),
+      mrp: p.mrp != null ? p.mrp : (initialVariants[0]?.mrp || ''),
       category: p.category?._id || p.category || '',
       tags: (p.tags || []).join(', '),
       images: p.images || [],
+      variants: initialVariants,
     });
     setEditing(p);
   };
+
   const close = () => setEditing(null);
   const editFromView = (p) => { setViewing(null); openEdit(p); };
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const addVariantRow = (presetSize = '') => {
+    setForm((f) => {
+      let chosenSize = presetSize;
+      if (!chosenSize) {
+        const used = new Set(f.variants.map((v) => (v.size || '').trim().toLowerCase()));
+        chosenSize = SUGGESTED_SIZES.find((s) => !used.has(s.toLowerCase())) || '24x24';
+      }
+      return {
+        ...f,
+        variants: [
+          ...f.variants,
+          { size: chosenSize, price: '', mrp: '', stock: 10 },
+        ],
+      };
+    });
+  };
+
+  const updateVariantRow = (idx, field, val) => {
+    setForm((f) => {
+      const updated = [...f.variants];
+      updated[idx] = { ...updated[idx], [field]: val };
+      const nextForm = { ...f, variants: updated };
+      if (idx === 0) {
+        if (field === 'price') nextForm.price = val;
+        if (field === 'mrp') nextForm.mrp = val;
+      }
+      return nextForm;
+    });
+  };
+
+  const removeVariantRow = (idx) => {
+    setForm((f) => {
+      if (f.variants.length <= 1) {
+        toast.info('At least one size variant is required');
+        return f;
+      }
+      const updated = f.variants.filter((_, i) => i !== idx);
+      const nextForm = { ...f, variants: updated };
+      if (updated[0]) {
+        if (updated[0].price) nextForm.price = updated[0].price;
+        if (updated[0].mrp) nextForm.mrp = updated[0].mrp;
+      }
+      return nextForm;
+    });
+  };
 
   const onUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -93,18 +164,41 @@ export default function AdminProducts() {
 
   const save = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.price) return toast.error('Title and price are required');
+    if (!form.title) return toast.error('Title is required');
+
+    const cleanedVariants = (form.variants || [])
+      .filter((v) => v && (v.size?.trim() || v.price !== ''))
+      .map((v) => ({
+        size: String(v.size || '').trim(),
+        price: Number(v.price) || 0,
+        mrp: v.mrp !== '' && v.mrp != null ? Number(v.mrp) : undefined,
+        stock: Number(v.stock) || 0,
+      }));
+
+    const basePrice = cleanedVariants.length > 0 && cleanedVariants[0].price > 0
+      ? cleanedVariants[0].price
+      : Number(form.price);
+
+    if (!basePrice || basePrice <= 0) {
+      return toast.error('Please enter a valid price for at least one size');
+    }
+
+    const baseMrp = cleanedVariants.length > 0 && cleanedVariants[0].mrp
+      ? cleanedVariants[0].mrp
+      : (form.mrp ? Number(form.mrp) : undefined);
+
     const payload = {
       title: form.title,
       slug: form.slug || slugify(form.title),
       description: form.description,
       category: form.category || undefined,
-      price: Number(form.price),
-      mrp: form.mrp ? Number(form.mrp) : undefined,
+      price: basePrice,
+      mrp: baseMrp,
       stock: Number(form.stock) || 0,
       badge: form.badge || undefined,
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
       images: form.images,
+      variants: cleanedVariants,
       isActive: form.isActive,
       isFeatured: form.isFeatured,
     };
@@ -245,49 +339,198 @@ export default function AdminProducts() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Title" full><Input value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Product title" /></Field>
               <Field label="Slug (auto if blank)"><Input value={form.slug} onChange={(e) => set('slug', e.target.value)} placeholder={slugify(form.title)} /></Field>
-              <Field label="Category">
+              <Field label="Category" full>
                 <select value={form.category} onChange={(e) => set('category', e.target.value)} className="w-full rounded-xl border border-hairline bg-white px-4 py-3 text-sm text-ink outline-none focus:border-gold">
                   <option value="">— none —</option>
                   {cats.map((c) => <option key={c._id} value={c._id}>{c.title}</option>)}
                 </select>
               </Field>
-              <Field label="Price (₹)"><Input type="number" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="0" /></Field>
-              <Field label="MRP (₹)"><Input type="number" value={form.mrp} onChange={(e) => set('mrp', e.target.value)} placeholder="0" /></Field>
-              <Field label="Stock"><Input type="number" value={form.stock} onChange={(e) => set('stock', e.target.value)} /></Field>
               <Field label="Badge (NEW / BEST / LTD)"><Input value={form.badge} onChange={(e) => set('badge', e.target.value)} placeholder="optional" /></Field>
-              <Field label="Tags (comma separated)" full><Input value={form.tags} onChange={(e) => set('tags', e.target.value)} placeholder="abstract, gold, canvas" /></Field>
+              <Field label="Tags (comma separated)"><Input value={form.tags} onChange={(e) => set('tags', e.target.value)} placeholder="abstract, gold, canvas" /></Field>
               <Field label="Description" full>
                 <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} className="w-full rounded-xl border border-hairline bg-white px-4 py-3 text-sm text-ink outline-none focus:border-gold" placeholder="Product description" />
               </Field>
             </div>
 
-            {/* Images */}
-            <div className="mt-4">
-              <span className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-ink-muted">Images</span>
-              <div className="flex flex-wrap gap-3">
-                {form.images.map((img, i) => (
-                  <div key={i} className="relative h-20 w-20 overflow-hidden rounded-lg border border-hairline">
-                    <img src={img.url} alt="" className="h-full w-full object-cover" />
-                    <button type="button" onClick={() => removeImage(i)} className="absolute right-0.5 top-0.5 grid h-5 w-5 place-items-center rounded-full bg-ink/70 text-bone"><FiX size={11} /></button>
+            {/* Size & Price Options Section */}
+            <div className="mt-5 rounded-2xl border border-gold/30 bg-gradient-to-b from-gold/5 via-bone to-bone p-4 sm:p-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div>
+                  <span className="block text-[12px] font-bold uppercase tracking-[0.16em] text-gold-deep">
+                    📏 Size-Based Pricing &amp; Dimensions
+                  </span>
+                  <p className="text-[11px] text-ink-muted mt-0.5">
+                    Set prices per size (e.g. 18×36" = ₹1,600, 24×24" = ₹2,200). The first size will be the default selected price on the store.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => addVariantRow()}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-gold/60 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold-deep transition hover:bg-gold hover:text-ink active:scale-95"
+                >
+                  <FiPlus size={14} /> Add Size &amp; Price
+                </button>
+              </div>
+
+              {/* Quick Add Suggestions */}
+              <div className="mb-3.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                <span className="text-ink-muted">Quick add:</span>
+                {SUGGESTED_SIZES.map((sz) => (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => {
+                      if (!form.variants.some((v) => v.size === sz)) {
+                        addVariantRow(sz);
+                      } else {
+                        toast.info(`Size ${sz} is already added`);
+                      }
+                    }}
+                    className="rounded-lg border border-hairline/80 bg-bone-soft px-2 py-0.5 text-ink-soft transition hover:border-gold hover:text-gold-deep"
+                  >
+                    +{sz}"
+                  </button>
+                ))}
+              </div>
+
+              {/* Variant Rows Table */}
+              <div className="space-y-2.5">
+                {form.variants.map((v, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex flex-wrap items-center gap-2.5 rounded-xl border p-2.5 transition sm:flex-nowrap ${
+                      idx === 0
+                        ? 'border-gold/50 bg-gold/[0.04] shadow-xs'
+                        : 'border-hairline/80 bg-bone-soft'
+                    }`}
+                  >
+                    {/* Default Badge */}
+                    <div className="w-full sm:w-auto shrink-0 flex items-center justify-between sm:justify-start">
+                      <span className="text-[10px] font-mono font-bold text-ink-muted w-5">
+                        #{idx + 1}
+                      </span>
+                      {idx === 0 ? (
+                        <span className="rounded-md bg-gold/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-deep">
+                          Default Size
+                        </span>
+                      ) : (
+                        <span className="sm:hidden text-[10px] text-ink-muted">Size Option</span>
+                      )}
+                    </div>
+
+                    {/* Size Input (Left Side) */}
+                    <div className="flex-1 min-w-[110px]">
+                      <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Size (Inches)</span>
+                      <input
+                        value={v.size}
+                        onChange={(e) => updateVariantRow(idx, 'size', e.target.value)}
+                        placeholder="e.g. 18x36"
+                        className="w-full rounded-lg border border-hairline bg-white px-3 py-1.5 text-xs font-medium text-ink placeholder:text-ink-muted outline-none focus:border-gold"
+                      />
+                    </div>
+
+                    {/* Price Input (Right Side) */}
+                    <div className="w-28 sm:w-32">
+                      <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Price (₹)</span>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-muted">₹</span>
+                        <input
+                          type="number"
+                          value={v.price}
+                          onChange={(e) => updateVariantRow(idx, 'price', e.target.value)}
+                          placeholder="1600"
+                          className="w-full rounded-lg border border-hairline bg-white pl-6 pr-2.5 py-1.5 text-xs font-bold text-ink placeholder:text-ink-muted outline-none focus:border-gold"
+                        />
+                      </div>
+                    </div>
+
+                    {/* MRP Input (Optional) */}
+                    <div className="w-24 sm:w-28">
+                      <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">MRP (₹)</span>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-muted">₹</span>
+                        <input
+                          type="number"
+                          value={v.mrp || ''}
+                          onChange={(e) => updateVariantRow(idx, 'mrp', e.target.value)}
+                          placeholder="MRP"
+                          className="w-full rounded-lg border border-hairline bg-white pl-6 pr-2.5 py-1.5 text-xs text-ink-soft placeholder:text-ink-muted outline-none focus:border-gold"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Stock */}
+                    <div className="w-16 sm:w-20">
+                      <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Stock</span>
+                      <input
+                        type="number"
+                        value={v.stock != null ? v.stock : 10}
+                        onChange={(e) => updateVariantRow(idx, 'stock', e.target.value)}
+                        placeholder="Stock"
+                        className="w-full rounded-lg border border-hairline bg-white px-2 py-1.5 text-xs text-center text-ink outline-none focus:border-gold"
+                      />
+                    </div>
+
+                    {/* Remove Button */}
+                    <button
+                      type="button"
+                      onClick={() => removeVariantRow(idx)}
+                      disabled={form.variants.length <= 1}
+                      className="rounded-lg p-1.5 text-ink-muted transition hover:bg-sale/10 hover:text-sale disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-muted"
+                      title="Remove Size"
+                    >
+                      <FiTrash2 size={14} />
+                    </button>
                   </div>
                 ))}
-                <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-hairline text-ink-muted hover:border-gold hover:text-gold-deep">
-                  <FiUploadCloud size={18} />
-                  <span className="text-[10px]">{uploading ? '…' : 'Upload'}</span>
+              </div>
+            </div>
+
+            {/* Images */}
+            <div className="mt-5">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="block text-[11px] font-medium uppercase tracking-[0.18em] text-ink-muted">Product Images</span>
+                <button
+                  type="button"
+                  onClick={() => setGuideOpen(true)}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-gold-deep transition hover:text-ink hover:underline"
+                >
+                  <FiHelpCircle size={13} /> Dimension Guide
+                </button>
+              </div>
+
+              <div className="mb-2.5 rounded-lg border border-hairline/80 bg-bone/60 p-2.5 text-[11px] text-ink-soft flex items-start gap-2">
+                <span className="font-semibold text-gold-deep whitespace-nowrap">📐 Standards:</span>
+                <span><strong>4:5 Vertical (2400×3000px)</strong> for single canvases · <strong>4:3 or 16:9</strong> for Gallery Sets · Min 1600×2000px</span>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {form.images.map((img, i) => (
+                  <ProductImageChip key={i} img={img} onRemove={() => removeImage(i)} isPrimary={i === 0} />
+                ))}
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  className="group flex h-24 w-24 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-hairline/90 bg-bone-soft text-ink-muted transition hover:border-gold/60 hover:bg-gold/5 hover:text-gold-deep disabled:opacity-60"
+                >
+                  <FiUploadCloud size={20} className={uploading ? 'animate-pulse text-gold' : 'group-hover:scale-110'} />
+                  <span className="text-[10px] font-semibold">{uploading ? 'Uploading…' : 'Add Image'}</span>
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" onChange={onUpload} className="hidden" />
               </div>
+
               {/* Or add by direct link */}
               <div className="mt-2.5 flex items-center gap-2">
                 <input
                   value={imgLink}
                   onChange={(e) => setImgLink(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addImageLink(); } }}
-                  placeholder="or paste an image link…"
+                  placeholder="or paste image URL (https://…)"
                   className="min-w-0 flex-1 rounded-lg border border-hairline bg-bone-soft px-3 py-2 text-sm text-ink placeholder:text-ink-muted outline-none transition focus:border-gold"
                 />
                 <button type="button" onClick={addImageLink} className="shrink-0 rounded-lg border border-hairline bg-bone px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft transition hover:border-gold/50 hover:text-gold-deep">
-                  Add
+                  Add Link
                 </button>
               </div>
             </div>
@@ -346,11 +589,44 @@ export default function AdminProducts() {
             )}
 
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <ViewStat label="Price" value={formatINR(viewing.price)} />
+              <ViewStat label="Starting Price" value={formatINR(viewing.price)} />
               <ViewStat label="MRP" value={viewing.mrp ? formatINR(viewing.mrp) : '—'} />
               <ViewStat label="Stock" value={viewing.stock ?? 0} />
               <ViewStat label="Category" value={viewing.category?.title || '—'} />
             </div>
+
+            {/* Size & Price Options List in View Modal */}
+            {viewing.variants?.length > 0 && (
+              <div>
+                <span className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-ink-muted">
+                  Size &amp; Price Options
+                </span>
+                <div className="overflow-x-auto rounded-xl border border-hairline/80 bg-bone">
+                  <table className="w-full text-left text-xs">
+                    <thead className="border-b border-hairline/60 bg-bone-muted text-[10px] uppercase tracking-wider text-ink-muted">
+                      <tr>
+                        <th className="px-3.5 py-2 font-medium">Size (Inches)</th>
+                        <th className="px-3.5 py-2 font-medium">Price</th>
+                        <th className="px-3.5 py-2 font-medium">MRP</th>
+                        <th className="px-3.5 py-2 font-medium">Stock</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-hairline/40">
+                      {viewing.variants.map((v, i) => (
+                        <tr key={i} className={i === 0 ? 'bg-gold/[0.06] font-semibold' : ''}>
+                          <td className="px-3.5 py-2 text-ink">
+                            {v.size}" {i === 0 && <span className="ml-1.5 rounded bg-gold/20 px-1.5 py-0.2 text-[9px] font-bold uppercase text-gold-deep">Default</span>}
+                          </td>
+                          <td className="px-3.5 py-2 text-ink font-bold">{formatINR(v.price)}</td>
+                          <td className="px-3.5 py-2 text-ink-muted">{v.mrp ? formatINR(v.mrp) : '—'}</td>
+                          <td className="px-3.5 py-2 text-ink-soft">{v.stock ?? 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {viewing.tags?.length > 0 && (
               <div>
@@ -372,6 +648,61 @@ export default function AdminProducts() {
           </div>
         )}
       </Modal>
+
+      {/* Dimension Guide Modal */}
+      <DimensionGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
+    </div>
+  );
+}
+
+function ProductImageChip({ img, onRemove, isPrimary }) {
+  const [dims, setDims] = useState(null);
+
+  useEffect(() => {
+    if (!img?.url) return;
+    const i = new Image();
+    i.onload = () => {
+      const w = i.naturalWidth;
+      const h = i.naturalHeight;
+      const r = w / h;
+      let ratio = `${w}:${h}`;
+      if (Math.abs(r - 0.8) < 0.06) ratio = '4:5';
+      else if (Math.abs(r - 1.0) < 0.05) ratio = '1:1';
+      else if (Math.abs(r - 1.333) < 0.06) ratio = '4:3';
+      else if (Math.abs(r - 1.777) < 0.08) ratio = '16:9';
+      setDims({ w, h, ratio });
+    };
+    i.src = img.url;
+  }, [img?.url]);
+
+  return (
+    <div className="group/chip relative flex flex-col items-center">
+      <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-hairline/80 bg-[#FBF9F5] shadow-sm">
+        <img src={img.url} alt="" className="h-full w-full object-contain" />
+
+        {/* Primary Badge */}
+        {isPrimary && (
+          <span className="absolute bottom-1 left-1 rounded bg-gold px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-ink shadow">
+            Main
+          </span>
+        )}
+
+        {/* Remove Button */}
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-ink/75 text-bone shadow transition hover:bg-ink hover:scale-110"
+        >
+          <FiX size={11} />
+        </button>
+      </div>
+
+      {/* Live Dimension Pill */}
+      {dims && (
+        <span className="mt-1 font-mono text-[9px] text-ink-muted">
+          {dims.w}×{dims.h} <strong className="text-gold-deep">({dims.ratio})</strong>
+        </span>
+      )}
     </div>
   );
 }

@@ -6,24 +6,30 @@ import { initSocket } from './config/socket.js';
 
 const PORT = process.env.PORT || 5000;
 
-const start = async () => {
-  await connectDB();
+const server = http.createServer(app);
+initSocket(server);
 
-  // Wrap Express in an HTTP server so Socket.IO can share the same port.
-  const server = http.createServer(app);
-  initSocket(server);
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use. Please terminate existing node processes on port ${PORT}.`);
+    process.exit(1);
+  } else {
+    console.error('Server error:', err);
+  }
+});
 
-  server.listen(PORT, () => {
-    console.log(`✦ DreamzDecors API running on http://localhost:${PORT}`);
-    console.log(`✦ Socket.IO ready for real-time notifications`);
-  });
-};
+// Start listening immediately so Vite proxy never gets ECONNREFUSED
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`✦ DreamzDecors API running on http://localhost:${PORT}`);
+  console.log(`✦ Socket.IO ready for real-time notifications`);
+});
 
-start().catch((err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
+// Connect to MongoDB (Mongoose buffers queries until connection is established)
+connectDB().catch((err) => {
+  console.error('MongoDB connection error:', err.message);
 });
 
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled rejection:', err);
 });
+

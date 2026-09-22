@@ -6,22 +6,14 @@ export function cn(...inputs) {
 }
 
 const categoryFallbackImage = {
-  'wall-art':
-    'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1200&auto=format&fit=crop&q=70',
-  'gallery-sets':
-    'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&auto=format&fit=crop&q=70',
-  skateboards:
-    'https://images.unsplash.com/photo-1520975922323-a59c2deb1cc1?w=1200&auto=format&fit=crop&q=70',
-  bundles:
-    'https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&auto=format&fit=crop&q=70',
+  religious:
+    'https://res.cloudinary.com/dif6u5314/image/upload/v1790006430/dreamzdecors/products/golden-temple-handcrafted-art.jpg',
+  'wall-art': '',
+  'gallery-sets': '',
+  bundles: '',
 };
 
-const productFallbackImages = [
-  'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=900&auto=format&fit=crop&q=70',
-  'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&auto=format&fit=crop&q=70',
-  'https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=900&auto=format&fit=crop&q=70',
-  'https://images.unsplash.com/photo-1494526585095-c41746248156?w=900&auto=format&fit=crop&q=70',
-];
+const productFallbackImages = [];
 
 function fallbackByKey(key = '') {
   const normalized = String(key).trim().toLowerCase();
@@ -67,9 +59,8 @@ export function slugify(str) {
 export function normalizeProduct(p) {
   if (!p) return null;
   const categorySlug = typeof p.category === 'string' ? p.category : p.category?.slug;
-  const baseFallback = categoryFallbackImage[categorySlug] || fallbackByKey(p.slug || p.title);
-  const image = p.images?.[0]?.url || p.image || baseFallback;
-  const hover = p.images?.[1]?.url || p.hover || image;
+  const image = p.images?.[0]?.url || p.image || '';
+  const hover = p.images?.[1]?.url || p.hover || '';
 
   return {
     id: p._id || p.id,

@@ -126,13 +126,13 @@ export default function Shop() {
       />
 
       {/* ── 1. Hero ───────────────────────────────────────────── */}
-      <div className="border-b border-hairline/60 bg-bone py-10 text-center sm:py-12">
+      <div className="border-b border-hairline/60 bg-bone py-7 text-center sm:py-9">
         <div className="container-page">
           <p className="eyebrow-gold">{search ? 'Search' : 'Handcrafted in India'}</p>
-          <h1 className="mt-2 font-display text-4xl leading-tight text-ink sm:text-5xl">
+          <h1 className="mt-2 font-display text-2xl sm:text-3xl lg:text-4xl leading-tight text-ink">
             {search ? `Results for “${search}”` : currentCat ? currentCat.title : 'Our Collections'}
           </h1>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-ink-soft">
+          <p className="mx-auto mt-2.5 max-w-md text-xs sm:text-sm leading-relaxed text-ink-soft">
             {search
               ? 'Showing matches across the collection.'
               : currentCat?.blurb ||
@@ -143,13 +143,13 @@ export default function Shop() {
 
       {/* ── 2. Filter bar ─────────────────────────────────────── */}
       <div className="sticky top-0 z-20 border-b border-hairline/60 bg-bone/95 backdrop-blur-sm">
-        <div className="container-page flex flex-col gap-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="container-page flex flex-col gap-2.5 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           {/* Category pills — single swipeable row on mobile (bleeds edge to
               edge), wraps normally from sm up. */}
           <div className="scrollbar-hide -mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
             <button
               onClick={() => setCategory(null)}
-              className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
                 !category
                   ? 'bg-gold text-ink'
                   : 'border border-hairline text-ink-soft hover:border-gold/60 hover:text-ink'
@@ -161,7 +161,7 @@ export default function Shop() {
               <button
                 key={cat.slug}
                 onClick={() => setCategory(cat.slug)}
-                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
+                className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
                   category === cat.slug
                     ? 'bg-gold text-ink'
                     : 'border border-hairline text-ink-soft hover:border-gold/60 hover:text-ink'
@@ -177,7 +177,7 @@ export default function Shop() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="w-full appearance-none cursor-pointer rounded-full border border-hairline bg-bone py-2 pl-4 pr-8 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition focus:border-gold focus:outline-none sm:w-auto sm:py-1.5"
+              className="w-full appearance-none cursor-pointer rounded-full border border-hairline bg-bone py-1.5 pl-3.5 pr-7 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition focus:border-gold focus:outline-none sm:w-auto"
             >
               {sortOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -192,16 +192,16 @@ export default function Shop() {
       </div>
 
       {/* ── 3. Grid ───────────────────────────────────────────── */}
-      <div className="container-page py-8 sm:py-12">
+      <div className="container-page py-6 sm:py-8 lg:py-10">
         {gridLoading ? (
           <ProductGridSkeleton columns={4} count={PAGE_SIZE} />
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-base font-medium text-ink">Could not load products</p>
             <p className="mt-1 text-sm text-ink-muted">Please check your connection and try again.</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-5 rounded-full bg-gold-deep px-6 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-bone transition hover:bg-gold"
+              className="mt-4 rounded-full bg-gold-deep px-6 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-bone transition hover:bg-gold"
             >
               Retry
             </button>
@@ -212,7 +212,7 @@ export default function Shop() {
 
             {/* ── Pagination ──────────────────────────────────── */}
             {totalPages > 1 && (
-              <div className="mt-12 flex items-center justify-center gap-2">
+              <div className="mt-8 sm:mt-10 flex items-center justify-center gap-2">
                 <button
                   onClick={() => goToPage(currentPage - 1)}
                   disabled={currentPage <= 1}

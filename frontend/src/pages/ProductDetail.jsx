@@ -652,7 +652,7 @@ export default function ProductDetail() {
         </div>
 
         {/* ── 2. Craftsmanship & Quality Standards Section ─────── */}
-        <section className="mt-16 sm:mt-24 border-t border-hairline/70 pt-12 sm:pt-16">
+        <section className="mt-10 sm:mt-14 border-t border-hairline/70 pt-8 sm:pt-10">
           <div className="text-center max-w-2xl mx-auto">
             <span className="text-xs font-bold uppercase tracking-[0.24em] text-gold-deep">
               The DreamzDecors Standard
@@ -660,12 +660,12 @@ export default function ProductDetail() {
             <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold text-ink">
               Crafted for Spiritual Grace &amp; Lasting Elegance
             </h2>
-            <p className="mt-3 text-sm text-ink-soft leading-relaxed">
+            <p className="mt-2.5 text-xs sm:text-sm text-ink-soft leading-relaxed">
               Every artwork is meticulously produced using museum-grade archival materials, ensuring deep spiritual reverence and enduring beauty on your wall.
             </p>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="mt-7 sm:mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {CRAFTSMANSHIP_FEATURES.map((item, idx) => {
               const Icon = item.icon;
               return (
@@ -673,13 +673,13 @@ export default function ProductDetail() {
                   key={idx}
                   className="rounded-2xl border border-hairline/80 bg-bone-soft p-5 sm:p-6 transition-all duration-300 hover:border-gold/50 hover:shadow-md"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/15 text-gold-deep">
-                    <Icon size={22} />
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold/15 text-gold-deep">
+                    <Icon size={20} />
                   </div>
-                  <h3 className="mt-4 font-display text-base font-bold text-ink">
+                  <h3 className="mt-3.5 font-display text-base font-bold text-ink">
                     {item.title}
                   </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-ink-soft">
+                  <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">
                     {item.desc}
                   </p>
                 </div>
@@ -689,13 +689,13 @@ export default function ProductDetail() {
         </section>
 
         {/* ── 3. Tabs: Specifications, Description, Packaging ── */}
-        <section className="mt-16 border-t border-hairline/70 pt-12">
+        <section className="mt-10 sm:mt-12 border-t border-hairline/70 pt-8 sm:pt-10">
           <div className="flex flex-wrap gap-4 border-b border-hairline/70 sm:gap-8">
             {TABS.map((label) => (
               <button
                 key={label}
                 onClick={() => setTab(label)}
-                className={`-mb-px border-b-2 pb-3.5 pt-2 text-xs sm:text-sm font-semibold tracking-wide transition ${
+                className={`-mb-px border-b-2 pb-3 pt-1 text-xs sm:text-sm font-semibold tracking-wide transition ${
                   tab === label
                     ? 'border-gold text-gold-deep font-bold'
                     : 'border-transparent text-ink-muted hover:text-ink'
@@ -706,15 +706,15 @@ export default function ProductDetail() {
             ))}
           </div>
 
-          <div className="mt-6 max-w-4xl">
+          <div className="mt-5 sm:mt-6 max-w-4xl">
             {tab === 'Description' && (
-              <div className="prose max-w-none text-sm leading-relaxed text-ink-soft space-y-4">
+              <div className="prose max-w-none text-xs sm:text-sm leading-relaxed text-ink-soft space-y-3.5">
                 <p>{productDescription}</p>
-                <div className="mt-6 rounded-2xl border border-hairline/80 bg-bone-soft p-5">
-                  <h4 className="font-display text-sm font-bold text-ink mb-3 uppercase tracking-wider">
+                <div className="mt-5 rounded-2xl border border-hairline/80 bg-bone-soft p-4 sm:p-5">
+                  <h4 className="font-display text-sm font-bold text-ink mb-2.5 uppercase tracking-wider">
                     Key Highlights
                   </h4>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-ink-soft">
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-ink-soft">
                     {productFeatureHighlights.map((feat) => (
                       <li key={feat} className="flex items-center gap-2">
                         <FiCheck className="text-gold-deep shrink-0" size={14} />
@@ -762,7 +762,7 @@ export default function ProductDetail() {
             )}
 
             {tab === 'Shipping & Packaging' && (
-              <div className="rounded-2xl border border-hairline/80 bg-bone-soft p-5 sm:p-6 space-y-4 text-xs sm:text-sm leading-relaxed text-ink-soft">
+              <div className="rounded-2xl border border-hairline/80 bg-bone-soft p-4 sm:p-5 space-y-3 text-xs sm:text-sm leading-relaxed text-ink-soft">
                 <p>
                   <strong className="text-ink">Archival Packaging Standard:</strong> Every canvas is individually protected with custom high-density corner guards, wrapped in heavy-gauge shock-absorbing bubble cushioning, and encased in a 5-ply rigid corrugated delivery box.
                 </p>
@@ -778,7 +778,7 @@ export default function ProductDetail() {
         </section>
 
         {/* ── 4. Frequently Asked Questions (Accordion) ────────── */}
-        <section className="mt-16 border-t border-hairline/70 pt-12">
+        <section className="mt-10 sm:mt-12 border-t border-hairline/70 pt-8 sm:pt-10">
           <div className="max-w-3xl">
             <span className="text-xs font-bold uppercase tracking-[0.24em] text-gold-deep">
               Have Questions?
@@ -787,16 +787,16 @@ export default function ProductDetail() {
               Frequently Asked Questions
             </h2>
 
-            <div className="mt-6 space-y-3">
+            <div className="mt-5 sm:mt-6 space-y-2.5">
               {FAQS.map((faq, idx) => (
                 <div
                   key={idx}
-                  className="rounded-xl border border-hairline/80 bg-bone-soft transition-all"
+                  className="rounded-xl border border-hairline/80 bg-bone-soft overflow-hidden transition-all duration-200"
                 >
                   <button
                     type="button"
                     onClick={() => setOpenFaq(openFaq === idx ? -1 : idx)}
-                    className="flex w-full items-center justify-between p-4 text-left font-medium text-ink text-xs sm:text-sm"
+                    className="flex w-full items-center justify-between p-4 text-left font-display text-sm font-semibold text-ink hover:text-gold-deep transition-colors"
                   >
                     <span>{faq.q}</span>
                     <FiChevronDown
@@ -818,13 +818,13 @@ export default function ProductDetail() {
         </section>
 
         {/* ── 5. Customer Reviews ──────────────────────────────── */}
-        <section className="mt-16 border-t border-hairline/70 pt-12">
+        <section className="mt-10 sm:mt-12 border-t border-hairline/70 pt-8 sm:pt-10">
           <ProductReviews productId={product.id} rating={product.rating} reviews={product.reviews} />
         </section>
 
         {/* ── 6. You May Also Like / Related Artworks ──────────── */}
         {(related.loading || relatedList.length > 0) && (
-          <section className="mt-16 border-t border-hairline/70 pt-12">
+          <section className="mt-10 sm:mt-12 border-t border-hairline/70 pt-8 sm:pt-10">
             <SectionHeader eyebrow="Curated For You" title="More Masterpieces To Explore" />
             {related.loading ? (
               <ProductGridSkeleton columns={4} count={4} />

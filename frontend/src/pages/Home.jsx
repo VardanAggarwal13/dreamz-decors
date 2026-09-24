@@ -16,7 +16,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 export default function Home() {
   const settings = useSettingsStore((s) => s.settings);
   const bestsellers = useFetch('/products?sort=bestselling&limit=8');
-  const newArrivals  = useFetch('/products?sort=new&limit=4');
+  const newArrivals = useFetch('/products?sort=new&limit=12');
   const reviewsRes   = useFetch('/reviews');
 
   // Admin override (key 'home') merged over the built-in defaults — every band is editable.
@@ -42,7 +42,10 @@ export default function Home() {
   );
 
   const bestList = (bestsellers.data?.data || []).map(normalizeProduct);
-  const newList = (newArrivals.data?.data || []).map(normalizeProduct);
+  const bestIds = new Set(bestList.map((p) => String(p._id || p.id)));
+  const rawNewList = (newArrivals.data?.data || []).map(normalizeProduct);
+  const distinctNewList = rawNewList.filter((p) => !bestIds.has(String(p._id || p.id)));
+  const newList = distinctNewList.length > 0 ? distinctNewList.slice(0, 4) : rawNewList.slice(0, 4);
   const testimonials = reviewsRes.data?.data?.length
     ? reviewsRes.data.data
     : content.testimonials;

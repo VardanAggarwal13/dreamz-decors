@@ -38,7 +38,7 @@ export default function FeatureSplit({
 }) {
   const cards = (Array.isArray(points) && points.length ? points : DEFAULT_POINTS).map(normalizePoint);
   return (
-    <section className={cn('bg-bone-muted py-16 sm:py-20', className)}>
+    <section className={cn('bg-bone-muted py-10 sm:py-12 lg:py-14', className)}>
       <div className="container-page">
 
         {/* ── Section header ─────────────────────────────────── */}
@@ -47,7 +47,7 @@ export default function FeatureSplit({
             <>
               <span className="eyebrow-gold">{eyebrow}</span>
               <span
-                className="mx-auto mt-3 block h-px w-10"
+                className="mx-auto mt-2.5 block h-px w-10"
                 style={{
                   background:
                     'linear-gradient(90deg, transparent, rgb(197 158 89), transparent)',
@@ -55,33 +55,33 @@ export default function FeatureSplit({
               />
             </>
           )}
-          <h2 className="mt-5 font-display text-4xl text-balance text-ink sm:text-5xl">
+          <h2 className="mt-3 font-display text-2xl sm:text-3xl lg:text-4xl text-balance text-ink">
             {title}
           </h2>
           {description && (
-            <p className="mt-4 text-sm leading-7 text-ink-soft">{description}</p>
+            <p className="mt-2.5 text-xs sm:text-sm leading-relaxed sm:leading-7 text-ink-soft">{description}</p>
           )}
         </div>
 
         {/* ── Feature cards ──────────────────────────────────── */}
-        <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 sm:mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5">
           {cards.map(({ Icon, title: cardTitle, text }, i) => (
             <div
               key={`${cardTitle}-${i}`}
-              className="rounded-2xl border border-hairline/60 bg-bone-soft p-7 transition-shadow hover:shadow-card"
+              className="rounded-2xl border border-hairline/60 bg-bone-soft p-5 sm:p-6 transition-shadow hover:shadow-card"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-gold/25 bg-gold/10">
-                <Icon size={20} className="text-gold-deep" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/25 bg-gold/10">
+                <Icon size={18} className="text-gold-deep" />
               </div>
-              <h3 className="mt-5 text-[15px] font-medium text-ink">{cardTitle}</h3>
-              {text && <p className="mt-2 text-sm leading-6 text-ink-soft">{text}</p>}
+              <h3 className="mt-4 text-[14px] sm:text-[15px] font-medium text-ink">{cardTitle}</h3>
+              {text && <p className="mt-1.5 text-xs sm:text-sm leading-relaxed sm:leading-6 text-ink-soft">{text}</p>}
             </div>
           ))}
         </div>
 
         {/* ── CTA ────────────────────────────────────────────── */}
         {cta && (
-          <div className="mt-10 text-center">
+          <div className="mt-7 sm:mt-8 text-center">
             <Button
               asChild
               variant="primary"

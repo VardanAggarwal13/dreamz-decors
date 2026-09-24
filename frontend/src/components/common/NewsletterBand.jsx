@@ -30,13 +30,13 @@ export default function NewsletterBand({ content }) {
   };
 
   return (
-    <section className="border-t border-hairline/60 bg-bone-muted py-16 sm:py-20">
+    <section className="border-t border-hairline/60 bg-bone-muted py-10 sm:py-12 lg:py-14">
       <div className="container-page">
         <div className="mx-auto max-w-2xl text-center">
 
           {/* Gold rule above eyebrow */}
           <span
-            className="mx-auto mb-4 block h-px w-10"
+            className="mx-auto mb-3 block h-px w-10"
             style={{
               background:
                 'linear-gradient(90deg, transparent, rgb(197 158 89), transparent)',
@@ -47,17 +47,17 @@ export default function NewsletterBand({ content }) {
           <p className="eyebrow-gold">{c.eyebrow}</p>
 
           {/* Heading */}
-          <h2 className="mt-3 font-display text-3xl text-balance text-ink sm:text-4xl">
+          <h2 className="mt-2.5 font-display text-2xl sm:text-3xl lg:text-4xl text-balance text-ink">
             {c.title}{' '}
             {c.titleHighlight && <em className="not-italic text-gold-deep">{c.titleHighlight}</em>}
           </h2>
 
           {/* Sub-copy */}
-          <p className="mt-4 text-sm leading-7 text-ink-soft">{c.description}</p>
+          <p className="mt-3 text-xs sm:text-sm leading-relaxed sm:leading-7 text-ink-soft">{c.description}</p>
 
           {/* Form / Success */}
           {/* Form block — constrained width so input + button + footnote stay aligned */}
-          <div className="mx-auto mt-8 w-full max-w-md">
+          <div className="mx-auto mt-6 w-full max-w-md">
             {status === 'success' ? (
               <div className="flex items-center justify-center gap-2.5 rounded-xl border border-gold/30 bg-gold/10 px-6 py-4 text-sm font-medium text-gold-deep">
                 <FiCheck size={16} />

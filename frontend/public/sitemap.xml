@@ -64,11 +64,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.dreamdecords.com/product/lord-murugan-with-the-sacred-spear-canvas</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://www.dreamdecords.com/product/goddess-parvati-in-the-himalayas-canvas</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -229,11 +224,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.dreamdecords.com/product/neutral-botanical-gallery-set</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://www.dreamdecords.com/product/breathe-coastal-gallery-set</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -255,6 +245,16 @@
   </url>
   <url>
     <loc>https://www.dreamdecords.com/product/lord-ganesha-framed-wall-art</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.dreamdecords.com/product/alpine-horizon-sunset-gallery-set</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.dreamdecords.com/product/fluid-aura-abstract-gallery-set</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

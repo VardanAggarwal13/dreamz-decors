@@ -12,10 +12,10 @@ export default function SectionShell({
   children,
 }) {
   return (
-    <section className={cn('py-16 sm:py-20', className)}>
+    <section className={cn('py-10 sm:py-12 lg:py-14', className)}>
       <div className={cn('container-page', innerClassName)}>
         {(eyebrow || title || description || link) && (
-          <div className="flex flex-col items-start gap-4 pb-10 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6 sm:pb-12">
+          <div className="flex flex-col items-start gap-3 pb-6 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6 sm:pb-8">
             <div className="max-w-3xl">
               {eyebrow && (
                 <div>
@@ -24,12 +24,12 @@ export default function SectionShell({
                 </div>
               )}
               {title && (
-                <h2 className="mt-4 font-display text-3xl text-balance text-ink sm:text-4xl lg:text-5xl">
+                <h2 className="mt-3 font-display text-2xl sm:text-3xl lg:text-4xl text-balance text-ink">
                   {title}
                 </h2>
               )}
               {description && (
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-ink-soft">{description}</p>
+                <p className="mt-2.5 max-w-2xl text-xs sm:text-sm leading-relaxed sm:leading-7 text-ink-soft">{description}</p>
               )}
             </div>
             {link && (
@@ -45,7 +45,7 @@ export default function SectionShell({
 
         {/* Mobile-only "View all" below the cards */}
         {link && (
-          <div className="mt-10 flex justify-center sm:hidden">
+          <div className="mt-6 flex justify-center sm:hidden">
             <Link to={link.href} className="editorial-link inline-flex">
               {link.label}
               <FiArrowRight size={13} />

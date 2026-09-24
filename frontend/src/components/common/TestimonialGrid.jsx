@@ -165,7 +165,7 @@ export default function TestimonialGrid({ items = [] }) {
 
       {/* Controls */}
       {total > visible && (
-        <div className="mt-8 flex items-center justify-center gap-4">
+        <div className="mt-5 sm:mt-6 flex items-center justify-center gap-3 sm:gap-4">
           <button
             aria-label="Previous review"
             onClick={() => { prev(); resetTimer(); }}

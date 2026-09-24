@@ -2,19 +2,34 @@ import asyncHandler from 'express-async-handler';
 import Product from '../models/Product.js';
 import { buildPagination, buildPaginationMeta, paginationPresets, parseNumber } from '../utils/query.js';
 
+import mongoose from 'mongoose';
+
 const PRODUCT_LIST_SELECT =
   'title slug description price mrp badge images rating reviewsCount stock isFeatured sales category variants createdAt';
 
 const SORT_MAP = {
-  new: { createdAt: -1 },
-  bestselling: { sales: -1, _id: -1 },
-  rating: { rating: -1, _id: -1 },
+  new: { createdAt: -1, _id: -1 },
+  bestselling: { sales: -1, isFeatured: -1, rating: -1, reviewsCount: -1, createdAt: -1, _id: -1 },
+  rating: { rating: -1, reviewsCount: -1, sales: -1, _id: -1 },
   'price-asc': { price: 1, _id: 1 },
   'price-desc': { price: -1, _id: -1 },
 };
 
 export const listProducts = asyncHandler(async (req, res) => {
-  const { q, category, tag, minPrice, maxPrice, sort = 'new', page, limit } = req.query;
+  const {
+    q,
+    category,
+    tag,
+    minPrice,
+    maxPrice,
+    sort = 'new',
+    page,
+    limit,
+    featured,
+    isFeatured,
+    exclude,
+    badge,
+  } = req.query;
 
   const filter = { isActive: true };
   const normalizedSearch = typeof q === 'string' ? q.trim() : '';
@@ -25,6 +40,21 @@ export const listProducts = asyncHandler(async (req, res) => {
   if (normalizedSearch) filter.$text = { $search: normalizedSearch };
   if (category) filter.category = category;
   if (normalizedTag) filter.tags = normalizedTag;
+  if (badge) filter.badge = badge;
+  if (featured === 'true' || isFeatured === 'true') {
+    filter.isFeatured = true;
+  } else if (featured === 'false' || isFeatured === 'false') {
+    filter.isFeatured = false;
+  }
+  if (exclude) {
+    const rawIds = typeof exclude === 'string' ? exclude.split(',') : Array.isArray(exclude) ? exclude : [];
+    const excludeIds = rawIds
+      .map((id) => (typeof id === 'string' ? id.trim() : ''))
+      .filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (excludeIds.length > 0) {
+      filter._id = { $nin: excludeIds };
+    }
+  }
   if (min !== null || max !== null) {
     filter.price = {};
     if (min !== null) filter.price.$gte = min;

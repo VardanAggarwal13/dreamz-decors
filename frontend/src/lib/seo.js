@@ -100,3 +100,106 @@ export const collectionSchema = ({ name, path, products = [] }) => ({
     })),
   },
 });
+
+/**
+ * Product schema with full Google Rich Results compliance
+ * (Offers, InStock availability, MerchantReturnPolicy, ShippingDetails, AggregateRating).
+ */
+export const productSchema = (product, { selectedPrice, currentImage, gallery = [] } = {}) => {
+  if (!product) return undefined;
+
+  const schemaPrice = Number(selectedPrice || product.price) || 0;
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + 1);
+  const priceValidUntil = d.toISOString().split('T')[0];
+
+  const reviewCount = Number(product.reviews || product.reviewsCount) || 0;
+  const ratingValue = Math.min(5, Math.max(1, Number(product.rating) || 5));
+
+  const images = [
+    currentImage,
+    ...(Array.isArray(gallery) ? gallery.map((item) => (typeof item === 'string' ? item : item.url)) : []),
+    ...(Array.isArray(product.images) ? product.images.map((img) => img.url) : []),
+    product.image,
+  ].filter(Boolean);
+  const uniqueImages = Array.from(new Set(images));
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    image: uniqueImages.length ? uniqueImages : [DEFAULT_OG_IMAGE],
+    description: product.description || DEFAULT_DESCRIPTION,
+    brand: {
+      '@type': 'Brand',
+      name: SITE_NAME,
+    },
+    sku: product.slug || String(product.id || ''),
+    mpn: product.slug || String(product.id || ''),
+    category: product.categoryTitle || product.category || 'Wall Art',
+    ...(schemaPrice > 0
+      ? {
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'INR',
+            price: schemaPrice,
+            priceValidUntil,
+            itemCondition: 'https://schema.org/NewCondition',
+            availability:
+              product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+            url: absoluteUrl(`/product/${product.slug}`),
+            seller: {
+              '@type': 'Organization',
+              name: SITE_NAME,
+            },
+            shippingDetails: {
+              '@type': 'OfferShippingDetails',
+              shippingRate: {
+                '@type': 'MonetaryAmount',
+                value: 0,
+                currency: 'INR',
+              },
+              shippingDestination: {
+                '@type': 'DefinedRegion',
+                addressCountry: 'IN',
+              },
+              deliveryTime: {
+                '@type': 'ShippingDeliveryTime',
+                handlingTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 1,
+                  maxValue: 2,
+                  unitCode: 'd',
+                },
+                transitTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 3,
+                  maxValue: 5,
+                  unitCode: 'd',
+                },
+              },
+            },
+            hasMerchantReturnPolicy: {
+              '@type': 'MerchantReturnPolicy',
+              applicableCountry: 'IN',
+              returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+              merchantReturnDays: 7,
+              returnMethod: 'https://schema.org/ReturnByMail',
+              returnFees: 'https://schema.org/FreeReturn',
+            },
+          },
+        }
+      : {}),
+    ...(reviewCount > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: ratingValue.toFixed(1),
+            reviewCount,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+  };
+};

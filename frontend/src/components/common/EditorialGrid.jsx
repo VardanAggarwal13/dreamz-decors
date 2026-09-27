@@ -30,6 +30,7 @@ export default function EditorialGrid({ items = [], columns = 3, className = '' 
               width={1000}
               height={1200}
               gravity="auto"
+              sizes="(max-width: 768px) 100vw, 33vw"
               className="h-full w-full"
               imgClassName="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.05]"
             />

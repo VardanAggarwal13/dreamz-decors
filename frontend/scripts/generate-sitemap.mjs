@@ -64,6 +64,7 @@ async function main() {
 
   for (const c of categories) {
     if (!c?.slug) continue;
+    nodes.push({ path: `/${c.slug}`, lastmod: fmtDate(c.updatedAt), changefreq: 'weekly', priority: '0.8' });
     nodes.push({ path: `/shop/${c.slug}`, lastmod: fmtDate(c.updatedAt), changefreq: 'weekly', priority: '0.7' });
   }
   for (const p of products) {

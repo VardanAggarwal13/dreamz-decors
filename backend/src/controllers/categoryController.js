@@ -6,6 +6,7 @@ export const listCategories = asyncHandler(async (req, res) => {
     .sort({ order: 1, title: 1 })
     .select('title slug blurb image parent order isActive createdAt updatedAt')
     .lean();
+  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
   res.json({ success: true, data: cats });
 });
 

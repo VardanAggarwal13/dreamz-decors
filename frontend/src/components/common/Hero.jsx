@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import useFetch from '@/hooks/useFetch';
 import { homeContent } from '@/lib/siteContent';
 import { normalizeHref } from '@/lib/utils';
-import { cldTransform } from '@/lib/cloudinary';
+import { cldTransform, cldSrcSet } from '@/lib/cloudinary';
 
 const ctaClass =
   'h-auto min-h-12 flex-1 px-3 py-2 text-center text-[11px] leading-tight tracking-[0.08em] sm:h-14 sm:min-h-0 sm:flex-none sm:px-8 sm:py-0 sm:text-sm sm:tracking-[0.22em]';
@@ -57,6 +57,8 @@ export default function Hero() {
               <div className="relative aspect-[4/3] sm:aspect-[16/10] w-full overflow-hidden rounded-2xl border border-hairline/80 bg-bone-soft shadow-[0_10px_30px_rgba(22,22,22,0.08)]">
                 <img
                   src={cldTransform(hero.image, { width: 900, height: 750, gravity: 'north' })}
+                  srcSet={cldSrcSet(hero.image, { widths: [480, 720, 900], aspectRatio: 4 / 3, gravity: 'north' })}
+                  sizes="(max-width: 640px) 100vw, 80vw"
                   alt="DreamzDecors styled interior"
                   fetchPriority="high"
                   decoding="async"
@@ -113,6 +115,8 @@ export default function Hero() {
             <div className="relative aspect-[4/5] w-full max-h-[560px] overflow-hidden rounded-3xl border border-hairline/70 bg-bone-soft shadow-[0_14px_40px_rgba(22,22,22,0.08)] group">
               <img
                 src={cldTransform(hero.image, { width: 1000, height: 1250, gravity: 'north' })}
+                srcSet={cldSrcSet(hero.image, { widths: [640, 960, 1200], aspectRatio: 4 / 5, gravity: 'north' })}
+                sizes="50vw"
                 alt="DreamzDecors styled interior"
                 fetchPriority="high"
                 decoding="async"

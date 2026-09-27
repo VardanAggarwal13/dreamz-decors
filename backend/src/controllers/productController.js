@@ -82,6 +82,7 @@ export const listProducts = asyncHandler(async (req, res) => {
     Product.countDocuments(filter),
   ]);
 
+  res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
   res.json({
     success: true,
     data: items,
@@ -97,6 +98,7 @@ export const getProduct = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Product not found');
   }
+  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
   res.json({ success: true, data: product });
 });
 

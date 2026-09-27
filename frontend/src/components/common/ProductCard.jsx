@@ -74,6 +74,7 @@ export default function ProductCard({ product, layout = 'default' }) {
           height={900}
           fit="cover"
           gravity="auto"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className="h-full w-full"
           imgClassName="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
         />
@@ -86,6 +87,7 @@ export default function ProductCard({ product, layout = 'default' }) {
             height={900}
             fit="cover"
             gravity="auto"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-500 pointer-events-none group-hover:opacity-100"
             imgClassName="h-full w-full object-cover"
           />

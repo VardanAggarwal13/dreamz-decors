@@ -23,7 +23,18 @@ const DIST = path.resolve(__dirname, '../dist');
 const PORT = 4178;
 
 // Content-stable routes worth baking into static HTML.
-const ROUTES = ['/', '/shop', '/about', '/shipping', '/faq', '/contact', '/terms'];
+const ROUTES = [
+  '/',
+  '/shop',
+  '/religious',
+  '/wall-art',
+  '/gallery-sets',
+  '/about',
+  '/shipping',
+  '/faq',
+  '/contact',
+  '/terms',
+];
 
 const MIME = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',

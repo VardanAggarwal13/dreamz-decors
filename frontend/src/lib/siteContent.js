@@ -405,7 +405,8 @@ export const homeContent = {
       title: 'Statement pieces with a quiet, premium presence.',
       blurb: 'Large-format canvases crafted to transform living spaces into modern sanctuaries.',
       href: '/wall-art',
-      image: '',
+      image:
+        'https://res.cloudinary.com/dif6u5314/image/upload/v1790521489/dreamzdecors/editorial/collection-wall-art-v1.webp',
       ctaLabel: 'Shop Wall Art',
     },
     {
@@ -413,7 +414,8 @@ export const homeContent = {
       title: 'Curated sets designed to work together.',
       blurb: 'Harmonious multi-panel triptychs and balanced pairings for effortless gallery walls.',
       href: '/gallery-sets',
-      image: '',
+      image:
+        'https://res.cloudinary.com/dif6u5314/image/upload/v1790521490/dreamzdecors/editorial/collection-gallery-sets-v1.webp',
       ctaLabel: 'Shop Gallery Sets',
     },
     {
@@ -432,7 +434,8 @@ export const homeContent = {
       title: 'The living room edit',
       blurb: 'Anchor the most visible wall with one strong focal piece.',
       href: '/shop?tag=living-room',
-      image: '',
+      image:
+        'https://res.cloudinary.com/dif6u5314/image/upload/v1790521491/dreamzdecors/editorial/room-living-room-v1.webp',
       ctaLabel: 'Shop living room',
     },
     {
@@ -440,7 +443,8 @@ export const homeContent = {
       title: 'The bedroom edit',
       blurb: 'Soft tones and calmer compositions for a restful feel.',
       href: '/shop?tag=bedroom',
-      image: '',
+      image:
+        'https://res.cloudinary.com/dif6u5314/image/upload/v1790521492/dreamzdecors/editorial/room-bedroom-v1.webp',
       ctaLabel: 'Shop bedroom',
     },
     {
@@ -448,7 +452,8 @@ export const homeContent = {
       title: 'The office edit',
       blurb: 'A sharper visual language for productive work zones.',
       href: '/shop?tag=office',
-      image: '',
+      image:
+        'https://res.cloudinary.com/dif6u5314/image/upload/v1790521493/dreamzdecors/editorial/room-office-v1.webp',
       ctaLabel: 'Shop office',
     },
     {
@@ -456,7 +461,8 @@ export const homeContent = {
       title: 'The dining edit',
       blurb: 'Warm, layered pieces that add depth around shared spaces.',
       href: '/shop?tag=dining',
-      image: '',
+      image:
+        'https://res.cloudinary.com/dif6u5314/image/upload/v1790521491/dreamzdecors/editorial/room-living-room-v1.webp',
       ctaLabel: 'Shop dining',
     },
   ],
@@ -466,7 +472,8 @@ export const homeContent = {
       title: 'Modern minimalism',
       blurb: 'Clean forms, warm neutrals, and an easy premium feel.',
       href: '/shop?tag=abstract',
-      image: '',
+      image:
+        'https://res.cloudinary.com/dif6u5314/image/upload/v1790521495/dreamzdecors/editorial/curated-abstract-v1.webp',
       ctaLabel: 'Explore abstract',
     },
     {
@@ -474,7 +481,8 @@ export const homeContent = {
       title: 'Nature-inspired calm',
       blurb: 'Organic movement and earthy tones that soften a room.',
       href: '/shop?tag=nature',
-      image: '',
+      image:
+        'https://res.cloudinary.com/dif6u5314/image/upload/v1790006432/dreamzdecors/products/ten-gurus-handcrafted-art.jpg',
       ctaLabel: 'Explore nature',
     },
     {
@@ -482,7 +490,8 @@ export const homeContent = {
       title: 'Portrait-led statements',
       blurb: 'Graphic, art-forward pieces with a gallery sensibility.',
       href: '/shop?tag=portrait',
-      image: '',
+      image:
+        'https://res.cloudinary.com/dif6u5314/image/upload/v1790006408/dreamzdecors/products/lord-ganesha-handcrafted-relief-art.jpg',
       ctaLabel: 'Explore portrait',
     },
     {
@@ -490,7 +499,8 @@ export const homeContent = {
       title: 'Limited-run favorites',
       blurb: 'A small edit of the most distinctive items in the range.',
       href: '/shop?sort=bestselling',
-      image: '',
+      image:
+        'https://res.cloudinary.com/dif6u5314/image/upload/v1790006430/dreamzdecors/products/golden-temple-handcrafted-art.jpg',
       ctaLabel: 'Explore favorites',
     },
   ],
@@ -524,7 +534,7 @@ export const homeContent = {
   featureDescription:
     'Every piece is built to look composed on arrival, with a quieter palette, sharper typography, and less clutter across the experience.',
   featureImage:
-    'https://res.cloudinary.com/dif6u5314/image/upload/v1790006432/dreamzdecors/products/ten-gurus-handcrafted-art.jpg',
+    'https://res.cloudinary.com/dif6u5314/image/upload/v1790521496/dreamzdecors/editorial/feature-craft-v1.webp',
   featureCta: { label: 'Browse the collection', href: '/shop' },
   // Editable section headers (eyebrow / title / description / link label) for each homepage band.
   sections: {

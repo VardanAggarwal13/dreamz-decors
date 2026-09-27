@@ -17,7 +17,7 @@ import ProductReviews from '@/components/common/ProductReviews';
 import SectionHeader from '@/components/common/SectionHeader';
 import useFetch from '@/hooks/useFetch';
 import { productDescriptionFallback, productFeatureHighlights, contentPages } from '@/lib/siteContent';
-import { breadcrumbSchema, absoluteUrl } from '@/lib/seo';
+import { breadcrumbSchema, productSchema, absoluteUrl } from '@/lib/seo';
 import { formatINR, normalizeProduct } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
@@ -219,47 +219,10 @@ export default function ProductDetail() {
   const canonicalUrl = `/product/${product.slug}`;
   const categoryLabel = (product.categoryTitle || product.category || 'Collections').replace('-', ' ');
 
-  const schemaPrice = Number(selectedPrice) || 0;
-  const priceValidUntil = (() => {
-    const d = new Date();
-    d.setFullYear(d.getFullYear() + 1);
-    return d.toISOString().split('T')[0];
-  })();
-  const reviewCount = Number(product.reviews) || 0;
-  const ratingValue = Math.min(5, Math.max(1, Number(product.rating) || 0));
-
-  const productSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: product.title,
-    image: [currentImage, ...gallery.map((item) => item.url).filter(Boolean)].filter(Boolean),
-    description: productDescription,
-    brand: { '@type': 'Brand', name: 'DreamzDecors' },
-    sku: product.slug,
-    ...(schemaPrice > 0
-      ? {
-          offers: {
-            '@type': 'Offer',
-            priceCurrency: 'INR',
-            price: schemaPrice,
-            priceValidUntil,
-            itemCondition: 'https://schema.org/NewCondition',
-            availability:
-              product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
-            url: absoluteUrl(`/product/${product.slug}`),
-          },
-        }
-      : {}),
-    ...(reviewCount > 0
-      ? {
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: ratingValue.toFixed(1),
-            reviewCount,
-          },
-        }
-      : {}),
-  };
+  const jsonLdProduct = productSchema(
+    { ...product, description: productDescription },
+    { selectedPrice, currentImage, gallery }
+  );
 
   const productBreadcrumb = breadcrumbSchema([
     { name: 'Home', path: '/' },
@@ -289,7 +252,7 @@ export default function ProductDetail() {
         canonical={canonicalUrl}
         image={currentImage}
         type="product"
-        schema={[productSchema, productBreadcrumb]}
+        schema={[jsonLdProduct, productBreadcrumb]}
       />
 
       <div className="container-page py-6 sm:py-10">
@@ -321,6 +284,7 @@ export default function ProductDetail() {
                 height={1500}
                 fit="contain"
                 priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="h-full w-full flex items-center justify-center"
                 imgClassName="h-full w-full object-contain object-center transition-transform duration-700 group-hover:scale-[1.02]"
               />
@@ -392,9 +356,10 @@ export default function ProductDetail() {
                       src={img.url}
                       alt=""
                       label={product.title}
-                      width={300}
-                      height={375}
+                      width={240}
+                      height={300}
                       fit="contain"
+                      sizes="80px"
                       className="h-full w-full"
                       imgClassName="h-full w-full object-contain"
                     />

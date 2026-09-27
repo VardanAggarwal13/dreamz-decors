@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { cldTransform } from '@/lib/cloudinary';
+import { cldTransform, cldSrcSet } from '@/lib/cloudinary';
 import { FiImage } from 'react-icons/fi';
 
 function fallbackInitials(label = '') {
@@ -25,6 +25,8 @@ export default function MediaImage({
   gravity,
   priority = false,
   fit = 'cover',
+  sizes,
+  srcSet,
   ...props
 }) {
   const [loaded, setLoaded] = useState(false);
@@ -32,7 +34,31 @@ export default function MediaImage({
 
   // When fit is 'contain', use 'limit' crop in Cloudinary so images are scaled without clipping edges
   const effectiveCrop = crop || (fit === 'contain' ? 'limit' : 'fill');
-  const optimizedSrc = width || height ? cldTransform(src, { width, height, crop: effectiveCrop, gravity }) : src;
+  const optimizedSrc = cldTransform(src, { width, height, crop: effectiveCrop, gravity });
+
+  // Generate responsive WebP srcset if not provided explicitly
+  const responsiveSrcSet =
+    srcSet ||
+    (width
+      ? cldSrcSet(src, {
+          widths: [
+            Math.round(width * 0.5),
+            Math.round(width * 0.75),
+            width,
+            Math.round(width * 1.5),
+          ].filter((w) => w >= 200),
+          crop: effectiveCrop,
+          gravity,
+          width,
+          height,
+        })
+      : undefined);
+
+  const effectiveSizes =
+    sizes ||
+    (responsiveSrcSet
+      ? `(max-width: 640px) 50vw, (max-width: 1024px) 33vw, ${width || 600}px`
+      : undefined);
 
   if (!src || failed) {
     return (
@@ -64,8 +90,11 @@ export default function MediaImage({
       )}
       <img
         src={optimizedSrc}
+        srcSet={responsiveSrcSet}
+        sizes={effectiveSizes}
         alt={alt || label || 'DreamzDecors Art'}
         loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
@@ -79,4 +108,4 @@ export default function MediaImage({
       />
     </div>
   );
-}
+}

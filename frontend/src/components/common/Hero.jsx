@@ -59,6 +59,8 @@ export default function Hero() {
                   src={cldTransform(hero.image, { width: 900, height: 750, gravity: 'north' })}
                   srcSet={cldSrcSet(hero.image, { widths: [480, 720, 900], aspectRatio: 4 / 3, gravity: 'north' })}
                   sizes="(max-width: 640px) 100vw, 80vw"
+                  width={900}
+                  height={675}
                   alt="DreamzDecors styled interior"
                   fetchPriority="high"
                   decoding="async"
@@ -117,6 +119,8 @@ export default function Hero() {
                 src={cldTransform(hero.image, { width: 1000, height: 1250, gravity: 'north' })}
                 srcSet={cldSrcSet(hero.image, { widths: [640, 960, 1200], aspectRatio: 4 / 5, gravity: 'north' })}
                 sizes="50vw"
+                width={1000}
+                height={1250}
                 alt="DreamzDecors styled interior"
                 fetchPriority="high"
                 decoding="async"

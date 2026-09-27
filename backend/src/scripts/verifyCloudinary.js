@@ -5,7 +5,7 @@ import 'dotenv/config';
 import cloudinary from '../config/cloudinary.js';
 
 const SAMPLE_URL =
-  'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=600&auto=format&fit=crop&q=70';
+  'https://res.cloudinary.com/dif6u5314/image/upload/v1790006430/dreamzdecors/products/golden-temple-handcrafted-art.jpg';
 
 const run = async () => {
   console.log('Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME);

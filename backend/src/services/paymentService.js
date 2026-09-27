@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
+import Product from '../models/Product.js';
 import { getRazorpay } from '../config/razorpay.js';
 import { notify, notifyAdmins } from '../services/notificationService.js';
 
@@ -85,9 +86,19 @@ export async function markOrderPaid(orderId, { paymentId, razorpayOrderId, signa
   logEvent(claimed, 'payment.captured', source, { paymentId, amount });
   await claimed.save();
 
+  // Increment sales counter for bought products
+  for (const item of claimed.items || []) {
+    if (item.product) {
+      await Product.updateOne({ _id: item.product }, { $inc: { sales: item.qty || 1 } }).catch(() => {});
+    }
+  }
+
   await Cart.findOneAndUpdate({ user: claimed.user }, { items: [] });
 
   const amountLabel = inr(claimed.total);
+  const orderShortId = String(claimed._id).slice(-8).toUpperCase();
+  const customerName = claimed.shippingAddress?.name || 'A customer';
+
   await notify({
     user: claimed.user,
     type: 'order_paid',
@@ -103,10 +114,10 @@ export async function markOrderPaid(orderId, { paymentId, razorpayOrderId, signa
   await notifyAdmins({
     type: 'admin_order_paid',
     title: 'Payment received',
-    message: `Payment of ${amountLabel} was confirmed for an order.`,
+    message: `Payment of ${amountLabel} confirmed for order #${orderShortId} from ${customerName}.`,
     data: { orderId: claimed._id },
     link: '/admin/orders',
-    emailContext: { order: claimed },
+    emailContext: { order: claimed, customerName },
   });
 
   return { changed: true, order: claimed };

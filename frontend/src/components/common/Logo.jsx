@@ -9,6 +9,8 @@ export default function Logo({ variant = 'horizontal', className = '' }) {
       <img
         src={LOGO_SRC}
         alt={brand.name}
+        width={56}
+        height={56}
         draggable="false"
         loading="eager"
         decoding="async"
@@ -23,6 +25,8 @@ export default function Logo({ variant = 'horizontal', className = '' }) {
         <img
           src={LOGO_SRC}
           alt={brand.name}
+          width={144}
+          height={144}
           draggable="false"
           loading="eager"
           decoding="async"
@@ -39,6 +43,8 @@ export default function Logo({ variant = 'horizontal', className = '' }) {
     <img
       src={LOGO_SRC}
       alt={brand.name}
+      width={280}
+      height={64}
       draggable="false"
       loading="eager"
       decoding="async"

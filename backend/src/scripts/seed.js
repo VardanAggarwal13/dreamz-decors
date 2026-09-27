@@ -12,7 +12,7 @@ const categories = [
     slug: "wall-art",
     blurb: "Hand-curated canvases for living rooms, bedrooms and studios.",
     image: {
-      url: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1200&auto=format&fit=crop&q=70",
+      url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521489/dreamzdecors/editorial/collection-wall-art-v1.webp",
     },
     order: 1,
   },
@@ -21,7 +21,7 @@ const categories = [
     slug: "gallery-sets",
     blurb: "Curated pairings and triptychs for a more finished wall.",
     image: {
-      url: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&auto=format&fit=crop&q=70",
+      url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521490/dreamzdecors/editorial/collection-gallery-sets-v1.webp",
     },
     order: 2,
   },
@@ -30,7 +30,7 @@ const categories = [
     slug: "skateboards",
     blurb: "Limited-run art decks. Mount them. Ride them. Up to you.",
     image: {
-      url: "https://images.unsplash.com/photo-1520975922323-a59c2deb1cc1?w=1200&auto=format&fit=crop&q=70",
+      url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790043148/dreamzdecors/banners/religious-art-collection-banner-v2.jpg",
     },
     order: 3,
   },
@@ -39,7 +39,7 @@ const categories = [
     slug: "bundles",
     blurb: "Best-value sets for gifting and quick room refreshes.",
     image: {
-      url: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&auto=format&fit=crop&q=70",
+      url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521488/dreamzdecors/categories/bundles-banner-v1.webp",
     },
     order: 4,
   },
@@ -184,11 +184,11 @@ const productsByCategory = {
         "An abstract dark bloom on premium artist canvas — deep, moody tones with gold detailing.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006432/dreamzdecors/products/ten-gurus-handcrafted-art.jpg",
           alt: "Midnight Bloom Canvas",
         },
         {
-          url: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006408/dreamzdecors/products/lord-ganesha-handcrafted-relief-art.jpg",
           alt: "Midnight Bloom Canvas — styled",
         },
       ],
@@ -201,11 +201,11 @@ const productsByCategory = {
         "Warm gold tones and fluid abstract forms — designed for living rooms that should feel finished.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006430/dreamzdecors/products/golden-temple-handcrafted-art.jpg",
           alt: "Golden Serenity Canvas",
         },
         {
-          url: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521489/dreamzdecors/editorial/collection-wall-art-v1.webp",
           alt: "Golden Serenity Canvas — room view",
         },
       ],
@@ -218,11 +218,11 @@ const productsByCategory = {
         "A calming landscape in muted earthy tones — quiet, premium, ready to anchor any wall.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521490/dreamzdecors/editorial/collection-gallery-sets-v1.webp",
           alt: "Horizon Drift Canvas",
         },
         {
-          url: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790043148/dreamzdecors/banners/religious-art-collection-banner-v2.jpg",
           alt: "Horizon Drift Canvas — room view",
         },
       ],
@@ -235,11 +235,11 @@ const productsByCategory = {
         "Cool blues and soft whites in a serene seascape — calm, understated, and enduringly elegant.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521488/dreamzdecors/categories/bundles-banner-v1.webp",
           alt: "Ocean Stillness Canvas",
         },
         {
-          url: "https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006432/dreamzdecors/products/ten-gurus-handcrafted-art.jpg",
           alt: "Ocean Stillness Canvas — room view",
         },
       ],
@@ -252,11 +252,11 @@ const productsByCategory = {
         "Amber and rust gradients that bring warmth to dining rooms and hallways alike.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006408/dreamzdecors/products/lord-ganesha-handcrafted-relief-art.jpg",
           alt: "Ember Glow Canvas",
         },
         {
-          url: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006430/dreamzdecors/products/golden-temple-handcrafted-art.jpg",
           alt: "Ember Glow Canvas — room view",
         },
       ],
@@ -273,11 +273,11 @@ const productsByCategory = {
         "A curated pair of abstract pieces designed to work together effortlessly on any feature wall.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521489/dreamzdecors/editorial/collection-wall-art-v1.webp",
           alt: "Studio Harmony Set",
         },
         {
-          url: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521490/dreamzdecors/editorial/collection-gallery-sets-v1.webp",
           alt: "Studio Harmony Set — room view",
         },
       ],
@@ -292,11 +292,11 @@ const productsByCategory = {
         "Three nature-inspired prints in a unified soft palette — ready to hang together from day one.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790043148/dreamzdecors/banners/religious-art-collection-banner-v2.jpg",
           alt: "Soft Horizon Gallery Set",
         },
         {
-          url: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521488/dreamzdecors/categories/bundles-banner-v1.webp",
           alt: "Soft Horizon Gallery Set — room view",
         },
       ],
@@ -311,11 +311,11 @@ const productsByCategory = {
         "Bold compositions that bring editorial precision to offices and studies.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006432/dreamzdecors/products/ten-gurus-handcrafted-art.jpg",
           alt: "Monochrome Edit Set",
         },
         {
-          url: "https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006408/dreamzdecors/products/lord-ganesha-handcrafted-relief-art.jpg",
           alt: "Monochrome Edit Set — room view",
         },
       ],
@@ -332,11 +332,11 @@ const productsByCategory = {
         "A limited-run art deck with hand-finished colour work. Mount it as wall art or ride it.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1520975922323-a59c2deb1cc1?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006430/dreamzdecors/products/golden-temple-handcrafted-art.jpg",
           alt: "Pop Burst Skate Deck",
         },
         {
-          url: "https://images.unsplash.com/photo-1520975922323-a59c2deb1cc1?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521489/dreamzdecors/editorial/collection-wall-art-v1.webp",
           alt: "Pop Burst Skate Deck — detail",
         },
       ],
@@ -351,11 +351,11 @@ const productsByCategory = {
         "Vibrant neon strokes on a premium maple deck — a collector piece for any wall.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1520975922323-a59c2deb1cc1?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521490/dreamzdecors/editorial/collection-gallery-sets-v1.webp",
           alt: "Neon Streak Deck",
         },
         {
-          url: "https://images.unsplash.com/photo-1520975922323-a59c2deb1cc1?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790043148/dreamzdecors/banners/religious-art-collection-banner-v2.jpg",
           alt: "Neon Streak Deck — detail",
         },
       ],
@@ -372,11 +372,11 @@ const productsByCategory = {
         "Our most-loved starter set — three complementary prints for an instant gallery-wall look.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521488/dreamzdecors/categories/bundles-banner-v1.webp",
           alt: "Collector Wall Bundle",
         },
         {
-          url: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006432/dreamzdecors/products/ten-gurus-handcrafted-art.jpg",
           alt: "Collector Wall Bundle — room view",
         },
       ],
@@ -391,11 +391,11 @@ const productsByCategory = {
         "Two statement canvases in a matched edition — curated for bedrooms and home offices.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006408/dreamzdecors/products/lord-ganesha-handcrafted-relief-art.jpg",
           alt: "Signature Pair Bundle",
         },
         {
-          url: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790006430/dreamzdecors/products/golden-temple-handcrafted-art.jpg",
           alt: "Signature Pair Bundle — room view",
         },
       ],
@@ -410,11 +410,11 @@ const productsByCategory = {
         "Premium gold foil canvases gifted-boxed and ready to impress — our top gifting pick.",
       images: [
         {
-          url: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521489/dreamzdecors/editorial/collection-wall-art-v1.webp",
           alt: "Gold Foil Gift Bundle",
         },
         {
-          url: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=900&auto=format&fit=crop&q=80",
+          url: "https://res.cloudinary.com/dif6u5314/image/upload/v1790521490/dreamzdecors/editorial/collection-gallery-sets-v1.webp",
           alt: "Gold Foil Gift Bundle — room view",
         },
       ],

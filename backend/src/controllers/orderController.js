@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import Order, { ORDER_STATUS } from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import User from '../models/User.js';
+import Product from '../models/Product.js';
 import { buildPagination, buildPaginationMeta, paginationPresets, escapeRegex } from '../utils/query.js';
 import { notify, notifyAdmins } from '../services/notificationService.js';
 import { initiateRefund } from '../services/paymentService.js';
@@ -115,6 +116,11 @@ export const createOrder = asyncHandler(async (req, res) => {
   if (paymentMethod === 'cod') {
     cart.items = [];
     await cart.save();
+    for (const item of items || []) {
+      if (item.product) {
+        await Product.updateOne({ _id: item.product }, { $inc: { sales: item.qty || 1 } }).catch(() => {});
+      }
+    }
   }
 
   // Fire the "order placed" notification to the customer (in-app + email + push).

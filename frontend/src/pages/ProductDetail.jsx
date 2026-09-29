@@ -152,6 +152,25 @@ export default function ProductDetail() {
       : 10;
   const isOutOfStock = availableStock <= 0;
 
+  // Ensure the product detail page always resets scroll to the top at the main product image
+  useEffect(() => {
+    setActiveImg(0);
+    setQty(1);
+    setTab(TABS[0]);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [slug]);
+
+  // Ensure scroll stays at the top once product data resolves and layout renders
+  useEffect(() => {
+    if (product?.id) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [product?.id]);
+
   useEffect(() => {
     if (!variantSizes.length) return;
     if (!variantSizes.includes(size)) {
@@ -653,106 +672,191 @@ export default function ProductDetail() {
           </div>
         </section>
 
-        {/* ── 3. Tabs: Specifications, Description, Packaging ── */}
-        <section className="mt-10 sm:mt-12 border-t border-hairline/70 pt-8 sm:pt-10">
-          <div className="flex flex-wrap gap-4 border-b border-hairline/70 sm:gap-8">
-            {TABS.map((label) => (
-              <button
-                key={label}
-                onClick={() => setTab(label)}
-                className={`-mb-px border-b-2 pb-3 pt-1 text-xs sm:text-sm font-semibold tracking-wide transition ${
-                  tab === label
-                    ? 'border-gold text-gold-deep font-bold'
-                    : 'border-transparent text-ink-muted hover:text-ink'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        {/* ── 3. Tabs: Specifications, Description, Packaging + Studio Standard Card ── */}
+        <section className="mt-10 sm:mt-14 border-t border-hairline/70 pt-8 sm:pt-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+            
+            {/* Left Column (8 cols): Tabs & In-depth Details */}
+            <div className="lg:col-span-7 xl:col-span-8">
+              <div className="flex flex-wrap gap-4 border-b border-hairline/70 sm:gap-8">
+                {TABS.map((label) => (
+                  <button
+                    key={label}
+                    onClick={() => setTab(label)}
+                    className={`-mb-px border-b-2 pb-3 pt-1 text-xs sm:text-sm font-semibold tracking-wide transition ${
+                      tab === label
+                        ? 'border-gold text-gold-deep font-bold'
+                        : 'border-transparent text-ink-muted hover:text-ink'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-          <div className="mt-5 sm:mt-6 max-w-4xl">
-            {tab === 'Description' && (
-              <div className="prose max-w-none text-xs sm:text-sm leading-relaxed text-ink-soft space-y-3.5">
-                <p>{productDescription}</p>
-                <div className="mt-5 rounded-2xl border border-hairline/80 bg-bone-soft p-4 sm:p-5">
-                  <h4 className="font-display text-sm font-bold text-ink mb-2.5 uppercase tracking-wider">
-                    Key Highlights
-                  </h4>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-ink-soft">
-                    {productFeatureHighlights.map((feat) => (
-                      <li key={feat} className="flex items-center gap-2">
-                        <FiCheck className="text-gold-deep shrink-0" size={14} />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
+              <div className="mt-5 sm:mt-6">
+                {tab === 'Description' && (
+                  <div className="prose max-w-none text-xs sm:text-sm leading-relaxed text-ink-soft space-y-4">
+                    <p>{productDescription}</p>
+                    <div className="rounded-2xl border border-hairline/80 bg-bone-soft p-5">
+                      <h4 className="font-display text-sm font-bold text-ink mb-3 uppercase tracking-wider flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-gold-deep" />
+                        Key Highlights &amp; Artwork Features
+                      </h4>
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-ink-soft">
+                        {productFeatureHighlights.map((feat) => (
+                          <li key={feat} className="flex items-center gap-2">
+                            <FiCheck className="text-gold-deep shrink-0" size={15} />
+                            <span>{feat}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {tab === 'Specifications & Details' && (
+                  <div className="overflow-hidden rounded-2xl border border-hairline/80 bg-bone-soft">
+                    <table className="w-full text-xs sm:text-sm">
+                      <tbody>
+                        <tr className="border-b border-hairline/60">
+                          <td className="w-1/3 px-4 py-3 font-semibold text-ink bg-bone/50">Collection</td>
+                          <td className="px-4 py-3 text-ink-soft capitalize">{categoryLabel}</td>
+                        </tr>
+                        <tr className="border-b border-hairline/60">
+                          <td className="px-4 py-3 font-semibold text-ink bg-bone/50">Canvas Quality</td>
+                          <td className="px-4 py-3 text-ink-soft">380 GSM Heavyweight Poly-Cotton Matte Canvas</td>
+                        </tr>
+                        <tr className="border-b border-hairline/60">
+                          <td className="px-4 py-3 font-semibold text-ink bg-bone/50">Printing Technique</td>
+                          <td className="px-4 py-3 text-ink-soft">12-Color Archival Pigment Giclée (2400 DPI Fidelity)</td>
+                        </tr>
+                        <tr className="border-b border-hairline/60">
+                          <td className="px-4 py-3 font-semibold text-ink bg-bone/50">Frame &amp; Stretcher</td>
+                          <td className="px-4 py-3 text-ink-soft">1.5-inch Deep Kiln-Dried Solid Pine Wood</td>
+                        </tr>
+                        <tr className="border-b border-hairline/60">
+                          <td className="px-4 py-3 font-semibold text-ink bg-bone/50">Mounting Hardware</td>
+                          <td className="px-4 py-3 text-ink-soft">Pre-installed Heavy Brass Brackets · Ready to Hang</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-semibold text-ink bg-bone/50">Care Guide</td>
+                          <td className="px-4 py-3 text-ink-soft">Wipe gently with a dry microfiber cloth. Avoid direct moisture.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {tab === 'Shipping & Packaging' && (
+                  <div className="rounded-2xl border border-hairline/80 bg-bone-soft p-5 space-y-4 text-xs sm:text-sm leading-relaxed text-ink-soft">
+                    <div className="flex items-start gap-3">
+                      <FiPackage className="mt-1 text-gold-deep shrink-0" size={18} />
+                      <div>
+                        <strong className="text-ink">Archival Armor Packaging: </strong>
+                        Every canvas is individually protected with custom high-density corner guards, wrapped in heavy-gauge shock-absorbing bubble cushioning, and encased in a 5-ply rigid corrugated delivery box.
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <FiTruck className="mt-1 text-gold-deep shrink-0" size={18} />
+                      <div>
+                        <strong className="text-ink">Express Dispatch &amp; Delivery: </strong>
+                        Orders are hand-prepared and dispatched within 24–48 hours. Estimated delivery across metro cities is 4–6 business days and 6–8 business days for all other pin codes in India.
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <FiShield className="mt-1 text-gold-deep shrink-0" size={18} />
+                      <div>
+                        <strong className="text-ink">Zero-Risk Transit Guarantee: </strong>
+                        If your shipment is compromised or damaged during courier transit, contact our concierge within 48 hours and we will ship a brand-new replacement immediately at no extra charge.
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column (4-5 cols): Studio Authenticity & Care Advisory Card */}
+            <div className="lg:col-span-5 xl:col-span-4 space-y-4">
+              <div className="rounded-2xl border border-hairline/90 bg-gradient-to-br from-bone-soft via-white to-bone-muted/40 p-5 sm:p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/15 text-gold-deep border border-gold/30">
+                    <FiAward size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-display text-sm font-bold text-ink">DreamzDecors Studio Seal</h4>
+                    <p className="text-[11px] text-ink-muted">Museum Archival Certification</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 divide-y divide-hairline/60 text-xs text-ink-soft">
+                  <div className="py-2.5 flex items-start gap-2.5">
+                    <FiCheck className="mt-0.5 text-emerald-600 shrink-0" size={14} />
+                    <span><strong>100+ Years Fade Resistance:</strong> Formulated with UV-inhibited archival pigment inks.</span>
+                  </div>
+                  <div className="py-2.5 flex items-start gap-2.5">
+                    <FiCheck className="mt-0.5 text-emerald-600 shrink-0" size={14} />
+                    <span><strong>Kiln-Dried Pine Wood:</strong> Warp-proof stretcher bars resistant to humidity changes.</span>
+                  </div>
+                  <div className="py-2.5 flex items-start gap-2.5">
+                    <FiCheck className="mt-0.5 text-emerald-600 shrink-0" size={14} />
+                    <span><strong>Pre-Installed Mounting:</strong> Ready to hang immediately upon unboxing with wall hardware included.</span>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-xl border border-gold/25 bg-gold/10 p-3.5 text-xs text-ink">
+                  <p className="font-semibold text-gold-deep flex items-center gap-1.5">
+                    <FiHelpCircle size={14} /> Need Bespoke Framing or Custom Size?
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">
+                    Our art advisory concierge can customize dimensions or frame finishes tailored to your interior space.
+                  </p>
+                  <Link
+                    to="/contact"
+                    className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-gold-deep hover:underline"
+                  >
+                    Contact Studio Concierge →
+                  </Link>
                 </div>
               </div>
-            )}
+            </div>
 
-            {tab === 'Specifications & Details' && (
-              <div className="space-y-6">
-                <div className="overflow-hidden rounded-2xl border border-hairline/80 bg-bone-soft">
-                  <table className="w-full text-xs sm:text-sm">
-                    <tbody>
-                      <tr className="border-b border-hairline/60">
-                        <td className="w-1/3 px-4 py-3 font-semibold text-ink bg-bone/50">Collection</td>
-                        <td className="px-4 py-3 text-ink-soft capitalize">{categoryLabel}</td>
-                      </tr>
-                      <tr className="border-b border-hairline/60">
-                        <td className="px-4 py-3 font-semibold text-ink bg-bone/50">Canvas Quality</td>
-                        <td className="px-4 py-3 text-ink-soft">380 GSM Heavyweight Matte Canvas</td>
-                      </tr>
-                      <tr className="border-b border-hairline/60">
-                        <td className="px-4 py-3 font-semibold text-ink bg-bone/50">Printing Technique</td>
-                        <td className="px-4 py-3 text-ink-soft">12-Color Archival Pigment Giclée (2400 DPI)</td>
-                      </tr>
-                      <tr className="border-b border-hairline/60">
-                        <td className="px-4 py-3 font-semibold text-ink bg-bone/50">Frame &amp; Stretcher</td>
-                        <td className="px-4 py-3 text-ink-soft">1.5-inch Deep Kiln-Dried Solid Pine Wood</td>
-                      </tr>
-                      <tr className="border-b border-hairline/60">
-                        <td className="px-4 py-3 font-semibold text-ink bg-bone/50">Mounting Hardware</td>
-                        <td className="px-4 py-3 text-ink-soft">Pre-installed Brass Brackets · Ready to Hang</td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-3 font-semibold text-ink bg-bone/50">Care Guide</td>
-                        <td className="px-4 py-3 text-ink-soft">Dust with a soft microfiber cloth. Avoid water exposure.</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {tab === 'Shipping & Packaging' && (
-              <div className="rounded-2xl border border-hairline/80 bg-bone-soft p-4 sm:p-5 space-y-3 text-xs sm:text-sm leading-relaxed text-ink-soft">
-                <p>
-                  <strong className="text-ink">Archival Packaging Standard:</strong> Every canvas is individually protected with custom high-density corner guards, wrapped in heavy-gauge shock-absorbing bubble cushioning, and encased in a 5-ply rigid corrugated delivery box.
-                </p>
-                <p>
-                  <strong className="text-ink">Delivery Timeframe:</strong> Orders are hand-prepared and dispatched within 24–48 hours. Estimated delivery across metro cities is 4–6 business days and 6–8 business days for other regions across India.
-                </p>
-                <p>
-                  <strong className="text-ink">Zero-Risk Transit Guarantee:</strong> If your shipment is compromised or damaged during courier transit, contact us within 48 hours and we will ship a brand-new replacement immediately at no cost.
-                </p>
-              </div>
-            )}
           </div>
         </section>
 
-        {/* ── 4. Frequently Asked Questions (Accordion) ────────── */}
-        <section className="mt-10 sm:mt-12 border-t border-hairline/70 pt-8 sm:pt-10">
-          <div className="max-w-3xl">
-            <span className="text-xs font-bold uppercase tracking-[0.24em] text-gold-deep">
-              Have Questions?
-            </span>
-            <h2 className="mt-1 font-display text-2xl font-bold text-ink">
-              Frequently Asked Questions
-            </h2>
+        {/* ── 4. Frequently Asked Questions (2-Column Grid) ────── */}
+        <section className="mt-10 sm:mt-14 border-t border-hairline/70 pt-8 sm:pt-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+            {/* Left Column (4 cols): Section Intro & Concierge Support Card */}
+            <div className="lg:col-span-4 space-y-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-[0.24em] text-gold-deep">
+                  Have Questions?
+                </span>
+                <h2 className="mt-1 font-display text-2xl font-bold text-ink">
+                  Frequently Asked Questions
+                </h2>
+                <p className="mt-2 text-xs sm:text-sm text-ink-soft leading-relaxed">
+                  Everything you need to know about our canvas archival quality, transit protection, and wall display setup.
+                </p>
+              </div>
 
-            <div className="mt-5 sm:mt-6 space-y-2.5">
+              <div className="rounded-2xl border border-hairline/80 bg-bone-soft p-5 text-xs text-ink-soft space-y-3">
+                <p className="font-semibold text-ink">Have a custom question?</p>
+                <p className="text-[11px] leading-relaxed">
+                  Our private art concierge is ready to assist with sizing advice, bulk gallery curation, or bespoke framing options.
+                </p>
+                <Link
+                  to="/contact"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-gold/50 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold-deep hover:bg-gold/20 transition"
+                >
+                  Ask Our Art Team →
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Column (8 cols): Accordion Items */}
+            <div className="lg:col-span-8 space-y-3">
               {FAQS.map((faq, idx) => (
                 <div
                   key={idx}

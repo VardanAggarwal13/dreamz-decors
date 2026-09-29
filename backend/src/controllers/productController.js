@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import Product from '../models/Product.js';
+import Category from '../models/Category.js';
 import { buildPagination, buildPaginationMeta, paginationPresets, parseNumber } from '../utils/query.js';
 
 import mongoose from 'mongoose';
@@ -38,7 +39,19 @@ export const listProducts = asyncHandler(async (req, res) => {
   const max = parseNumber(maxPrice);
 
   if (normalizedSearch) filter.$text = { $search: normalizedSearch };
-  if (category) filter.category = category;
+  if (category) {
+    const rawCategory = String(category).trim();
+    if (mongoose.Types.ObjectId.isValid(rawCategory) && rawCategory.length === 24) {
+      filter.category = new mongoose.Types.ObjectId(rawCategory);
+    } else {
+      const catDoc = await Category.findOne({ slug: rawCategory.toLowerCase() }).select('_id').lean();
+      if (catDoc) {
+        filter.category = catDoc._id;
+      } else {
+        filter.category = new mongoose.Types.ObjectId();
+      }
+    }
+  }
   if (normalizedTag) filter.tags = normalizedTag;
   if (badge) filter.badge = badge;
   if (featured === 'true' || isFeatured === 'true') {

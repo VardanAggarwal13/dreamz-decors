@@ -37,21 +37,20 @@ export default function Shop() {
     sp.set('sort', sort);
     sp.set('page', String(page));
     sp.set('limit', String(PAGE_SIZE));
-    if (currentCat?.id) sp.set('category', currentCat.id);
+    if (currentCat?.id) {
+      sp.set('category', currentCat.id);
+    } else if (category) {
+      sp.set('category', category);
+    }
     if (search) sp.set('q', search); // backend expects `q` for text search
     return sp.toString();
-  }, [currentCat?.id, page, sort, search]);
+  }, [currentCat?.id, category, page, sort, search]);
 
   const { data, loading, error } = useFetch(`/products?${query}`, {
     deps: [query],
-    skip: Boolean(category) && !currentCat,
   });
 
-  // While the categories are still in flight we don't yet know this category's id,
-  // so the products request is skipped — and a skipped useFetch reports
-  // `loading: false`. Without folding that in, the grid would flash its empty
-  // state ("no products in this collection") before the real skeleton appears.
-  const gridLoading = loading || (Boolean(category) && !currentCat);
+  const gridLoading = loading;
 
   const products   = (data?.data || []).map(normalizeProduct);
   const totalPages = Math.max(1, data?.pages || 1);

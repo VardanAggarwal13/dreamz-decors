@@ -18,6 +18,7 @@ const AdminNewsletter = lazy(() => import('@/pages/admin/AdminNewsletter'));
 const AdminPayments = lazy(() => import('@/pages/admin/AdminPayments'));
 const AdminSettings = lazy(() => import('@/pages/admin/AdminSettings'));
 const AdminContent = lazy(() => import('@/pages/admin/AdminContent'));
+import ScrollToTop from '@/components/common/ScrollToTop';
 import { NotificationBootstrap } from '@/components/common/NotificationBootstrap';
 import { WishlistSync } from '@/components/common/WishlistSync';
 import { SettingsBootstrap } from '@/components/common/SettingsBootstrap';
@@ -75,6 +76,8 @@ function MainLayout() {
 export default function App() {
   return (
     <>
+      {/* Resets window scroll position to the top on route transitions */}
+      <ScrollToTop />
       {/* Bootstraps auth state on every page */}
       <AuthBootstrap />
       {/* Connects the real-time notification socket when logged in */}

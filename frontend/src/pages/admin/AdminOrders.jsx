@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FiEye } from 'react-icons/fi';
+import { FiEye, FiArrowRight } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import OrderStatusBadge from '@/components/common/OrderStatusBadge';
@@ -10,6 +10,7 @@ import Modal, { ViewStat } from '@/components/admin/Modal';
 import { AdminListSkeleton } from '@/components/admin/AdminSkeleton';
 import AdminSearch from '@/components/admin/AdminSearch';
 import AdminPagination from '@/components/admin/AdminPagination';
+import { Button } from '@/components/ui/Button';
 import { formatINR } from '@/lib/utils';
 
 const STATUSES = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
@@ -21,6 +22,8 @@ export default function AdminOrders() {
   const [filter, setFilter] = useState('');
   const [q, setQ] = useState('');
   const [viewing, setViewing] = useState(null);
+  const [statusConfirm, setStatusConfirm] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   // Server-side pagination + status filter + search (customer name/email/id).
   const makePath = ({ page, limit }) => {
@@ -45,9 +48,36 @@ export default function AdminOrders() {
       setOrders((list) => list.map((o) => (o._id === id ? merge(o) : o)));
       setViewing((v) => (v && v._id === id ? merge(v) : v));
       toast.success(res.message || `Order marked ${updated.orderStatus || status}`);
+      return true;
     } catch (err) {
       toast.error(err.message || 'Update failed');
       reload();
+      return false;
+    }
+  };
+
+  const requestStatusChange = (order, newStatus) => {
+    if (!order || order.status === newStatus) return;
+    setStatusConfirm({
+      orderId: order._id,
+      orderNumber: shortId(order._id),
+      customerName: order.user?.name || order.user?.email || 'Customer',
+      total: order.total,
+      currentStatus: order.status,
+      newStatus,
+    });
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (!statusConfirm) return;
+    setUpdatingStatus(true);
+    try {
+      const success = await changeStatus(statusConfirm.orderId, statusConfirm.newStatus);
+      if (success) {
+        setStatusConfirm(null);
+      }
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -86,7 +116,7 @@ export default function AdminOrders() {
             <div className="mt-3 flex items-center gap-2">
               <select
                 value={o.status}
-                onChange={(e) => changeStatus(o._id, e.target.value)}
+                onChange={(e) => requestStatusChange(o, e.target.value)}
                 className="min-w-0 flex-1 rounded-lg border border-hairline bg-bone-soft px-2 py-2 text-xs text-ink-soft outline-none focus:border-gold"
               >
                 {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -136,7 +166,7 @@ export default function AdminOrders() {
                 <td className="px-4 py-3">
                   <select
                     value={o.status}
-                    onChange={(e) => changeStatus(o._id, e.target.value)}
+                    onChange={(e) => requestStatusChange(o, e.target.value)}
                     className="rounded-lg border border-hairline bg-bone px-2 py-1.5 text-xs text-ink-soft outline-none focus:border-gold"
                   >
                     {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -172,7 +202,7 @@ export default function AdminOrders() {
             <span className="text-sm font-medium text-ink">Update status</span>
             <select
               value={viewing.status}
-              onChange={(e) => changeStatus(viewing._id, e.target.value)}
+              onChange={(e) => requestStatusChange(viewing, e.target.value)}
               className="rounded-lg border border-hairline bg-bone px-3 py-2 text-sm text-ink-soft outline-none focus:border-gold"
             >
               {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -266,6 +296,86 @@ export default function AdminOrders() {
                   )}
                   <p>{[viewing.shippingAddress.line1, viewing.shippingAddress.line2, viewing.shippingAddress.city, viewing.shippingAddress.state, viewing.shippingAddress.pincode, viewing.shippingAddress.country].filter(Boolean).join(', ')}</p>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Status change confirmation modal */}
+      <Modal
+        open={!!statusConfirm}
+        onClose={() => !updatingStatus && setStatusConfirm(null)}
+        title="Confirm Order Status Update"
+        subtitle={
+          statusConfirm && (
+            <span className="text-xs text-ink-muted">
+              {statusConfirm.orderNumber} · {statusConfirm.customerName}
+            </span>
+          )
+        }
+        maxWidth="max-w-md"
+        footer={
+          statusConfirm && (
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                disabled={updatingStatus}
+                onClick={() => setStatusConfirm(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                disabled={updatingStatus}
+                onClick={handleConfirmStatusChange}
+              >
+                {updatingStatus ? 'Updating…' : 'Confirm Update'}
+              </Button>
+            </div>
+          )
+        }
+      >
+        {statusConfirm && (
+          <div className="space-y-4 text-sm text-ink-soft">
+            <div className="rounded-xl border border-hairline/80 bg-bone p-4">
+              <div className="flex items-center justify-between text-xs text-ink-muted mb-2">
+                <span>Status Transition</span>
+                <span>Total: {formatINR(statusConfirm.total)}</span>
+              </div>
+              <div className="flex items-center justify-center gap-3 py-2">
+                <OrderStatusBadge status={statusConfirm.currentStatus} />
+                <FiArrowRight className="text-gold-deep shrink-0" size={16} />
+                <OrderStatusBadge status={statusConfirm.newStatus} />
+              </div>
+            </div>
+
+            <p className="text-xs leading-relaxed text-ink-soft">
+              Are you sure you want to change the status of{' '}
+              <strong className="text-ink font-semibold">{statusConfirm.orderNumber}</strong> from{' '}
+              <span className="font-semibold uppercase text-ink">{statusConfirm.currentStatus}</span> to{' '}
+              <span className="font-semibold uppercase text-gold-deep">{statusConfirm.newStatus}</span>?
+            </p>
+
+            {statusConfirm.newStatus === 'delivered' && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-800">
+                <strong>Delivery Notice:</strong> This will mark the order as successfully delivered to the customer.
+              </div>
+            )}
+
+            {statusConfirm.newStatus === 'shipped' && (
+              <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3 text-xs text-blue-800">
+                <strong>Shipment Notice:</strong> This will mark the order as dispatched and update customer tracking.
+              </div>
+            )}
+
+            {(statusConfirm.newStatus === 'cancelled' || statusConfirm.newStatus === 'refunded') && (
+              <div className="rounded-xl border border-sale/30 bg-sale/10 p-3 text-xs text-sale">
+                <strong>Warning:</strong> Marking an order as {statusConfirm.newStatus} cannot be undone automatically and may trigger customer notifications or refund adjustments.
               </div>
             )}
           </div>

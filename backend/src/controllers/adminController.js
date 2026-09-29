@@ -296,6 +296,8 @@ export const sendCampaign = asyncHandler(async (req, res) => {
   let sent = 0;
   let failed = 0;
 
+  const origin = req.headers.origin || req.headers.referer;
+
   // Send in batches of 10 with the shared mailer (which never throws).
   const BATCH = 10;
   for (let i = 0; i < recipients.length; i += BATCH) {
@@ -311,7 +313,7 @@ export const sendCampaign = asyncHandler(async (req, res) => {
           ctaUrl,
           imageUrl,
           unsubscribeUrl: unsubscribeUrlFor(r),
-        });
+        }, { origin });
         return sendEmail({ to: r.email, subject: email.subject, html: email.html });
       })
     );

@@ -24,18 +24,25 @@ self.addEventListener('push', (event) => {
 // Focus an existing tab (or open one) at the notification's link when clicked.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const link = event.notification.data?.link || '/account';
+  const rawLink = event.notification.data?.link || '/account';
+  let targetPath = rawLink;
+  try {
+    const parsed = new URL(rawLink, self.location.origin);
+    targetPath = parsed.pathname + parsed.search + parsed.hash;
+  } catch {}
+
+  const fullUrl = new URL(targetPath, self.location.origin).href;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if ('focus' in client) {
           client.focus();
-          if ('navigate' in client) client.navigate(link);
+          if ('navigate' in client) client.navigate(fullUrl);
           return;
         }
       }
-      if (self.clients.openWindow) return self.clients.openWindow(link);
+      if (self.clients.openWindow) return self.clients.openWindow(fullUrl);
     })
   );
 });

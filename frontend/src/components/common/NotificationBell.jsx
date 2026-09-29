@@ -82,7 +82,16 @@ export default function NotificationBell({ buttonClassName, badgeClassName, icon
   const handleItemClick = (notif) => {
     if (!notif.read) markRead(notif._id);
     setOpen(false);
-    if (notif.link) navigate(notif.link);
+    if (notif.link) {
+      let target = notif.link;
+      if (typeof target === 'string' && target.startsWith('http')) {
+        try {
+          const u = new URL(target);
+          target = u.pathname + u.search + u.hash;
+        } catch {}
+      }
+      navigate(target);
+    }
   };
 
   const togglePush = async () => {

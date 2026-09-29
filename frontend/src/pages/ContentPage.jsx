@@ -492,7 +492,7 @@ function AboutPage({ page }) {
             <div className="lg:col-span-5 flex flex-col items-center">
               <div className="overflow-hidden rounded-xl border border-hairline/80 bg-bone-soft shadow-xs w-full max-w-[300px] sm:max-w-[340px]">
                 <img
-                  src={page.storyImage || 'https://res.cloudinary.com/dif6u5314/image/upload/v1790006408/dreamzdecors/products/lord-ganesha-handcrafted-relief-art.jpg'}
+                  src={page.storyImage || 'https://res.cloudinary.com/pla77unx/image/upload/v1790006408/dreamzdecors/products/lord-ganesha-handcrafted-relief-art.jpg'}
                   alt="Dreamz Decor handcrafted relief canvas artwork"
                   className="aspect-[4/5] max-h-[380px] w-full object-cover"
                 />

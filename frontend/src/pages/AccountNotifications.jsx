@@ -78,7 +78,16 @@ export default function AccountNotifications() {
 
   const openItem = (n) => {
     if (!n.read) markRead(n._id);
-    if (n.link) navigate(n.link);
+    if (n.link) {
+      let target = n.link;
+      if (typeof target === 'string' && target.startsWith('http')) {
+        try {
+          const u = new URL(target);
+          target = u.pathname + u.search + u.hash;
+        } catch {}
+      }
+      navigate(target);
+    }
   };
 
   return (

@@ -34,7 +34,8 @@ export const submitContact = asyncHandler(async (req, res) => {
   }
 
   const to = await contactRecipient();
-  const { subject: emailSubject, html } = buildContactMessage({ name, email, subject, message });
+  const origin = req.headers.origin || req.headers.referer;
+  const { subject: emailSubject, html } = buildContactMessage({ name, email, subject, message }, { origin });
 
   const sent = await sendEmail({ to, subject: emailSubject, html, replyTo: email });
   if (!sent) {

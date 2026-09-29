@@ -19,6 +19,19 @@ const clientUrls = () =>
     .filter(Boolean);
 
 function resetPasswordEmail(name, url) {
+  let safeUrl = url;
+  const liveUrl = process.env.LIVE_SITE_URL || (process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',')[0].trim() : null);
+  if (liveUrl && !liveUrl.includes('localhost') && safeUrl && (safeUrl.includes('localhost') || safeUrl.includes('127.0.0.1'))) {
+    try {
+      const u = new URL(safeUrl);
+      const live = new URL(liveUrl);
+      u.protocol = live.protocol;
+      u.host = live.host;
+      u.port = live.port;
+      safeUrl = u.toString();
+    } catch {}
+  }
+
   return `<!doctype html>
 <html><body style="margin:0;background:#f7f3ec;font-family:Helvetica,Arial,sans-serif;color:#161616;">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
@@ -27,7 +40,7 @@ function resetPasswordEmail(name, url) {
       <tr><td style="padding:32px;">
         <h1 style="margin:0 0 14px;font-size:22px;">Reset your password</h1>
         <p style="font-size:14px;line-height:1.7;color:#5a5751;">Hi ${name || 'there'}, we received a request to reset your password. Click below to choose a new one. This link expires shortly.</p>
-        <p style="margin-top:22px;"><a href="${url}" style="display:inline-block;background:#c59e59;color:#fff;text-decoration:none;font-size:13px;letter-spacing:1px;text-transform:uppercase;padding:12px 26px;border-radius:999px;">Reset password</a></p>
+        <p style="margin-top:22px;"><a href="${safeUrl}" style="display:inline-block;background:#c59e59;color:#fff;text-decoration:none;font-size:13px;letter-spacing:1px;text-transform:uppercase;padding:12px 26px;border-radius:999px;">Reset password</a></p>
         <p style="margin-top:20px;font-size:12px;color:#9a948a;">If you didn't request this, you can safely ignore this email.</p>
       </td></tr>
     </table>

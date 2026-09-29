@@ -17,10 +17,10 @@ const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
  *     the money moved. Telling a customer "refund processed" before that is a lie.
  */
 const STATUS_NOTIFICATION = {
-  processing: { type: 'order_processing', title: 'Order processing',  message: () => 'Your order is being prepared for dispatch.' },
-  shipped:    { type: 'order_shipped',    title: 'Order shipped',     message: () => 'Your order has been dispatched and is on its way.' },
-  delivered:  { type: 'order_delivered',  title: 'Order delivered',   message: () => 'Your order has been delivered. We hope you love it!' },
-  cancelled:  { type: 'order_cancelled',  title: 'Order cancelled',   message: () => 'Your order has been cancelled.' },
+  processing: { type: 'order_processing', title: 'Order processing',  message: () => 'Your order is being prepared for dispatch.', email: false },
+  shipped:    { type: 'order_shipped',    title: 'Order shipped',     message: () => 'Your order has been dispatched and is on its way.', email: true },
+  delivered:  { type: 'order_delivered',  title: 'Order delivered',   message: () => 'Your order has been delivered. We hope you love it!', email: true },
+  cancelled:  { type: 'order_cancelled',  title: 'Order cancelled',   message: () => 'Your order has been cancelled.', email: true },
 };
 
 // The admin UI still speaks the legacy vocabulary; translate it to orderStatus.
@@ -123,6 +123,8 @@ export const createOrder = asyncHandler(async (req, res) => {
     }
   }
 
+  const origin = req.headers.origin || req.headers.referer;
+
   // Fire the "order placed" notification to the customer (in-app + email + push).
   await notify({
     user: req.user._id,
@@ -133,7 +135,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     link: `/account/orders/${order._id}`,
     email: true,
     push: true,
-    emailContext: { order },
+    emailContext: { order, origin },
   });
 
   // Alert every admin about the new order (bell + email).
@@ -143,7 +145,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     message: `${req.user.name || 'A customer'} placed an order of ${inr(total)}.`,
     data: { orderId: order._id },
     link: '/admin/orders',
-    emailContext: { order, customerName: req.user.name },
+    emailContext: { order, customerName: req.user.name, origin },
   });
 
   res.status(201).json({ success: true, data: order });
@@ -252,6 +254,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 
   const spec = STATUS_NOTIFICATION[target];
   if (changed && spec) {
+    const origin = req.headers.origin || req.headers.referer;
     await notify({
       user: order.user,
       type: spec.type,
@@ -259,9 +262,9 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
       message: spec.message(order),
       data: { orderId: order._id },
       link: `/account/orders/${order._id}`,
-      email: true,
+      email: spec.email !== false,
       push: true,
-      emailContext: { order },
+      emailContext: { order, origin },
     });
   }
 

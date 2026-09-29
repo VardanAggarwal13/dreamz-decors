@@ -10,7 +10,7 @@ const ctaClass =
   'h-auto min-h-12 flex-1 px-3 py-2 text-center text-[11px] leading-tight tracking-[0.08em] sm:h-14 sm:min-h-0 sm:flex-none sm:px-8 sm:py-0 sm:text-sm sm:tracking-[0.22em]';
 
 const FALLBACK_HERO_IMAGE =
-  'https://res.cloudinary.com/dif6u5314/image/upload/v1790006432/dreamzdecors/products/ten-gurus-handcrafted-art.jpg';
+  'https://res.cloudinary.com/pla77unx/image/upload/v1790006432/dreamzdecors/products/ten-gurus-handcrafted-art.jpg';
 
 export default function Hero() {
   // Admin override (key 'home') merged over the built-in default.

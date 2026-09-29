@@ -13,8 +13,8 @@ export const unsubscribeUrlFor = (sub) =>
   `${serverUrl()}/api/newsletter/unsubscribe?token=${sub.unsubscribeToken}`;
 
 // Fire-and-forget welcome email (never blocks the request).
-export function sendWelcomeEmail(sub) {
-  const { subject, html } = buildNewsletterWelcome({ unsubscribeUrl: unsubscribeUrlFor(sub) });
+export function sendWelcomeEmail(sub, origin) {
+  const { subject, html } = buildNewsletterWelcome({ unsubscribeUrl: unsubscribeUrlFor(sub) }, { origin });
   sendEmail({ to: sub.email, subject, html }).catch(() => {});
 }
 
@@ -40,7 +40,8 @@ export const subscribe = asyncHandler(async (req, res) => {
   await sub.save();
 
   // Only welcome NEW or re-activated subscribers, not repeat submits.
-  if (!wasSubscribed) sendWelcomeEmail(sub);
+  const origin = req.headers.origin || req.headers.referer;
+  if (!wasSubscribed) sendWelcomeEmail(sub, origin);
 
   res.status(201).json({
     success: true,

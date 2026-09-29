@@ -19,7 +19,36 @@ const COLORS = {
   muted: '#9a948a',
 };
 
-const clientUrl = () => (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
+export function clientUrl(ctx = {}) {
+  // 1. If explicit origin was provided in ctx (e.g. from req.headers.origin on live site)
+  if (ctx.origin && typeof ctx.origin === 'string' && ctx.origin.startsWith('http')) {
+    return ctx.origin.replace(/\/+$/, '');
+  }
+
+  // 2. If LIVE_SITE_URL or SITE_URL is defined
+  const explicit = process.env.LIVE_SITE_URL || process.env.SITE_URL;
+  if (explicit && typeof explicit === 'string' && explicit.startsWith('http')) {
+    return explicit.replace(/\/+$/, '');
+  }
+
+  // 3. Check comma-separated CLIENT_URL in env
+  const raw = process.env.CLIENT_URL || '';
+  const origins = raw
+    .split(',')
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+
+  // If in production or live origin is present in CLIENT_URL, prefer non-localhost URL!
+  const live = origins.find((o) => !o.includes('localhost') && !o.includes('127.0.0.1'));
+  if (live) return live;
+
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://www.dreamdecords.com';
+  }
+
+  return origins[0] || 'http://localhost:5173';
+}
+
 const supportEmail = () => process.env.SUPPORT_EMAIL || 'dreamzdecor30@gmail.com';
 const currentYear = () => new Date().getFullYear();
 
@@ -49,8 +78,10 @@ function button(label, url) {
  * @param {string} [o.imageUrl]     Optional full-width banner under the header.
  * @param {string} [o.footerNote]   Why-you-got-this line (defaults to account copy).
  * @param {string} [o.unsubscribeUrl] Adds an unsubscribe link to the footer.
+ * @param {object} [ctx]            Context object carrying origin or clientUrl
  */
-function renderEmail({ preheader, heading, bodyHtml, cta, imageUrl, footerNote, unsubscribeUrl }) {
+function renderEmail({ preheader, heading, bodyHtml, cta, imageUrl, footerNote, unsubscribeUrl }, ctx = {}) {
+  const baseUrl = clientUrl(ctx);
   const banner = imageUrl
     ? `<tr><td style="padding:0;">
          <img src="${imageUrl}" alt="" width="600"
@@ -114,7 +145,7 @@ function renderEmail({ preheader, heading, bodyHtml, cta, imageUrl, footerNote, 
             ${note}${unsubscribe}
           </p>
           <p style="margin:12px 0 0;font-size:11px;color:${COLORS.muted};">
-            © ${currentYear()} ${BRAND} · <a href="${clientUrl()}" style="color:${COLORS.muted};text-decoration:underline;">dreamzdecors.com</a>
+            © ${currentYear()} ${BRAND} · <a href="${baseUrl}" style="color:${COLORS.muted};text-decoration:underline;">dreamzdecors.com</a>
           </p>
         </td></tr>
 
@@ -127,11 +158,12 @@ function renderEmail({ preheader, heading, bodyHtml, cta, imageUrl, footerNote, 
 
 // ─── Transactional emails (orders, account) ────────────────────────────────────
 
-// Map a notification type to a branded email. `ctx` carries { name, order, … }.
+// Map a notification type to a branded email. `ctx` carries { name, order, origin, … }.
 export function buildEmail(type, ctx = {}) {
-  const name = ctx.name || 'there';
+  const baseUrl = clientUrl(ctx);
+  const name = ctx.name || ctx.order?.shippingAddress?.name || 'there';
   const orderId = ctx.order?._id || ctx.orderId;
-  const orderUrl = orderId ? `${clientUrl()}/account/orders/${orderId}` : `${clientUrl()}/account/orders`;
+  const orderUrl = orderId ? `${baseUrl}/account/orders/${orderId}` : `${baseUrl}/account/orders`;
   const total = ctx.order?.total != null ? `₹${Number(ctx.order.total).toLocaleString('en-IN')}` : null;
   const viewOrder = { label: 'View order', url: orderUrl };
 
@@ -144,7 +176,7 @@ export function buildEmail(type, ctx = {}) {
           heading: 'Your order is confirmed',
           bodyHtml: `Hi ${name}, we've received your order${total ? ` of <strong>${total}</strong>` : ''}. We'll start preparing it and notify you the moment it ships.`,
           cta: viewOrder,
-        }),
+        }, ctx),
       };
     case 'order_paid':
       return {
@@ -154,7 +186,17 @@ export function buildEmail(type, ctx = {}) {
           heading: 'Payment received',
           bodyHtml: `Hi ${name}, your payment${total ? ` of <strong>${total}</strong>` : ''} was successful. Your order is now being processed.`,
           cta: viewOrder,
-        }),
+        }, ctx),
+      };
+    case 'order_processing':
+      return {
+        subject: `Your order is being prepared 🎨`,
+        html: renderEmail({
+          preheader: `We're preparing your order${total ? ` of ${total}` : ''} for dispatch.`,
+          heading: 'Order in preparation',
+          bodyHtml: `Hi ${name}, our studio has begun preparing your order${total ? ` of <strong>${total}</strong>` : ''}. Each piece is carefully inspected, framed, and packaged with archival care. We'll notify you the moment it ships.`,
+          cta: viewOrder,
+        }, ctx),
       };
     case 'order_shipped':
       return {
@@ -164,7 +206,7 @@ export function buildEmail(type, ctx = {}) {
           heading: 'On its way to you',
           bodyHtml: `Good news, ${name}! Your order has been dispatched and is on its way. Tracking details will follow shortly.`,
           cta: { label: 'Track order', url: orderUrl },
-        }),
+        }, ctx),
       };
     case 'order_delivered':
       return {
@@ -174,7 +216,7 @@ export function buildEmail(type, ctx = {}) {
           heading: 'Delivered',
           bodyHtml: `Hi ${name}, your order has been delivered. We hope you love it! Tap below to leave a review.`,
           cta: viewOrder,
-        }),
+        }, ctx),
       };
     case 'order_cancelled':
       return {
@@ -184,7 +226,7 @@ export function buildEmail(type, ctx = {}) {
           heading: 'Order cancelled',
           bodyHtml: `Hi ${name}, your order has been cancelled. If this wasn't expected or you need a refund update, reply to this email.`,
           cta: viewOrder,
-        }),
+        }, ctx),
       };
     case 'order_refunded':
       return {
@@ -194,7 +236,7 @@ export function buildEmail(type, ctx = {}) {
           heading: 'Refund processed',
           bodyHtml: `Hi ${name}, your refund${total ? ` of <strong>${total}</strong>` : ''} has been processed and should reflect in your account soon.`,
           cta: viewOrder,
-        }),
+        }, ctx),
       };
     case 'account_welcome':
       return {
@@ -203,8 +245,8 @@ export function buildEmail(type, ctx = {}) {
           preheader: 'Hand-finished canvases, gallery sets and statement pieces await.',
           heading: `Welcome, ${name}!`,
           bodyHtml: `Thanks for joining ${BRAND}. Explore hand-finished canvases, gallery sets, and statement pieces curated for spaces that linger.`,
-          cta: { label: 'Start shopping', url: `${clientUrl()}/shop` },
-        }),
+          cta: { label: 'Start shopping', url: `${baseUrl}/shop` },
+        }, ctx),
       };
     case 'admin_new_order':
       return {
@@ -213,8 +255,8 @@ export function buildEmail(type, ctx = {}) {
           preheader: `A new order was placed${total ? ` for ${total}` : ''}.`,
           heading: 'New order received',
           bodyHtml: `A new order has been placed${ctx.customerName ? ` by <strong>${ctx.customerName}</strong>` : ''}${total ? ` for <strong>${total}</strong>` : ''}. Open the dashboard to review and process it.`,
-          cta: { label: 'Open admin orders', url: `${clientUrl()}/admin/orders` },
-        }),
+          cta: { label: 'Open admin orders', url: `${baseUrl}/admin/orders` },
+        }, ctx),
       };
     case 'admin_order_paid':
       return {
@@ -223,8 +265,8 @@ export function buildEmail(type, ctx = {}) {
           preheader: `Payment confirmed${total ? ` of ${total}` : ''}.`,
           heading: 'Payment received',
           bodyHtml: `Payment has been confirmed${ctx.customerName ? ` from <strong>${ctx.customerName}</strong>` : ''}${total ? ` for <strong>${total}</strong>` : ''}. The order is ready to be processed and shipped.`,
-          cta: { label: 'Open admin orders', url: `${clientUrl()}/admin/orders` },
-        }),
+          cta: { label: 'Open admin orders', url: `${baseUrl}/admin/orders` },
+        }, ctx),
       };
     default:
       return {
@@ -233,8 +275,8 @@ export function buildEmail(type, ctx = {}) {
           preheader: ctx.message || '',
           heading: ctx.title || 'Notification',
           bodyHtml: ctx.message || '',
-          cta: ctx.link ? { label: 'View', url: `${clientUrl()}${ctx.link}` } : undefined,
-        }),
+          cta: ctx.link ? { label: 'View', url: `${baseUrl}${ctx.link.startsWith('/') ? '' : '/'}${ctx.link}` } : undefined,
+        }, ctx),
       };
   }
 }
@@ -252,7 +294,7 @@ function escapeHtml(str = '') {
 
 // Notifies the store of a customer contact-form submission. The customer's
 // email is set as reply-to (by the controller) so the admin can reply directly.
-export function buildContactMessage({ name, email, subject, message }) {
+export function buildContactMessage({ name, email, subject, message }, ctx = {}) {
   const safeSubject = subject?.trim() || 'New enquiry';
   const rows = [
     ['Name', name],
@@ -283,7 +325,7 @@ export function buildContactMessage({ name, email, subject, message }) {
       bodyHtml,
       cta: { label: 'Reply by email', url: `mailto:${email}?subject=${encodeURIComponent('Re: ' + safeSubject)}` },
       footerNote: `Sent from the ${BRAND} website contact form. Reply directly to respond to the customer.`,
-    }),
+    }, ctx),
   };
 }
 
@@ -292,36 +334,41 @@ export function buildContactMessage({ name, email, subject, message }) {
 const NEWSLETTER_NOTE = `You're receiving this because you subscribed to the ${BRAND} newsletter.`;
 
 // Welcome email sent right after someone subscribes.
-export function buildNewsletterWelcome({ unsubscribeUrl } = {}) {
+export function buildNewsletterWelcome({ unsubscribeUrl } = {}, ctx = {}) {
+  const baseUrl = clientUrl(ctx);
   return {
     subject: `You're on the list — welcome to ${BRAND}`,
     html: renderEmail({
       preheader: 'First access to new collections, limited prints & members-only offers.',
       heading: 'Welcome to the inner circle',
       bodyHtml: `Thanks for subscribing! You'll be the first to hear about new collections, limited-edition prints, and members-only offers — no spam, ever.`,
-      cta: { label: 'Explore new arrivals', url: `${clientUrl()}/shop` },
+      cta: { label: 'Explore new arrivals', url: `${baseUrl}/shop` },
       footerNote: NEWSLETTER_NOTE,
       unsubscribeUrl,
-    }),
+    }, ctx),
   };
 }
 
 // Wrap an admin-composed campaign (subject + message + optional image/CTA) in the
 // branded shell. `body` may contain simple HTML; plain newlines become <br/>.
-export function buildNewsletterCampaign({ subject, heading, body, ctaLabel, ctaUrl, unsubscribeUrl, imageUrl }) {
+export function buildNewsletterCampaign({ subject, heading, body, ctaLabel, ctaUrl, unsubscribeUrl, imageUrl }, ctx = {}) {
+  const baseUrl = clientUrl(ctx);
   const htmlBody = String(body || '').includes('<')
     ? body
     : String(body || '').replace(/\n/g, '<br/>');
+  const safeCtaUrl = ctaUrl
+    ? (ctaUrl.startsWith('http') ? ctaUrl : `${baseUrl}${ctaUrl.startsWith('/') ? '' : '/'}${ctaUrl}`)
+    : undefined;
   return {
     subject,
     html: renderEmail({
       preheader: String(body || '').replace(/<[^>]+>/g, '').slice(0, 110),
       heading: heading || subject || BRAND,
       bodyHtml: htmlBody,
-      cta: ctaLabel && ctaUrl ? { label: ctaLabel, url: ctaUrl } : undefined,
+      cta: ctaLabel && safeCtaUrl ? { label: ctaLabel, url: safeCtaUrl } : undefined,
       imageUrl,
       footerNote: NEWSLETTER_NOTE,
       unsubscribeUrl,
-    }),
+    }, ctx),
   };
 }

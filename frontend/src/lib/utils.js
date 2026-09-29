@@ -7,7 +7,7 @@ export function cn(...inputs) {
 
 const categoryFallbackImage = {
   religious:
-    'https://res.cloudinary.com/dif6u5314/image/upload/v1790006430/dreamzdecors/products/golden-temple-handcrafted-art.jpg',
+    'https://res.cloudinary.com/pla77unx/image/upload/v1790006430/dreamzdecors/products/golden-temple-handcrafted-art.jpg',
   'wall-art': '',
   'gallery-sets': '',
   bundles: '',

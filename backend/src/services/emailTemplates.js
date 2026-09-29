@@ -180,11 +180,11 @@ export function buildEmail(type, ctx = {}) {
       };
     case 'order_paid':
       return {
-        subject: 'Payment received',
+        subject: `Order confirmed — thank you, ${name}! (${orderId ? `#${orderId}` : ''})`.trim(),
         html: renderEmail({
-          preheader: `Your payment${total ? ` of ${total}` : ''} was successful.`,
-          heading: 'Payment received',
-          bodyHtml: `Hi ${name}, your payment${total ? ` of <strong>${total}</strong>` : ''} was successful. Your order is now being processed.`,
+          preheader: `Your payment${total ? ` of ${total}` : ''} was successful and your order is confirmed.`,
+          heading: 'Order Confirmed & In Production',
+          bodyHtml: `Hi ${name}, thank you for your order! Your payment${total ? ` of <strong>${total}</strong>` : ''} was successful. Our studio has received your order and our artisans are now hand-finishing, framing, and carefully packaging your artwork. We'll send you tracking details as soon as it ships.`,
           cta: viewOrder,
         }, ctx),
       };

@@ -1,4 +1,11 @@
 import nodemailer from 'nodemailer';
+import dns from 'dns';
+
+// Force IPv4 lookup first. Render and many cloud hosts do not support IPv6 routing,
+// which causes `connect ENETUNREACH 2607:f8b0:400e:c0a::6c:587` errors!
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch {}
 
 let transporter = null;
 let warned = false;
@@ -17,7 +24,7 @@ export function mailFrom() {
 function getTransporter() {
   if (transporter) return transporter;
 
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SECURE } = process.env;
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
     if (!warned) {
       console.warn(
@@ -28,11 +35,19 @@ function getTransporter() {
     return null;
   }
 
+  const isGmail = (SMTP_HOST || '').includes('gmail') || (SMTP_USER || '').includes('gmail');
+  const port = Number(SMTP_PORT) || (isGmail ? 465 : 587);
+  const secure = String(SMTP_SECURE) === 'true' || port === 465;
+
   transporter = nodemailer.createTransport({
     host: SMTP_HOST,
-    port: Number(SMTP_PORT) || 587,
-    secure: String(process.env.SMTP_SECURE) === 'true' || Number(SMTP_PORT) === 465,
+    port,
+    secure,
     auth: { user: SMTP_USER, pass: SMTP_PASS },
+    family: 4, // CRITICAL: Force IPv4 connection to prevent ENETUNREACH on Render/Linux cloud containers
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
   });
 
   return transporter;

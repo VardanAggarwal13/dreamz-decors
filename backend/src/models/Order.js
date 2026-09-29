@@ -121,7 +121,12 @@ const orderSchema = new mongoose.Schema(
 );
 
 orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ status: 1 });
 orderSchema.index({ status: 1, createdAt: -1 });
+orderSchema.index({ orderStatus: 1, createdAt: -1 });
+orderSchema.index({ paymentStatus: 1, createdAt: -1 });
+orderSchema.index({ 'payment.paidAt': -1, createdAt: -1 });
 orderSchema.index({ 'payment.razorpayOrderId': 1 }, { unique: true, sparse: true });
 orderSchema.index({ 'payment.razorpayPaymentId': 1 }, { unique: true, sparse: true });
 

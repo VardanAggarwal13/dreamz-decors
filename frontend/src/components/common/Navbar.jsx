@@ -15,8 +15,8 @@ import { useWishlistStore } from '@/store/wishlistStore';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { normalizeHref } from '@/lib/utils';
 import Logo from './Logo';
-import NotificationBell from './NotificationBell';
 import AccountMenu from './AccountMenu';
+import { useNotificationStore } from '@/store/notificationStore';
 
 // Shared style for every icon control in the right-hand cluster so they line
 // up on a consistent grid and their badges never collide.
@@ -33,6 +33,7 @@ export default function Navbar() {
   const [menuTop, setMenuTop] = useState(0);
   const count = useCartStore((state) => state.items.reduce((total, item) => total + item.qty, 0));
   const wishCount = useWishlistStore((state) => state.items.length);
+  const unread = useNotificationStore((state) => state.unread);
   const navRes = useFetch('/content/navigation', { deps: [], cache: 'dd:content:navigation' });
   const rawMenu = navRes.data?.data?.menu?.length ? navRes.data.data.menu : defaultNavMenu;
   const navMenu = rawMenu.map((item) => ({ ...item, href: normalizeHref(item.href) }));
@@ -150,8 +151,6 @@ export default function Navbar() {
             <FiSearch size={18} />
           </button>
 
-          {user && <NotificationBell buttonClassName={iconButton} badgeClassName={iconBadge} />}
-
           <Link to="/wishlist" aria-label="Wishlist" className={iconButton}>
             <FiHeart size={18} />
             {wishCount > 0 && <span className={iconBadge}>{wishCount}</span>}
@@ -210,6 +209,23 @@ export default function Navbar() {
               {user ? 'My Account' : 'Sign In'}
               <FiChevronRight size={18} className="text-ink-muted" />
             </Link>
+            {user && (
+              <Link
+                to="/account/notifications"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-between border-b border-hairline/50 py-4 font-display text-lg text-ink transition hover:text-accent"
+              >
+                <span className="flex items-center gap-2">
+                  <span>Notifications</span>
+                  {unread > 0 && (
+                    <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-accent px-1.5 text-xs font-bold text-bone">
+                      {unread}
+                    </span>
+                  )}
+                </span>
+                <FiChevronRight size={18} className="text-ink-muted" />
+              </Link>
+            )}
             <Link
               to="/wishlist"
               onClick={() => setOpen(false)}

@@ -102,8 +102,8 @@ export async function markOrderPaid(orderId, { paymentId, razorpayOrderId, signa
   await notify({
     user: claimed.user,
     type: 'order_paid',
-    title: 'Payment received',
-    message: `We've received your payment of ${amountLabel}.`,
+    title: 'Order Confirmed & Payment Successful',
+    message: `Thank you! Your payment of ${amountLabel} for order #${orderShortId} was successful. We are now preparing your artwork with care.`,
     data: { orderId: claimed._id },
     link: `/account/orders/${claimed._id}`,
     email: true,
@@ -113,7 +113,7 @@ export async function markOrderPaid(orderId, { paymentId, razorpayOrderId, signa
 
   await notifyAdmins({
     type: 'admin_order_paid',
-    title: 'Payment received',
+    title: `Payment Received — ${amountLabel}`,
     message: `Payment of ${amountLabel} confirmed for order #${orderShortId} from ${customerName}.`,
     data: { orderId: claimed._id },
     link: '/admin/orders',

@@ -12,11 +12,30 @@ const fmtDate = (iso) =>
 const shortId = (id) => (id ? `#${String(id).slice(-8).toUpperCase()}` : '');
 
 export default function Dashboard() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = 'dd:admin:overview';
+  const cachedData = (() => {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const [data, setData] = useState(cachedData);
+  const [loading, setLoading] = useState(!cachedData);
 
   useEffect(() => {
-    api.get('/admin/overview').then((res) => { setData(res.data); setLoading(false); }).catch(() => setLoading(false));
+    api
+      .get('/admin/overview')
+      .then((res) => {
+        setData(res.data);
+        setLoading(false);
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(res.data));
+        } catch {}
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const cards = [

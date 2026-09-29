@@ -32,9 +32,22 @@ function Stars({ value, size = 15, onSelect }) {
 }
 
 export default function ProductReviews({ productId, rating = 4.8, reviews = 4 }) {
-  const [list, setList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ rating: Number(rating) || 4.8, count: Number(reviews) || 4 });
+  const cacheKey = productId ? `dd:reviews:${productId}` : null;
+  const cached = useMemo(() => {
+    if (!cacheKey) return null;
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, [cacheKey]);
+
+  const [list, setList] = useState(() => cached?.items || []);
+  const [loading, setLoading] = useState(() => !cached?.items?.length);
+  const [stats, setStats] = useState(
+    () => cached?.stats || { rating: Number(rating) || 4.8, count: Number(reviews) || 4 }
+  );
   const [form, setForm] = useState({ rating: 5, title: '', comment: '' });
   const [submitting, setSubmitting] = useState(false);
   const [helpfulMap, setHelpfulMap] = useState({});
@@ -43,17 +56,23 @@ export default function ProductReviews({ productId, rating = 4.8, reviews = 4 })
   const promptAuth = useAuthPrompt((s) => s.show);
 
   const load = () => {
-    setLoading(true);
+    if (!cached?.items?.length) setLoading(true);
     api.get(`/products/${productId}/reviews`)
       .then((res) => {
         const items = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
         setList(items);
         if (items.length > 0) {
           const avg = items.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / items.length;
-          setStats({
+          const nextStats = {
             rating: Math.round(avg * 10) / 10,
             count: items.length,
-          });
+          };
+          setStats(nextStats);
+          if (cacheKey) {
+            try {
+              localStorage.setItem(cacheKey, JSON.stringify({ items, stats: nextStats }));
+            } catch {}
+          }
         }
       })
       .catch(() => {})

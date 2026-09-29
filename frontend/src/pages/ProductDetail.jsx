@@ -86,12 +86,18 @@ const TABS = ['Description', 'Specifications & Details', 'Shipping & Packaging']
 
 export default function ProductDetail() {
   const { slug } = useParams();
-  const { data, loading, error } = useFetch(`/products/${slug}`, { deps: [slug] });
+  const { data, loading, error } = useFetch(`/products/${slug}`, {
+    deps: [slug],
+    cache: slug ? `dd:product:${slug}` : undefined,
+  });
   const product = useMemo(() => normalizeProduct(data?.data), [data]);
 
   const related = useFetch(
     product?.categoryId ? `/products?category=${product.categoryId}&limit=4&sort=bestselling` : null,
-    { deps: [product?.categoryId] }
+    {
+      deps: [product?.categoryId],
+      cache: product?.categoryId ? `dd:related:${product.categoryId}` : undefined,
+    }
   );
   const relatedList = useMemo(
     () => (related.data?.data || []).map(normalizeProduct),
@@ -133,10 +139,28 @@ export default function ProductDetail() {
     () => [...new Set(variants.map((variant) => variant.size).filter(Boolean))],
     [variants]
   );
-  const availableFrames = useMemo(
-    () => variants.filter((variant) => variant.size === size && variant.price != null && variant.frame && variant.frame.trim()),
-    [size, variants]
-  );
+  const availableFrames = useMemo(() => {
+    const directFrames = variants.filter(
+      (variant) => variant.size === size && variant.price != null && variant.frame && variant.frame.trim()
+    );
+    if (directFrames.length > 0) return directFrames;
+
+    const options = product?.frameOptions?.filter(Boolean) || [];
+    if (options.length > 0) {
+      const baseVariant = variants.find((v) => v.size === size) || variants[0];
+      const basePrice = baseVariant?.price ?? product?.price ?? 0;
+      const baseMrp = baseVariant?.mrp ?? product?.mrp;
+      const baseStock = baseVariant?.stock ?? product?.stock ?? 10;
+      return options.map((opt) => ({
+        size: size || baseVariant?.size || '',
+        frame: opt,
+        price: basePrice,
+        mrp: baseMrp,
+        stock: baseStock,
+      }));
+    }
+    return [];
+  }, [size, variants, product?.frameOptions, product?.price, product?.mrp, product?.stock]);
   const selectedVariant =
     (frame ? availableFrames.find((variant) => variant.frame === frame) : null) ||
     variants.find((variant) => variant.size === size) ||
@@ -903,35 +927,6 @@ export default function ProductDetail() {
           </section>
         )}
 
-      </div>
-
-      {/* ── Sticky Mobile Action Bar (screens < lg) ──────────── */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline/80 bg-bone-soft/95 px-4 py-3 backdrop-blur-md pb-safe lg:hidden shadow-lg">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-xs font-semibold text-ink">{product.title}</p>
-            <p className="text-sm font-bold text-gold-deep">{formatINR(selectedPrice)}</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              onClick={handleWishlist}
-              aria-label="Wishlist"
-              className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${
-                inWishlist ? 'border-gold bg-gold/10 text-gold' : 'border-hairline text-ink-soft'
-              }`}
-            >
-              <FiHeart size={16} fill={inWishlist ? 'currentColor' : 'none'} />
-            </button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleAdd}
-              className="h-10 px-5 text-xs uppercase tracking-wider font-semibold"
-            >
-              <FiShoppingBag size={14} /> Add
-            </Button>
-          </div>
-        </div>
       </div>
 
       {/* ── High-Resolution Lightbox Modal ──────────────────────── */}

@@ -11,6 +11,7 @@ import {
 } from 'react-icons/fi';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
+import { useNotificationStore } from '@/store/notificationStore';
 
 const LINKS = [
   { to: '/account', label: 'My Account', Icon: FiUser, end: true },
@@ -28,6 +29,7 @@ export default function AccountMenu() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const cartCount = useCartStore((s) => s.items.reduce((total, item) => total + item.qty, 0));
+  const unread = useNotificationStore((s) => s.unread);
 
   const initial = (user?.name || user?.email || '?').trim().charAt(0).toUpperCase();
 
@@ -58,13 +60,18 @@ export default function AccountMenu() {
         onClick={() => setOpen((v) => !v)}
         aria-label="Account menu"
         aria-expanded={open}
-        className={`grid h-9 w-9 place-items-center rounded-full border text-xs font-semibold uppercase transition ${
+        className={`relative grid h-9 w-9 place-items-center rounded-full border text-xs font-semibold uppercase transition ${
           open
             ? 'border-gold/50 bg-gold/15 text-gold-deep'
             : 'border-hairline bg-bone-soft text-ink-soft hover:border-gold/40 hover:text-gold-deep'
         }`}
       >
         {initial}
+        {unread > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-bone ring-2 ring-bone shadow-sm">
+            {unread > 99 ? '99+' : unread}
+          </span>
+        )}
       </button>
 
       {open && (
@@ -99,10 +106,17 @@ export default function AccountMenu() {
                 key={to}
                 to={to}
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink-soft transition hover:bg-bone-muted/70 hover:text-ink"
+                className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-ink-soft transition hover:bg-bone-muted/70 hover:text-ink"
               >
-                <Icon size={16} className="text-ink-muted" />
-                {label}
+                <span className="flex items-center gap-3">
+                  <Icon size={16} className="text-ink-muted" />
+                  {label}
+                </span>
+                {to === '/account/notifications' && unread > 0 && (
+                  <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-bone">
+                    {unread}
+                  </span>
+                )}
               </Link>
             ))}
             {user?.role === 'admin' && (

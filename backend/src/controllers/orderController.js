@@ -126,14 +126,18 @@ export const createOrder = asyncHandler(async (req, res) => {
   const origin = req.headers.origin || req.headers.referer;
 
   // Fire the "order placed" notification to the customer (in-app + email + push).
+  // For Razorpay, paymentService sends the full confirmation email upon capture so the customer isn't spammed.
+  const isOnlinePayment = paymentMethod === 'razorpay';
   await notify({
     user: req.user._id,
     type: 'order_placed',
-    title: 'Order confirmed',
-    message: `Your order of ${inr(total)} has been placed successfully.`,
+    title: isOnlinePayment ? 'Order Created' : 'Order Placed (Cash on Delivery)',
+    message: isOnlinePayment
+      ? `Your order for ${inr(total)} has been created.`
+      : `Your order for ${inr(total)} has been placed. You can pay via cash on delivery.`,
     data: { orderId: order._id },
     link: `/account/orders/${order._id}`,
-    email: true,
+    email: !isOnlinePayment,
     push: true,
     emailContext: { order, origin },
   });

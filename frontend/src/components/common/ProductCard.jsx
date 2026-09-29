@@ -48,7 +48,6 @@ export default function ProductCard({ product, layout = 'default' }) {
     e.stopPropagation();
     addItem(product);
     setAdded(true);
-    toast.success(`Added ${product.title} to cart`);
     setTimeout(() => setAdded(false), 1800);
   };
 
@@ -70,8 +69,8 @@ export default function ProductCard({ product, layout = 'default' }) {
           src={product.image}
           alt={product.title}
           label={product.title}
-          width={720}
-          height={900}
+          width={480}
+          height={600}
           fit="cover"
           gravity="auto"
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -83,10 +82,11 @@ export default function ProductCard({ product, layout = 'default' }) {
             src={product.hover}
             alt=""
             label={product.title}
-            width={720}
-            height={900}
+            width={480}
+            height={600}
             fit="cover"
             gravity="auto"
+            loading="lazy"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-500 pointer-events-none group-hover:opacity-100"
             imgClassName="h-full w-full object-cover"

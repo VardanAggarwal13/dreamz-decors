@@ -6,12 +6,21 @@ export const useCartStore = create(
   persist(
     (set, get) => ({
       items: [],
+      lastAddedItem: null,
+      clearLastAdded: () => set({ lastAddedItem: null }),
       addItem: (product, qty = 1, options = {}) => {
         const stockLimit = product.stock != null ? Number(product.stock) : Infinity;
         if (stockLimit <= 0) {
           toast.error('This item is currently out of stock');
           return;
         }
+
+        const resolvedImage =
+          (typeof product.image === 'string' && product.image) ||
+          product.images?.[0]?.url ||
+          (typeof product.images?.[0] === 'string' && product.images[0]) ||
+          (typeof product.image === 'object' && (product.image?.url || product.image?.secure_url)) ||
+          '';
 
         let addedAmount = qty;
         let blocked = false;
@@ -32,6 +41,15 @@ export const useCartStore = create(
               items: state.items.map((i) =>
                 i.key === key ? { ...i, qty: nextQty, stock: stockLimit } : i
               ),
+              lastAddedItem: {
+                id: product.id || product.slug,
+                slug: product.slug,
+                title: product.title,
+                price: product.price,
+                image: resolvedImage || existing.image,
+                qty: addedAmount,
+                timestamp: Date.now(),
+              },
             };
           }
 
@@ -47,13 +65,22 @@ export const useCartStore = create(
                 title: product.title,
                 description: product.description || '',
                 price: product.price,
-                image: product.image,
+                image: resolvedImage,
                 category: product.categoryTitle || product.category || '',
                 options,
                 qty: initialQty,
                 stock: stockLimit,
               },
             ],
+            lastAddedItem: {
+              id: product.id || product.slug,
+              slug: product.slug,
+              title: product.title,
+              price: product.price,
+              image: resolvedImage,
+              qty: initialQty,
+              timestamp: Date.now(),
+            },
           };
         });
 
@@ -62,7 +89,11 @@ export const useCartStore = create(
         } else if (addedAmount < qty) {
           toast.info(`Only ${stockLimit} items available in stock. Added remaining ${addedAmount} to cart.`);
         } else {
-          toast.success(`Added ${addedAmount} × ${product.title} to cart`);
+          // On desktop (>= 1024px), show toast notification.
+          // On mobile (< 1024px), the rich sticky MobileCartToast with View Cart option handles it.
+          if (typeof window === 'undefined' || window.innerWidth >= 1024) {
+            toast.success(`Added ${addedAmount} × ${product.title} to cart`);
+          }
         }
       },
       updateQty: (key, qty) =>
@@ -101,6 +132,9 @@ export const useCartStore = create(
       subtotal: () =>
         get().items.reduce((sum, i) => sum + i.price * i.qty, 0),
     }),
-    { name: 'dreamzdecors-cart' }
+    {
+      name: 'dreamzdecors-cart',
+      partialize: (state) => ({ items: state.items }),
+    }
   )
 );

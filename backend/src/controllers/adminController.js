@@ -148,6 +148,7 @@ const PAID_STATUSES = ['paid', 'processing', 'shipped', 'delivered'];
 
 // GET /api/admin/overview — dashboard metrics
 export const overview = asyncHandler(async (req, res) => {
+  res.set('Cache-Control', 'private, max-age=15, stale-while-revalidate=60');
   const [products, orders, customers, revenueAgg, statusAgg, recentOrders] = await Promise.all([
     Product.countDocuments(),
     Order.countDocuments(),

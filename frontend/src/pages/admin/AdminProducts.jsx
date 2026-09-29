@@ -16,10 +16,18 @@ import { formatINR } from '@/lib/utils';
 
 const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
+const PRESET_FRAMES = [
+  'Without Frame',
+  'Black / White Frame',
+  'Antique Frame',
+  'Stretched Frame',
+];
+
 const empty = {
   title: '', slug: '', description: '', category: '', price: '', mrp: '',
   stock: 10, badge: '', tags: '', images: [], isActive: true, isFeatured: false,
-  variants: [{ size: '18x36', price: '', mrp: '', stock: 10 }],
+  frameOptions: ['Without Frame', 'Black / White Frame', 'Antique Frame', 'Stretched Frame'],
+  variants: [{ size: '18x36', frame: 'Without Frame', price: '', mrp: '', stock: 10 }],
 };
 
 const SUGGESTED_SIZES = ['18x36', '24x24', '12x18', '20x30', '24x36', '30x40'];
@@ -34,6 +42,7 @@ export default function AdminProducts() {
   const [uploading, setUploading] = useState(false);
   const [imgLink, setImgLink] = useState('');
   const [guideOpen, setGuideOpen] = useState(false);
+  const [newFrameName, setNewFrameName] = useState('');
   const fileRef = useRef(null);
   useBodyScrollLock(!!editing); // view modal manages its own lock via <Modal/>
 
@@ -53,24 +62,35 @@ export default function AdminProducts() {
   const openNew = () => {
     setForm({
       ...empty,
-      variants: [{ size: '18x36', price: '', mrp: '', stock: 10 }],
+      frameOptions: [...PRESET_FRAMES],
+      variants: [{ size: '18x36', frame: 'Without Frame', price: '', mrp: '', stock: 10 }],
     });
     setEditing({});
   };
 
   const openEdit = (p) => {
+    const existingFrames = [
+      ...new Set([
+        ...(p.frameOptions || []),
+        ...(p.variants || []).map((v) => v.frame).filter(Boolean),
+      ]),
+    ];
+    const initialFrameOptions = existingFrames.length > 0 ? existingFrames : [...PRESET_FRAMES];
+
     const initialVariants = (p.variants && p.variants.length > 0)
       ? p.variants.map((v) => ({
           size: v.size || '',
+          frame: v.frame || '',
           price: v.price != null ? v.price : '',
           mrp: v.mrp != null ? v.mrp : '',
           stock: v.stock != null ? v.stock : 10,
         }))
-      : [{ size: '18x36', price: p.price != null ? p.price : '', mrp: p.mrp != null ? p.mrp : '', stock: p.stock ?? 10 }];
+      : [{ size: '18x36', frame: 'Without Frame', price: p.price != null ? p.price : '', mrp: p.mrp != null ? p.mrp : '', stock: p.stock ?? 10 }];
 
     setForm({
       ...empty,
       ...p,
+      frameOptions: initialFrameOptions,
       price: p.price != null ? p.price : (initialVariants[0]?.price || ''),
       mrp: p.mrp != null ? p.mrp : (initialVariants[0]?.mrp || ''),
       category: p.category?._id || p.category || '',
@@ -85,21 +105,85 @@ export default function AdminProducts() {
   const editFromView = (p) => { setViewing(null); openEdit(p); };
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const addVariantRow = (presetSize = '') => {
+  const toggleFrameOption = (frameName) => {
+    setForm((f) => {
+      const current = f.frameOptions || [];
+      const exists = current.includes(frameName);
+      const next = exists ? current.filter((x) => x !== frameName) : [...current, frameName];
+      return { ...f, frameOptions: next };
+    });
+  };
+
+  const addCustomFrameOption = () => {
+    const trimmed = newFrameName.trim();
+    if (!trimmed) return;
+    if ((form.frameOptions || []).some((f) => f.toLowerCase() === trimmed.toLowerCase())) {
+      toast.info(`Frame "${trimmed}" is already added`);
+      return;
+    }
+    setForm((f) => ({
+      ...f,
+      frameOptions: [...(f.frameOptions || []), trimmed],
+    }));
+    setNewFrameName('');
+    toast.success(`Added "${trimmed}" to framing finishes`);
+  };
+
+  const addVariantRow = (presetSize = '', defaultFrame = '') => {
     setForm((f) => {
       let chosenSize = presetSize;
       if (!chosenSize) {
         const used = new Set(f.variants.map((v) => (v.size || '').trim().toLowerCase()));
         chosenSize = SUGGESTED_SIZES.find((s) => !used.has(s.toLowerCase())) || '24x24';
       }
+      const chosenFrame = defaultFrame || (f.frameOptions && f.frameOptions[0]) || 'Without Frame';
       return {
         ...f,
         variants: [
           ...f.variants,
-          { size: chosenSize, price: '', mrp: '', stock: 10 },
+          { size: chosenSize, frame: chosenFrame, price: '', mrp: '', stock: 10 },
         ],
       };
     });
+  };
+
+  const generateFramesForFirstSize = () => {
+    const targetSize = form.variants[0]?.size || '18x36';
+    const basePrice = form.variants[0]?.price || form.price || '';
+    const baseMrp = form.variants[0]?.mrp || form.mrp || '';
+    const baseStock = form.variants[0]?.stock != null ? form.variants[0].stock : 10;
+    const framesToApply = form.frameOptions && form.frameOptions.length > 0
+      ? form.frameOptions
+      : PRESET_FRAMES;
+
+    const existingKeys = new Set(
+      form.variants.map((v) => `${(v.size || '').toLowerCase()}::${(v.frame || '').toLowerCase()}`)
+    );
+
+    const newRows = [];
+    framesToApply.forEach((fr) => {
+      const key = `${targetSize.toLowerCase()}::${fr.toLowerCase()}`;
+      if (!existingKeys.has(key)) {
+        newRows.push({
+          size: targetSize,
+          frame: fr,
+          price: basePrice,
+          mrp: baseMrp,
+          stock: baseStock,
+        });
+      }
+    });
+
+    if (newRows.length === 0) {
+      toast.info(`All active frames already exist for size ${targetSize}`);
+      return;
+    }
+
+    setForm((f) => ({
+      ...f,
+      variants: [...f.variants, ...newRows],
+    }));
+    toast.success(`Generated ${newRows.length} framing options for ${targetSize}`);
   };
 
   const updateVariantRow = (idx, field, val) => {
@@ -167,9 +251,10 @@ export default function AdminProducts() {
     if (!form.title) return toast.error('Title is required');
 
     const cleanedVariants = (form.variants || [])
-      .filter((v) => v && (v.size?.trim() || v.price !== ''))
+      .filter((v) => v && (v.size?.trim() || v.frame?.trim() || v.price !== ''))
       .map((v) => ({
         size: String(v.size || '').trim(),
+        frame: String(v.frame || '').trim(),
         price: Number(v.price) || 0,
         mrp: v.mrp !== '' && v.mrp != null ? Number(v.mrp) : undefined,
         stock: Number(v.stock) || 0,
@@ -198,6 +283,7 @@ export default function AdminProducts() {
       badge: form.badge || undefined,
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
       images: form.images,
+      frameOptions: (form.frameOptions || []).map((f) => String(f).trim()).filter(Boolean),
       variants: cleanedVariants,
       isActive: form.isActive,
       isFeatured: form.isFeatured,
@@ -352,40 +438,133 @@ export default function AdminProducts() {
               </Field>
             </div>
 
-            {/* Size & Price Options Section */}
+            {/* ── Framing Options & Finishes (Admin Dynamic Authority) ──── */}
+            <div className="mt-5 rounded-2xl border border-hairline/80 bg-bone p-4 sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="block text-[12px] font-bold uppercase tracking-[0.16em] text-ink">
+                      🖼️ Framing Options &amp; Finishes
+                    </span>
+                    <span className="rounded-full bg-gold/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-deep">
+                      Admin Authority
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-ink-muted">
+                    Enable preset frames or add custom dynamic frame finishes (like Antique Frame, Stretched Frame, Floater Frame) that appear in the customer selector.
+                  </p>
+                </div>
+              </div>
+
+              {/* Active Frame Badges with remove buttons */}
+              <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                {(form.frameOptions || []).map((fr) => (
+                  <span
+                    key={fr}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-gold/50 bg-gold/10 px-3 py-1 text-xs font-semibold text-ink shadow-2xs"
+                  >
+                    <span>{fr}</span>
+                    <button
+                      type="button"
+                      onClick={() => toggleFrameOption(fr)}
+                      className="rounded-full p-0.5 text-ink/60 transition hover:bg-gold/25 hover:text-ink"
+                      title={`Remove ${fr}`}
+                    >
+                      <FiX size={12} />
+                    </button>
+                  </span>
+                ))}
+                {(!form.frameOptions || form.frameOptions.length === 0) && (
+                  <span className="text-xs italic text-ink-muted">No frame finishes enabled for this product.</span>
+                )}
+              </div>
+
+              {/* Preset Quick Toggles */}
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="text-[11px] font-semibold text-ink-muted mr-1">Presets:</span>
+                {PRESET_FRAMES.map((preset) => {
+                  const isActive = (form.frameOptions || []).includes(preset);
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => toggleFrameOption(preset)}
+                      className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                        isActive
+                          ? 'border-gold bg-gold/20 text-gold-deep font-semibold shadow-2xs'
+                          : 'border-hairline bg-bone-soft text-ink-soft hover:border-gold/60 hover:text-ink'
+                      }`}
+                    >
+                      {isActive ? `✓ ${preset}` : `+ ${preset}`}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Add Custom Dynamic Frame Input */}
+              <div className="mt-3.5 flex items-center gap-2">
+                <input
+                  value={newFrameName}
+                  onChange={(e) => setNewFrameName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCustomFrameOption();
+                    }
+                  }}
+                  placeholder="Type dynamic frame option (e.g. Antique Gold Frame, Floater Frame)..."
+                  className="min-w-0 flex-1 rounded-lg border border-hairline bg-white px-3 py-1.5 text-xs text-ink placeholder:text-ink-muted outline-none transition focus:border-gold"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomFrameOption}
+                  className="shrink-0 rounded-lg border border-gold/40 bg-gold/15 px-3 py-1.5 text-xs font-semibold text-gold-deep transition hover:bg-gold/25 active:scale-95"
+                >
+                  + Add Custom Frame
+                </button>
+              </div>
+            </div>
+
+            {/* Size & Framing Variants Matrix Section */}
             <div className="mt-5 rounded-2xl border border-gold/30 bg-gradient-to-b from-gold/5 via-bone to-bone p-4 sm:p-5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <div>
                   <span className="block text-[12px] font-bold uppercase tracking-[0.16em] text-gold-deep">
-                    📏 Size-Based Pricing &amp; Dimensions
+                    📏 Size &amp; Framing Variants (Pricing Matrix)
                   </span>
                   <p className="text-[11px] text-ink-muted mt-0.5">
-                    Set prices per size (e.g. 18×36" = ₹1,600, 24×24" = ₹2,200). The first size will be the default selected price on the store.
+                    Configure price, MRP, and stock for each Size and Frame combination.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => addVariantRow()}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-gold/60 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold-deep transition hover:bg-gold hover:text-ink active:scale-95"
-                >
-                  <FiPlus size={14} /> Add Size &amp; Price
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => addVariantRow()}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-gold/60 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold-deep transition hover:bg-gold hover:text-ink active:scale-95"
+                  >
+                    <FiPlus size={14} /> Add Row
+                  </button>
+                  {(form.frameOptions?.length || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => generateFramesForFirstSize()}
+                      className="inline-flex items-center gap-1 rounded-xl border border-hairline bg-bone-soft px-2.5 py-1.5 text-xs font-medium text-ink-soft transition hover:border-gold hover:text-gold-deep"
+                      title="Quick-generate all active frame finishes for the current size"
+                    >
+                      ⚡ Apply All Frames to Size
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Quick Add Suggestions */}
               <div className="mb-3.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-                <span className="text-ink-muted">Quick add:</span>
+                <span className="text-ink-muted">Quick add size:</span>
                 {SUGGESTED_SIZES.map((sz) => (
                   <button
                     key={sz}
                     type="button"
-                    onClick={() => {
-                      if (!form.variants.some((v) => v.size === sz)) {
-                        addVariantRow(sz);
-                      } else {
-                        toast.info(`Size ${sz} is already added`);
-                      }
-                    }}
+                    onClick={() => addVariantRow(sz)}
                     className="rounded-lg border border-hairline/80 bg-bone-soft px-2 py-0.5 text-ink-soft transition hover:border-gold hover:text-gold-deep"
                   >
                     +{sz}"
@@ -411,26 +590,44 @@ export default function AdminProducts() {
                       </span>
                       {idx === 0 ? (
                         <span className="rounded-md bg-gold/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-deep">
-                          Default Size
+                          Default
                         </span>
                       ) : (
-                        <span className="sm:hidden text-[10px] text-ink-muted">Size Option</span>
+                        <span className="sm:hidden text-[10px] text-ink-muted">Option</span>
                       )}
                     </div>
 
-                    {/* Size Input (Left Side) */}
-                    <div className="flex-1 min-w-[110px]">
+                    {/* Size Input */}
+                    <div className="flex-1 min-w-[95px] sm:min-w-[100px]">
                       <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Size (Inches)</span>
                       <input
                         value={v.size}
                         onChange={(e) => updateVariantRow(idx, 'size', e.target.value)}
-                        placeholder="e.g. 18x36"
-                        className="w-full rounded-lg border border-hairline bg-white px-3 py-1.5 text-xs font-medium text-ink placeholder:text-ink-muted outline-none focus:border-gold"
+                        placeholder="18x36"
+                        className="w-full rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-xs font-medium text-ink placeholder:text-ink-muted outline-none focus:border-gold"
                       />
                     </div>
 
-                    {/* Price Input (Right Side) */}
-                    <div className="w-28 sm:w-32">
+                    {/* Frame Finish Selector */}
+                    <div className="flex-1 min-w-[130px] sm:min-w-[160px]">
+                      <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Frame Finish</span>
+                      <select
+                        value={v.frame || ''}
+                        onChange={(e) => updateVariantRow(idx, 'frame', e.target.value)}
+                        className="w-full rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-xs font-medium text-ink outline-none focus:border-gold"
+                      >
+                        <option value="">No Frame / Default</option>
+                        {(form.frameOptions || []).map((fr) => (
+                          <option key={fr} value={fr}>{fr}</option>
+                        ))}
+                        {v.frame && !(form.frameOptions || []).includes(v.frame) && (
+                          <option value={v.frame}>{v.frame}</option>
+                        )}
+                      </select>
+                    </div>
+
+                    {/* Price Input */}
+                    <div className="w-24 sm:w-28">
                       <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Price (₹)</span>
                       <div className="relative">
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-muted">₹</span>
@@ -444,8 +641,8 @@ export default function AdminProducts() {
                       </div>
                     </div>
 
-                    {/* MRP Input (Optional) */}
-                    <div className="w-24 sm:w-28">
+                    {/* MRP Input */}
+                    <div className="w-20 sm:w-24">
                       <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">MRP (₹)</span>
                       <div className="relative">
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-muted">₹</span>
@@ -460,7 +657,7 @@ export default function AdminProducts() {
                     </div>
 
                     {/* Stock */}
-                    <div className="w-16 sm:w-20">
+                    <div className="w-14 sm:w-16">
                       <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Stock</span>
                       <input
                         type="number"
@@ -477,7 +674,7 @@ export default function AdminProducts() {
                       onClick={() => removeVariantRow(idx)}
                       disabled={form.variants.length <= 1}
                       className="rounded-lg p-1.5 text-ink-muted transition hover:bg-sale/10 hover:text-sale disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-muted"
-                      title="Remove Size"
+                      title="Remove variant"
                     >
                       <FiTrash2 size={14} />
                     </button>
@@ -595,17 +792,40 @@ export default function AdminProducts() {
               <ViewStat label="Category" value={viewing.category?.title || '—'} />
             </div>
 
-            {/* Size & Price Options List in View Modal */}
+            {/* Available Frame Finishes in View Modal */}
+            {((viewing.frameOptions && viewing.frameOptions.length > 0) || (viewing.variants && viewing.variants.some((v) => v.frame))) && (
+              <div>
+                <span className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-ink-muted">
+                  Available Frame Finishes
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {[...new Set([
+                    ...(viewing.frameOptions || []),
+                    ...(viewing.variants || []).map((v) => v.frame).filter(Boolean),
+                  ])].map((fr) => (
+                    <span
+                      key={fr}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold-deep shadow-2xs"
+                    >
+                      <span>🖼️</span> {fr}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Size & Framing Matrix in View Modal */}
             {viewing.variants?.length > 0 && (
               <div>
                 <span className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-ink-muted">
-                  Size &amp; Price Options
+                  Size &amp; Framing Pricing Matrix
                 </span>
                 <div className="overflow-x-auto rounded-xl border border-hairline/80 bg-bone">
                   <table className="w-full text-left text-xs">
                     <thead className="border-b border-hairline/60 bg-bone-muted text-[10px] uppercase tracking-wider text-ink-muted">
                       <tr>
                         <th className="px-3.5 py-2 font-medium">Size (Inches)</th>
+                        <th className="px-3.5 py-2 font-medium">Frame Finish</th>
                         <th className="px-3.5 py-2 font-medium">Price</th>
                         <th className="px-3.5 py-2 font-medium">MRP</th>
                         <th className="px-3.5 py-2 font-medium">Stock</th>
@@ -615,7 +835,17 @@ export default function AdminProducts() {
                       {viewing.variants.map((v, i) => (
                         <tr key={i} className={i === 0 ? 'bg-gold/[0.06] font-semibold' : ''}>
                           <td className="px-3.5 py-2 text-ink">
-                            {v.size}" {i === 0 && <span className="ml-1.5 rounded bg-gold/20 px-1.5 py-0.2 text-[9px] font-bold uppercase text-gold-deep">Default</span>}
+                            {v.size ? `${v.size}"` : 'Standard'}
+                            {i === 0 && <span className="ml-1.5 rounded bg-gold/20 px-1.5 py-0.2 text-[9px] font-bold uppercase text-gold-deep">Default</span>}
+                          </td>
+                          <td className="px-3.5 py-2 text-ink">
+                            {v.frame ? (
+                              <span className="rounded-md border border-gold/30 bg-gold/10 px-2 py-0.5 text-[11px] font-semibold text-gold-deep">
+                                {v.frame}
+                              </span>
+                            ) : (
+                              <span className="text-ink-muted">—</span>
+                            )}
                           </td>
                           <td className="px-3.5 py-2 text-ink font-bold">{formatINR(v.price)}</td>
                           <td className="px-3.5 py-2 text-ink-muted">{v.mrp ? formatINR(v.mrp) : '—'}</td>

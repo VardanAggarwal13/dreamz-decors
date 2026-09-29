@@ -19,6 +19,7 @@ const AdminPayments = lazy(() => import('@/pages/admin/AdminPayments'));
 const AdminSettings = lazy(() => import('@/pages/admin/AdminSettings'));
 const AdminContent = lazy(() => import('@/pages/admin/AdminContent'));
 import ScrollToTop from '@/components/common/ScrollToTop';
+import MobileCartToast from '@/components/common/MobileCartToast';
 import { NotificationBootstrap } from '@/components/common/NotificationBootstrap';
 import { WishlistSync } from '@/components/common/WishlistSync';
 import { SettingsBootstrap } from '@/components/common/SettingsBootstrap';
@@ -90,9 +91,9 @@ export default function App() {
       <AuthPromptModal />
       {/* First-visit prompt (per user) to enable browser push notifications */}
       <PushOptInModal />
-      {/* Global toast notifications */}
+      {/* Global toast notifications — rendered at the top of the screen */}
       <Toaster
-        position="bottom-right"
+        position="top-right"
         toastOptions={{
           style: {
             background: 'rgb(247 243 236)',
@@ -101,6 +102,8 @@ export default function App() {
           },
         }}
       />
+      {/* Sticky item added to cart notification on mobile only */}
+      <MobileCartToast />
 
       <Suspense
         fallback={

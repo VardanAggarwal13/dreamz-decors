@@ -20,6 +20,7 @@ async function recomputeRating(productId) {
 // GET /api/products/:id/reviews — public list
 export const listProductReviews = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.json({ success: true, data: [] });
+  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   const reviews = await ProductReview.find({ product: req.params.id })
     .sort({ createdAt: -1 })
     .limit(50)

@@ -117,12 +117,17 @@ export const getProduct = asyncHandler(async (req, res) => {
 
 export const createProduct = asyncHandler(async (req, res) => {
   const payload = { ...req.body };
+  if (Array.isArray(payload.frameOptions)) {
+    payload.frameOptions = payload.frameOptions.map((f) => String(f).trim()).filter(Boolean);
+  }
   if (Array.isArray(payload.variants)) {
     payload.variants = payload.variants
-      .filter((v) => v && (v.size || v.price != null))
+      .filter((v) => v && (v.size || v.frame || v.price != null))
       .map((v, idx) => ({
         ...v,
-        sku: v.sku || `${payload.slug || 'item'}-${v.size || idx}`,
+        size: v.size ? String(v.size).trim() : '',
+        frame: v.frame ? String(v.frame).trim() : '',
+        sku: v.sku || `${payload.slug || 'item'}-${v.size || idx}${v.frame ? `-${v.frame.replace(/[^a-zA-Z0-9]+/g, '')}` : ''}`,
         price: Number(v.price) || 0,
         mrp: v.mrp ? Number(v.mrp) : undefined,
         stock: v.stock ? Number(v.stock) : 0,
@@ -137,12 +142,17 @@ export const createProduct = asyncHandler(async (req, res) => {
 
 export const updateProduct = asyncHandler(async (req, res) => {
   const payload = { ...req.body };
+  if (Array.isArray(payload.frameOptions)) {
+    payload.frameOptions = payload.frameOptions.map((f) => String(f).trim()).filter(Boolean);
+  }
   if (Array.isArray(payload.variants)) {
     payload.variants = payload.variants
-      .filter((v) => v && (v.size || v.price != null))
+      .filter((v) => v && (v.size || v.frame || v.price != null))
       .map((v, idx) => ({
         ...v,
-        sku: v.sku || `${payload.slug || 'item'}-${v.size || idx}`,
+        size: v.size ? String(v.size).trim() : '',
+        frame: v.frame ? String(v.frame).trim() : '',
+        sku: v.sku || `${payload.slug || 'item'}-${v.size || idx}${v.frame ? `-${v.frame.replace(/[^a-zA-Z0-9]+/g, '')}` : ''}`,
         price: Number(v.price) || 0,
         mrp: v.mrp ? Number(v.mrp) : undefined,
         stock: v.stock ? Number(v.stock) : 0,

@@ -33,5 +33,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ wishlist: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ createdAt: -1 });
 
 export default mongoose.model('User', userSchema);

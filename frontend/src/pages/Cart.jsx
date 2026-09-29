@@ -71,7 +71,7 @@ export default function Cart() {
     { Icon: ShieldCheck, title: 'Secure Payments', text: '100% encrypted & safe checkout' },
     { Icon: Package, title: 'Premium Packaging', text: 'Each piece carefully wrapped & boxed' },
     { Icon: RotateCcw, title: 'Easy Returns', text: '7-day hassle-free return policy' },
-    { Icon: Truck, title: 'Free Shipping', text: 'Free delivery on all orders' },
+    { Icon: Truck, title: 'Insured Delivery', text: 'Safe & tracked pan-India delivery' },
   ];
 
   const count = items.reduce((sum, i) => sum + i.qty, 0);
@@ -256,8 +256,8 @@ export default function Cart() {
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-ink-soft">Shipping</dt>
-                  <dd className={shipping === 0 ? 'font-medium text-gold-deep' : 'text-ink'}>
-                    {shipping === 0 ? 'Free' : formatINR(shipping)}
+                  <dd className={shipping === 0 ? 'font-medium text-ink-soft' : 'text-ink'}>
+                    {shipping === 0 ? 'Standard Delivery' : formatINR(shipping)}
                   </dd>
                 </div>
                 <div className="flex justify-between">

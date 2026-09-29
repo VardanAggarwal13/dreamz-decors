@@ -10,7 +10,7 @@ let warned = false;
  * Falls back to the SMTP login, then a safe default.
  */
 export function mailFrom() {
-  return process.env.MAIL_FROM || process.env.SMTP_USER || 'DreamzDecor <no-reply@dreamzdecor.com>';
+  return process.env.MAIL_FROM || process.env.SMTP_USER || 'DreamzDecor <dreamzdecor30@gmail.com>';
 }
 
 // Lazily build a single reusable SMTP transport from env config.

@@ -20,7 +20,7 @@ function ensureConfigured() {
   }
 
   webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:support@dreamzdecor.com',
+    process.env.VAPID_SUBJECT || 'mailto:dreamzdecor30@gmail.com',
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
   );

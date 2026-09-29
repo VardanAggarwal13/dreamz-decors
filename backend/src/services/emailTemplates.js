@@ -20,7 +20,7 @@ const COLORS = {
 };
 
 const clientUrl = () => (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
-const supportEmail = () => process.env.MAIL_FROM_ADDRESS || process.env.SMTP_USER || 'support@dreamzdecors.com';
+const supportEmail = () => process.env.SUPPORT_EMAIL || 'dreamzdecor30@gmail.com';
 const currentYear = () => new Date().getFullYear();
 
 // A premium pill button. Returns '' when label/url missing.

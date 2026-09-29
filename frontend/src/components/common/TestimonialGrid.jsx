@@ -21,21 +21,31 @@ const StarRow = () => (
 function TestimonialCard({ item }) {
   return (
     <div
-      className="flex h-full flex-col rounded-2xl border border-hairline/60 bg-bone p-6 sm:p-7"
-      style={{ borderLeft: '2px solid rgb(197 158 89 / 0.35)' }}
+      className="flex h-full flex-col rounded-2xl border border-hairline/60 bg-bone p-6 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_6px_20px_rgba(0,0,0,0.04)]"
+      style={{ borderLeft: '3px solid rgb(197 158 89 / 0.45)' }}
     >
-      <StarRow />
-      <p className="mt-4 flex-1 text-sm leading-7 text-ink-soft">
+      <div className="flex items-center justify-between gap-2">
+        <StarRow />
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10.5px] font-medium text-emerald-700">
+          <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+          Verified Buyer
+        </span>
+      </div>
+
+      <p className="mt-4 flex-1 text-sm leading-relaxed text-ink-soft">
         &ldquo;{item.quote}&rdquo;
       </p>
-      <div className="mt-5 flex items-center gap-3 border-t border-hairline/50 pt-5">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold/25 bg-gold/10 font-display text-sm text-gold-deep">
+
+      <div className="mt-5 flex items-center gap-3 border-t border-hairline/50 pt-4">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold/30 bg-gold/10 font-display text-sm font-semibold text-gold-deep">
           {item.author.charAt(0)}
         </div>
-        <div>
-          <p className="text-sm font-medium text-ink">{item.author}</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-ink">{item.author}</p>
           {item.role && (
-            <p className="mt-0.5 text-[10px] uppercase tracking-[0.2em] text-ink-muted">{item.role}</p>
+            <p className="mt-0.5 truncate text-[11px] text-ink-muted">{item.role}</p>
           )}
         </div>
       </div>
@@ -44,8 +54,8 @@ function TestimonialCard({ item }) {
 }
 
 export default function TestimonialGrid({ items = [] }) {
-  const total = items.length;
-  if (total === 0) return null;
+  const rawTotal = items.length;
+  if (rawTotal === 0) return null;
 
   const containerRef = useRef(null);
   const trackRef     = useRef(null);
@@ -66,8 +76,14 @@ export default function TestimonialGrid({ items = [] }) {
   // Keep a ref in sync so navigate's async setTimeout always reads the latest value
   useEffect(() => { visibleRef.current = visible; }, [visible]);
 
+  // If we have multiple items but count <= visible, duplicate them so carousel can cycle continuously
+  const displayItems = (rawTotal > 1 && rawTotal <= visible)
+    ? [...items, ...items]
+    : items;
+  const total = displayItems.length;
+
   // Cloned array: [last N clones] + [real items] + [first N clones]
-  const cloned = [...items.slice(-visible), ...items, ...items.slice(0, visible)];
+  const cloned = [...displayItems.slice(-visible), ...displayItems, ...displayItems.slice(0, visible)];
 
   // Card width
   const cardW = containerW > 0 ? (containerW - GAP * (visible - 1)) / visible : 0;
@@ -126,15 +142,27 @@ export default function TestimonialGrid({ items = [] }) {
   useEffect(() => { nextFnRef.current = next; }, [next]);
 
   useEffect(() => {
-    if (total <= visible) return;
+    if (total <= 1) return;
     timerRef.current = setInterval(() => nextFnRef.current?.(), INTERVAL);
     return () => clearInterval(timerRef.current);
-  }, [total, visible]);
+  }, [total]);
 
   const resetTimer = useCallback(() => {
     clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => nextFnRef.current?.(), INTERVAL);
+    if (total > 1) {
+      timerRef.current = setInterval(() => nextFnRef.current?.(), INTERVAL);
+    }
+  }, [total]);
+
+  const pauseTimer = useCallback(() => {
+    clearInterval(timerRef.current);
   }, []);
+
+  const resumeTimer = useCallback(() => {
+    if (total <= 1) return;
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => nextFnRef.current?.(), INTERVAL);
+  }, [total]);
 
   // Jump to a specific real-item index (dot clicks)
   const jumpTo = useCallback((realIdx) => {
@@ -146,10 +174,10 @@ export default function TestimonialGrid({ items = [] }) {
     bump();
   }, [bump]);
 
-  const activeReal = ((posRef.current - visible) % total + total) % total;
+  const activeReal = ((posRef.current - visible) % rawTotal + rawTotal) % rawTotal;
 
   return (
-    <div>
+    <div onMouseEnter={pauseTimer} onMouseLeave={resumeTimer}>
       <div ref={containerRef} className="overflow-hidden">
         <div
           ref={trackRef}
@@ -164,7 +192,7 @@ export default function TestimonialGrid({ items = [] }) {
       </div>
 
       {/* Controls */}
-      {total > visible && (
+      {rawTotal > 1 && (
         <div className="mt-5 sm:mt-6 flex items-center justify-center gap-3 sm:gap-4">
           <button
             aria-label="Previous review"

@@ -288,7 +288,7 @@ export default function Checkout() {
 
               <dl className="mt-5 space-y-3 border-t border-hairline/60 pt-5 text-sm">
                 <Row label="Subtotal" value={formatINR(subtotal)} />
-                <Row label="Shipping" value={shipping === 0 ? 'Free' : formatINR(shipping)} valueClass={shipping === 0 ? 'text-gold-deep' : ''} />
+                <Row label="Shipping" value={shipping === 0 ? 'Standard Delivery' : formatINR(shipping)} valueClass={shipping === 0 ? 'text-ink-soft' : ''} />
               </dl>
               <div className="mt-4 flex items-center justify-between border-t border-hairline/70 pt-4">
                 <span className="text-base font-semibold text-ink">Total</span>

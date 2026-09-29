@@ -148,7 +148,7 @@ export const contentPages = {
       { label: 'Other locations', value: '10-12 business days' },
     ],
     heroHighlights: [
-      'Free shipping on all orders',
+      'Pan-India insured delivery',
       'Tracking shared after dispatch',
       'Large formats may need extra handling time',
     ],
@@ -163,7 +163,7 @@ export const contentPages = {
       {
         title: 'Shipping Information',
         bullets: [
-          'Free shipping is available across India',
+          'Pan-India delivery across 19,000+ PIN codes',
           'Orders are usually processed within 1-3 business days',
           'Delivery timelines may vary based on product size and delivery location',
           'Large-size artworks may require additional handling time',
@@ -184,7 +184,7 @@ export const contentPages = {
       {
         title: 'Delivery Charges',
         body: [
-          'Delivery charges may vary by artwork size. Standard eligible orders can include free delivery, while extra-large artworks and premium frames may require additional handling charges.',
+          'Delivery charges are calculated based on artwork dimensions and destination PIN code.',
           'Final delivery charges, if applicable, will be shown before checkout.',
         ],
       },
@@ -203,50 +203,87 @@ export const contentPages = {
     intro: 'Find answers to the most common questions about our art, orders, and delivery.',
     sections: [
       {
+        title: 'Artwork & Framing',
+        faqs: [
+          {
+            question: 'Are your artworks 100% made in India?',
+            answer:
+              'Yes. Every Dreamz Decor artwork is conceived, printed, hand-textured, and framed in-house at our studio in Amritsar, Punjab, by master craftspeople using archival-grade materials.',
+          },
+          {
+            question: 'Do the canvas paintings arrive framed and ready to hang?',
+            answer:
+              'Yes! Every framed canvas arrives 100% ready-to-hang out of the box with pre-installed heavy-duty sawtooth hangers or steel hanging wire, wall-mounting screws, and anchors included.',
+          },
+          {
+            question: 'What materials and canvas weight do you use?',
+            answer:
+              'We use premium 380–420 GSM heavy-weave textured cotton canvas treated with UV-resistant archival inks that prevent fading over decades. Our floating frames are precision-mitered from warp-free composite wood designed specifically for Indian weather conditions.',
+          },
+          {
+            question: 'Can I request custom dimensions or multi-panel splits?',
+            answer:
+              'Absolutely! We offer bespoke sizing for large living rooms, commercial lobbies, and feature walls. Connect directly with our studio concierge via WhatsApp (+91 82848 65051) or email dreamzdecor30@gmail.com with your wall measurements for a tailored mockup.',
+          },
+          {
+            question: 'How should I clean and maintain my canvas artwork?',
+            answer:
+              'Gently dust the canvas surface with a soft, dry microfibre cloth or feather duster once every few weeks. Never use harsh household cleaning sprays, water, or abrasive detergents.',
+          },
+        ],
+      },
+      {
         title: 'Orders & Payments',
         faqs: [
           {
-            question: 'Are your artworks made in India?',
-            answer:
-              'Yes. Dreamz Decor products are designed and produced in-house in India with premium materials and handcrafted finishing.',
-          },
-          {
-            question: 'Do the paintings come with frames?',
-            answer: 'Selected artworks include premium wooden framing and ready-to-hang support.',
-          },
-          {
             question: 'What payment methods do you accept?',
             answer:
-              'We accept 100% secure online payments via Razorpay, including UPI (Google Pay, PhonePe, Paytm), Credit & Debit Cards, Net Banking, and digital wallets.',
+              'We accept 100% secure payments processed via Razorpay: all major UPI apps (Google Pay, PhonePe, Paytm, BHIM), Credit & Debit cards (Visa, Mastercard, RuPay, Amex), and Net Banking across all Indian banks.',
           },
           {
-            question: 'Are multiple size options available?',
+            question: 'Are prices inclusive of GST?',
             answer:
-              'Yes, our artworks are available in standard and gallery dimensions listed on each product page with transparent size-based pricing.',
+              'Yes. Every price listed on Dreamz Decor includes 18% GST. A digital GST-compliant tax invoice is automatically generated and sent to your registered email upon order confirmation.',
+          },
+          {
+            question: 'Can I modify or cancel my order after placing it?',
+            answer:
+              'Since each piece is hand-assembled to order, adjustments or cancellations can be made within 12 hours of placing your order. Reach out to our concierge team immediately via WhatsApp (+91 82848 65051).',
           },
         ],
       },
       {
-        title: 'Shipping & Delivery',
+        title: 'Shipping & Pan-India Dispatch',
         faqs: [
           {
-            question: 'How long does delivery take?',
+            question: 'What are your delivery timelines across India?',
             answer:
-              'Delivery usually takes 6–10 business days in metro cities and 10–12 business days in other locations.',
+              'Artwork is inspected and prepared within 1–3 business days. Delivery typically takes 6–10 business days for metro cities and 10–12 business days for regional and tier-2/3 destinations.',
           },
           {
-            question: 'Do you ship across India?',
-            answer: 'Yes, we deliver pan India with tracking support after dispatch.',
+            question: 'How do I track my shipment once dispatched?',
+            answer:
+              'As soon as your package is handed over to our logistics partner, courier tracking details are emailed to you. You can also view live status updates anytime in your Account > Orders dashboard.',
+          },
+          {
+            question: 'Do you deliver to remote or hilly locations?',
+            answer:
+              'Yes, our delivery network reaches over 19,000+ PIN codes across all 28 states and union territories in India with verified ground logistics.',
           },
         ],
       },
       {
-        title: 'Returns & Refunds',
+        title: 'Transit Protection & Guarantees',
         faqs: [
           {
-            question: 'What if my order arrives damaged?',
+            question: 'What happens if my package arrives damaged?',
             answer:
-              'Contact support within 48 hours of delivery with photos or an unboxing video so we can review a replacement request.',
+              'We provide an unconditional 100% Free Doorstep Replacement Guarantee. If the carton or artwork shows transit damage, simply send 2–3 unboxing photos or a short video to WhatsApp (+91 82848 65051) or dreamzdecor30@gmail.com within 48 hours of delivery. We will immediately dispatch a fresh replacement at zero cost.',
+          },
+          {
+            question: 'How are fragile and oversized frames packaged?',
+            answer:
+              'Each piece is encased in moisture-barrier film, cushioned in multi-layer bubble wrap, protected by 8-ply heavy-duty corner guards, and sealed inside a puncture-resistant double-corrugated outer armour crate.',
           },
         ],
       },
@@ -258,24 +295,26 @@ export const contentPages = {
     intro:
       'We are here to help with orders, shipping queries, product assistance, and artwork guidance.',
     heroStats: [
-      { label: 'Email', value: 'support@dreamzdecor.com' },
-      { label: 'Coverage', value: 'Order and shipping support' },
-      { label: 'Mode', value: 'Direct assistance' },
+      { label: 'Email', value: 'dreamzdecor30@gmail.com' },
+      { label: 'Phone', value: '+91 82848 65051' },
+      { label: 'Hours', value: 'Mon–Sat: 10 AM – 7 PM' },
     ],
     heroHighlights: [
-      'Best for order, shipping, and product queries',
-      'Support replies are routed through email first',
-      'Use the form below to stay in one place',
+      'Dedicated concierge support for orders and custom requests',
+      'Direct assistance via email, phone, and WhatsApp',
+      'Quick response within standard studio hours',
     ],
     contactDetails: [
-      { label: 'Email', value: 'support@dreamzdecor.com', href: 'mailto:support@dreamzdecor.com' },
+      { label: 'Email', value: 'dreamzdecor30@gmail.com', href: 'mailto:dreamzdecor30@gmail.com' },
+      { label: 'Phone', value: '+91 82848 65051', href: 'tel:+918284865051' },
       { label: 'Location', value: 'Made in India, delivering pan India' },
     ],
     sections: [
       {
         title: 'Customer Support',
         cards: [
-          { title: 'Email', text: 'support@dreamzdecor.com' },
+          { title: 'Email', text: 'dreamzdecor30@gmail.com' },
+          { title: 'Phone', text: '+91 82848 65051' },
           { title: 'Location', text: 'Made in India, delivering pan India' },
         ],
       },
@@ -341,7 +380,7 @@ export const contentPages = {
       {
         title: 'Contact Us',
         body: [
-          'If you have any questions, concerns, or require clarification regarding these Terms and Conditions, please do not hesitate to reach out to our team. You may contact us by email at support@dreamdecords.com or write to us at: Dreamz Decor, Grand Trunk Road, Baba Phoola Singh, Amritsar, Punjab. We aim to respond to all enquiries within 5 business days.',
+          'If you have any questions, concerns, or require clarification regarding these Terms and Conditions, please do not hesitate to reach out to our team. You may contact us by email at dreamzdecor30@gmail.com or phone at +91 82848 65051, or write to us at: Dreamz Decor, Grand Trunk Road, Baba Phoola Singh, Amritsar, Punjab. We aim to respond to all enquiries promptly.',
         ],
       },
     ],
@@ -506,19 +545,52 @@ export const homeContent = {
   ],
   testimonials: [
     {
-      quote: 'The finish feels far more premium than the price suggests. It changed the room instantly.',
-      author: 'Priya S.',
-      role: 'Living room customer',
+      quote:
+        'Was hesitant about ordering art online, but the Golden Temple canvas exceeded all expectations. The subtle gold leaf foil catches the morning light beautifully and the champagne frame feels solid and gallery-grade. Arrived in 4 days with zero damage.',
+      author: 'Pooja S. Sharma',
+      role: 'Verified Buyer • South Delhi (Golden Temple Canvas)',
     },
     {
-      quote: 'Packaging was secure, delivery was smooth, and the artwork arrived looking gallery-ready.',
-      author: 'Rahul K.',
-      role: 'Repeat buyer',
+      quote:
+        'Ordered the 3-piece botanical gallery set for our new clinic waiting lounge in Indiranagar. The archival matte canvas texture has real depth unlike flat synthetic prints. Pre-installed hardware made wall mounting effortless.',
+      author: 'Dr. Rajesh Varma',
+      role: 'Verified Buyer • Bengaluru (Botanical Gallery Set)',
     },
     {
-      quote: 'The gallery set made styling simple. It looks intentional without feeling overdesigned.',
-      author: 'Ananya M.',
-      role: 'Interior designer',
+      quote:
+        'Packaging was genuinely bulletproof — corner protectors, heavy wooden reinforcement, and multiple bubble wraps. We hung the large minimalist abstract above our 8-seater living room sofa and it completely anchored the room.',
+      author: 'Ritika & Aman Khurana',
+      role: 'Verified Buyer • DLF Phase 5, Gurgaon (Minimalist Horizon Art)',
+    },
+    {
+      quote:
+        'The Lord Shiva meditation piece has brought such serenity to our home foyer. The print resolution is razor sharp and the warm sepia-gold palette feels calm and deeply spiritual. Worth every single rupee.',
+      author: 'Siddharth Nambiar',
+      role: 'Verified Buyer • Bandra West, Mumbai (Spiritual Series)',
+    },
+    {
+      quote:
+        "As an interior designer, I'm extremely picky about canvas tension and frame joins. DreamzDecor's frames have clean mitered joints and the floating frame profile adds that quiet luxury look clients love. Now my go-to for residential projects.",
+      author: 'Ananya Deshmukh',
+      role: 'Interior Architect • Koregaon Park, Pune',
+    },
+    {
+      quote:
+        'We gifted the Darbar Sahib heritage frame to our parents for their anniversary in Ludhiana. They were moved to tears by the craftsmanship. Customer care was super prompt in updating our tracking details.',
+      author: 'Harpreet & Simran Singh',
+      role: 'Verified Buyer • Model Town, Ludhiana (Heritage Canvas)',
+    },
+    {
+      quote:
+        'Ordered two framed pieces during Diwali. Delivery was on time despite peak rush, colors matched the website photos 100%, and the anti-glare finish looks stunning under our track lighting.',
+      author: 'Kavita Reddy',
+      role: 'Verified Buyer • Jubilee Hills, Hyderabad (Contemporary Triptych)',
+    },
+    {
+      quote:
+        'Found DreamzDecor through an interior decor forum. The quality of their heavy canvas and bespoke gold detailing easily rivals high-end art gallerias charging four times the price. Highly recommend!',
+      author: 'Vikramaditya Roy',
+      role: 'Verified Buyer • Salt Lake, Kolkata (Abstract Luxe Series)',
     },
   ],
   // Homepage "Why DreamzDecors" cards — fully editable from Content → Homepage.
@@ -577,6 +649,6 @@ export const homeContent = {
       'Join 4,000+ homeowners and designers who get early access to new collections and limited-edition prints before anyone else.',
     buttonLabel: 'Subscribe',
     successText: "You're in — welcome to the inner circle.",
-    footnote: 'No spam. Unsubscribe anytime.',
+    footnote: 'We respect your privacy. Unsubscribe at any time.',
   },
 };

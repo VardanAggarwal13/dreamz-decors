@@ -31,16 +31,13 @@ export const organizationSchema = (settings = {}) => {
     logo: absoluteUrl('/IMG_3811-removebg-preview.png'),
     description: DEFAULT_DESCRIPTION,
     ...(sameAs.length ? { sameAs } : {}),
-    ...(settings.contact?.email
-      ? {
-          contactPoint: {
-            '@type': 'ContactPoint',
-            email: settings.contact.email,
-            contactType: 'customer support',
-            areaServed: 'IN',
-          },
-        }
-      : {}),
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: settings.contact?.phone || '+91 82848 65051',
+      email: settings.contact?.email || 'dreamzdecor30@gmail.com',
+      contactType: 'customer support',
+      areaServed: 'IN',
+    },
   };
 };
 

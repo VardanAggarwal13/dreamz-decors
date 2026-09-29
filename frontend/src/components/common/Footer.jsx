@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FaInstagram, FaFacebookF, FaPinterestP, FaYoutube, FaWhatsapp } from 'react-icons/fa';
-import { Mail, MapPin } from 'lucide-react';
+import { Mail, MapPin, Phone } from 'lucide-react';
 import Logo from './Logo';
 import useFetch from '@/hooks/useFetch';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -53,6 +53,18 @@ export default function Footer() {
     : FALLBACK_SHOP_LINKS;
   const navColumns = [{ title: 'Shop', links: shopLinks }, ...STATIC_COLUMNS];
 
+  const displayDescription =
+    !brand?.description || brand.description.includes('secure packaging and safe online checkout')
+      ? 'Handcrafted canvas paintings, gallery sets, and spiritual art designed to bring warmth, soul, and quiet luxury to modern Indian homes.'
+      : brand.description;
+
+  const footerEmail =
+    !contact?.email || contact.email.toLowerCase().includes('support@dreamzdecor.com')
+      ? 'dreamzdecor30@gmail.com'
+      : contact.email;
+  const footerPhone = !contact?.phone || !contact.phone.trim() ? '+91 82848 65051' : contact.phone;
+  const footerPhoneTel = footerPhone.replace(/[^+\d]/g, '');
+
   return (
     <footer className="border-t border-ink/8 bg-bone/85 text-ink">
       <div className="container-page py-8 sm:py-10">
@@ -62,7 +74,7 @@ export default function Footer() {
               <Logo variant="horizontal" className="mx-auto h-12 w-auto sm:mx-0" />
             </Link>
             <p className="mx-auto mt-3 max-w-sm text-sm leading-7 text-ink-soft sm:mx-0">
-              {brand?.description}
+              {displayDescription}
             </p>
           </div>
 
@@ -88,18 +100,14 @@ export default function Footer() {
             <h4 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-ink">Support</h4>
             <span className="mx-auto mt-2 block h-px w-8 bg-gold sm:mx-0" />
             <ul className="mt-4 space-y-4 text-sm text-ink-soft">
-              {contact?.email && (
-                <li className="flex justify-center gap-3 sm:justify-start">
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                  <a href={`mailto:${contact.email}`} className="hover:text-accent">{contact.email}</a>
-                </li>
-              )}
-              {contact?.phone && (
-                <li className="flex justify-center gap-3 sm:justify-start">
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-accent opacity-0" />
-                  <a href={`tel:${contact.phone}`} className="hover:text-accent">{contact.phone}</a>
-                </li>
-              )}
+              <li className="flex justify-center gap-3 sm:justify-start">
+                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                <a href={`mailto:${footerEmail}`} className="hover:text-accent">{footerEmail}</a>
+              </li>
+              <li className="flex justify-center gap-3 sm:justify-start">
+                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                <a href={`tel:${footerPhoneTel}`} className="hover:text-accent">{footerPhone}</a>
+              </li>
               {contact?.address && (
                 <li className="flex justify-center gap-3 sm:justify-start">
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
@@ -124,8 +132,55 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-hairline pt-5 text-center text-xs text-ink-muted">
-          &copy; {new Date().getFullYear()} {brand?.name || 'Dreamz Decor'}. Proudly made in India.
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-hairline pt-5 text-center text-xs text-ink-muted lg:flex-row lg:text-left">
+          <p className="shrink-0">
+            &copy; {new Date().getFullYear()} {brand?.name || 'Dreamz Decor'}. Proudly made in India.
+          </p>
+
+          {/* Center: Essential trust & policies */}
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-ink-muted">
+            <Link to="/terms" className="transition hover:text-gold-deep">
+              Privacy &amp; Terms
+            </Link>
+            <span className="text-hairline select-none">•</span>
+            <Link to="/shipping" className="transition hover:text-gold-deep">
+              Shipping &amp; Delivery
+            </Link>
+            <span className="text-hairline select-none">•</span>
+            <span className="inline-flex items-center gap-1.5 font-medium text-ink-soft">
+              <svg className="h-3.5 w-3.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+              100% Safe &amp; Secure Checkout
+            </span>
+          </div>
+
+          <a
+            href="https://www.smartvings.com/"
+            target="_blank"
+            rel="noopener"
+            className="group inline-flex shrink-0 items-center gap-1.5 transition-colors hover:text-gold-deep"
+            title="Smartvings — Web Design & Development Agency"
+          >
+            <span>Designed &amp; Developed by</span>
+            <span className="font-semibold text-ink transition-colors group-hover:text-gold-deep underline-offset-4 group-hover:underline">
+              Smartvings
+            </span>
+            <svg
+              className="h-3 w-3 opacity-60 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:opacity-100 group-hover:text-gold-deep"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M7 17L17 7" />
+              <path d="M7 7h10v10" />
+            </svg>
+          </a>
         </div>
       </div>
     </footer>

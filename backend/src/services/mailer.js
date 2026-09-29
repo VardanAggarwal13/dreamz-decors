@@ -1,26 +1,40 @@
 import nodemailer from 'nodemailer';
 import dns from 'dns';
 
-// Force IPv4 lookup first. Render and many cloud hosts do not support IPv6 routing,
-// which causes `connect ENETUNREACH 2607:f8b0:400e:c0a::6c:587` errors!
+// Force global IPv4 lookup first. Render and many cloud hosts / local ISPs do not support IPv6 routing,
+// which causes `connect ENETUNREACH 2607:f8b0:400e:...` errors.
 try {
   dns.setDefaultResultOrder('ipv4first');
 } catch {}
+
+const ipv4Lookup = (hostname, options, callback) => {
+  return dns.lookup(hostname, { ...options, family: 4 }, callback);
+};
 
 let transporter = null;
 let warned = false;
 
 /**
+ * Validate that an email address is real and routable (not dummy .local / .test domains).
+ */
+export function isValidRecipient(email) {
+  if (!email || typeof email !== 'string') return false;
+  const trimmed = email.trim().toLowerCase();
+  if (trimmed.endsWith('.local') || trimmed.endsWith('.test') || trimmed.endsWith('.example')) {
+    return false;
+  }
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+}
+
+/**
  * The single source of truth for the "from" address used by EVERY email the
- * app sends (notifications, password reset, welcome, etc.). Change MAIL_FROM
- * in .env and every email switches sender — nothing is hardcoded.
- * Falls back to the SMTP login, then a safe default.
+ * app sends (notifications, password reset, welcome, etc.).
  */
 export function mailFrom() {
   return process.env.MAIL_FROM || process.env.SMTP_USER || 'DreamzDecor <dreamzdecor30@gmail.com>';
 }
 
-// Lazily build a single reusable SMTP transport from env config.
+// Lazily build a single reusable SMTP transport from env config with connection pooling.
 function getTransporter() {
   if (transporter) return transporter;
 
@@ -44,10 +58,18 @@ function getTransporter() {
     port,
     secure,
     auth: { user: SMTP_USER, pass: SMTP_PASS },
-    family: 4, // CRITICAL: Force IPv4 connection to prevent ENETUNREACH on Render/Linux cloud containers
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 20000,
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    rateDelta: 1000,
+    rateLimit: 5,
+    lookup: ipv4Lookup,
+    tls: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
 
   return transporter;
@@ -57,14 +79,19 @@ function getTransporter() {
  * Send an email. Returns true on success, false if email is disabled or fails.
  * Never throws — notification dispatch must not break on a mail failure.
  */
-export async function sendEmail({ to, subject, html, text, replyTo }) {
+export async function sendEmail({ to, subject, html, text, replyTo }, retryCount = 0) {
+  if (!isValidRecipient(to)) {
+    console.warn(`✦ [email] Skipping unroutable/invalid email address: "${to}"`);
+    return false;
+  }
+
   const tx = getTransporter();
-  if (!tx || !to) return false;
+  if (!tx) return false;
 
   try {
     await tx.sendMail({
       from: mailFrom(),
-      to,
+      to: to.trim(),
       subject,
       text,
       html,
@@ -72,7 +99,18 @@ export async function sendEmail({ to, subject, html, text, replyTo }) {
     });
     return true;
   } catch (err) {
-    console.error('Email send failed:', err.message);
+    console.error(`Email send failed to ${to}:`, err.message);
+
+    // If transient socket/connection failure, recreate transporter and retry once
+    if (retryCount === 0 && (err.code === 'ETIMEDOUT' || err.code === 'ECONNRESET' || err.code === 'ESOCKET')) {
+      console.log(`Retrying email to ${to} with fresh connection...`);
+      try {
+        transporter?.close?.();
+      } catch {}
+      transporter = null;
+      return sendEmail({ to, subject, html, text, replyTo }, 1);
+    }
+
     return false;
   }
 }

@@ -77,9 +77,22 @@ async function dispatchExternal(doc, { user, type, title, message, link, email, 
   if (email) {
     tasks.push(
       (async () => {
-        const account = await User.findById(userId).select('name email').lean();
-        if (!account?.email) return;
-        const recipientName = account.name || emailContext?.customerName || emailContext?.order?.shippingAddress?.name;
+        const account = userId ? await User.findById(userId).select('name email').lean() : null;
+        const recipientEmail =
+          account?.email ||
+          emailContext?.email ||
+          emailContext?.order?.guestEmail ||
+          emailContext?.order?.shippingAddress?.email;
+
+        if (!recipientEmail) return;
+
+        const recipientName =
+          account?.name ||
+          emailContext?.customerName ||
+          emailContext?.name ||
+          emailContext?.order?.shippingAddress?.name ||
+          'there';
+
         const { subject, html } = buildEmail(type, {
           name: recipientName,
           title,
@@ -87,13 +100,13 @@ async function dispatchExternal(doc, { user, type, title, message, link, email, 
           link,
           ...emailContext,
         });
-        const sentEmail = await sendEmail({ to: account.email, subject, html, text: message });
+        const sentEmail = await sendEmail({ to: recipientEmail, subject, html, text: message });
         if (sentEmail) {
           doc.channels.email = true;
           doc.markModified('channels');
-          console.log(`✉️ [email] Sent "${subject}" to ${account.email}`);
+          console.log(`✉️ [email] Sent "${subject}" to ${recipientEmail}`);
         } else {
-          console.warn(`⚠️ [email] Failed sending "${subject}" to ${account.email}`);
+          console.warn(`⚠️ [email] Failed sending "${subject}" to ${recipientEmail}`);
         }
       })()
     );

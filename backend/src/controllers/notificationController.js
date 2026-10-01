@@ -12,6 +12,13 @@ export const myNotifications = asyncHandler(async (req, res) => {
   const { page, limit, skip } = buildPagination(req.query.page, req.query.limit, NOTIF_PRESET);
   const filter = { user: req.user._id };
 
+  // Scope: 'admin' (admin operational alerts only) vs 'customer' (personal order & account alerts only)
+  if (req.query.scope === 'admin') {
+    filter.type = { $regex: /^admin_/ };
+  } else if (req.query.scope === 'customer' || req.user.role !== 'admin') {
+    filter.type = { $not: /^admin_/ };
+  }
+
   const [items, total, unread] = await Promise.all([
     Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
     Notification.countDocuments(filter),
@@ -28,7 +35,13 @@ export const myNotifications = asyncHandler(async (req, res) => {
 
 // GET /api/notifications/unread-count
 export const unreadCount = asyncHandler(async (req, res) => {
-  const unread = await Notification.countDocuments({ user: req.user._id, read: false });
+  const filter = { user: req.user._id };
+  if (req.query.scope === 'admin') {
+    filter.type = { $regex: /^admin_/ };
+  } else if (req.query.scope === 'customer' || req.user.role !== 'admin') {
+    filter.type = { $not: /^admin_/ };
+  }
+  const unread = await Notification.countDocuments({ ...filter, read: false });
   res.json({ success: true, data: { unread } });
 });
 

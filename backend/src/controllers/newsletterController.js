@@ -1,7 +1,5 @@
 import asyncHandler from 'express-async-handler';
 import NewsletterSubscriber from '../models/NewsletterSubscriber.js';
-import { sendEmail } from '../services/mailer.js';
-import { buildNewsletterWelcome } from '../services/emailTemplates.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -12,10 +10,9 @@ const serverUrl = () =>
 export const unsubscribeUrlFor = (sub) =>
   `${serverUrl()}/api/newsletter/unsubscribe?token=${sub.unsubscribeToken}`;
 
-// Fire-and-forget welcome email (never blocks the request).
-export function sendWelcomeEmail(sub, origin) {
-  const { subject, html } = buildNewsletterWelcome({ unsubscribeUrl: unsubscribeUrlFor(sub) }, { origin });
-  sendEmail({ to: sub.email, subject, html }).catch(() => {});
+// Welcome email trigger on subscription has been disabled per user requirement.
+export function sendWelcomeEmail(_sub, _origin) {
+  // Disabled: welcome emails are not sent on subscription.
 }
 
 // POST /api/newsletter/subscribe  { email }  — public
@@ -39,14 +36,10 @@ export const subscribe = asyncHandler(async (req, res) => {
   }
   await sub.save();
 
-  // Only welcome NEW or re-activated subscribers, not repeat submits.
-  const origin = req.headers.origin || req.headers.referer;
-  if (!wasSubscribed) sendWelcomeEmail(sub, origin);
-
   res.status(201).json({
     success: true,
     data: { email: sub.email, status: sub.status },
-    message: wasSubscribed ? "You're already subscribed." : 'Subscribed — check your inbox!',
+    message: wasSubscribed ? "You're already subscribed." : 'Subscribed successfully!',
   });
 });
 

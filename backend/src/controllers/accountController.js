@@ -1,7 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
 import NewsletterSubscriber from '../models/NewsletterSubscriber.js';
-import { sendWelcomeEmail } from './newsletterController.js';
 
 // GET /api/account/addresses
 export const getAddresses = asyncHandler(async (req, res) => {
@@ -92,8 +91,6 @@ export const setNewsletterStatus = asyncHandler(async (req, res) => {
     sub.unsubscribedAt = new Date();
   }
   await sub.save();
-
-  if (subscribe && !wasSubscribed) sendWelcomeEmail(sub);
 
   res.json({ success: true, data: { email, subscribed: sub.status === 'subscribed' } });
 });

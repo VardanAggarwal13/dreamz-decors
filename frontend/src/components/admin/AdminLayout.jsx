@@ -100,6 +100,7 @@ export default function AdminLayout() {
               iconSize={22}
               buttonClassName="relative flex items-center text-bone/80 transition hover:text-bone"
               badgeClassName={bellBadge}
+              scope="admin"
             />
             <button onClick={() => setOpen((v) => !v)} className="flex items-center text-bone" aria-label={open ? 'Close menu' : 'Open menu'}>
               {open ? <FiX size={22} /> : <FiMenu size={22} />}
@@ -134,6 +135,7 @@ export default function AdminLayout() {
           <NotificationBell
             buttonClassName="relative text-ink-soft transition hover:text-ink"
             badgeClassName={bellBadge}
+            scope="admin"
           />
         </div>
         <div className="px-4 py-6 sm:px-8 sm:py-8">

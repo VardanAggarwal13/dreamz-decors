@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FiEye, FiArrowRight } from 'react-icons/fi';
+import { FiEye, FiArrowRight, FiTrash2, FiFilter, FiX, FiCalendar, FiCreditCard } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import OrderStatusBadge from '@/components/common/OrderStatusBadge';
@@ -13,26 +13,104 @@ import AdminPagination from '@/components/admin/AdminPagination';
 import { Button } from '@/components/ui/Button';
 import { formatINR } from '@/lib/utils';
 
-const STATUSES = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
+const ORDER_STATUS_OPTIONS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'shipped', label: 'Processing & Shipping' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'refunded', label: 'Refunded' },
+];
+
+const PAYMENT_STATUS_OPTIONS = [
+  { value: 'paid', label: 'Paid / Captured' },
+  { value: 'pending', label: 'Unpaid / Pending' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'refunded', label: 'Refunded' },
+];
+
+const PAYMENT_METHOD_OPTIONS = [
+  { value: 'razorpay', label: 'Razorpay (Online)' },
+  { value: 'cod', label: 'Cash on Delivery (COD)' },
+];
+
+const DATE_PRESET_OPTIONS = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: '7days', label: 'Last 7 Days' },
+  { value: '30days', label: 'Last 30 Days' },
+  { value: 'this_month', label: 'This Month' },
+  { value: 'custom', label: 'Custom Date Range…' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'total_high', label: 'Amount: High to Low' },
+  { value: 'total_low', label: 'Amount: Low to High' },
+];
+
+const normalizeOrderStatus = (st) => (st === 'processing' ? 'shipped' : (st || 'pending'));
+
+const statusLabelFor = (val) => {
+  const opt = ORDER_STATUS_OPTIONS.find((o) => o.value === val);
+  return opt ? opt.label : (val ? String(val).toUpperCase() : 'Pending');
+};
+
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' }) : '');
 const fmtDateLong = (iso) => (iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
 const shortId = (id) => (id ? `#${String(id).slice(-8).toUpperCase()}` : '');
 
 export default function AdminOrders() {
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState(''); // Order status
+  const [paymentStatus, setPaymentStatus] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [datePreset, setDatePreset] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
   const [q, setQ] = useState('');
   const [viewing, setViewing] = useState(null);
   const [statusConfirm, setStatusConfirm] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState(null);
+  const [deletingOrder, setDeletingOrder] = useState(false);
 
-  // Server-side pagination + status filter + search (customer name/email/id).
+  const hasActiveFilters = Boolean(
+    filter || paymentStatus || paymentMethod || datePreset || dateFrom || dateTo || q
+  );
+
+  const clearAllFilters = () => {
+    setFilter('');
+    setPaymentStatus('');
+    setPaymentMethod('');
+    setDatePreset('');
+    setDateFrom('');
+    setDateTo('');
+    setQ('');
+  };
+
+  // Server-side pagination + status filter + payment + date + search + sort.
   const makePath = ({ page, limit }) => {
     const sp = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (filter) sp.set('status', filter);
+    if (paymentStatus) sp.set('paymentStatus', paymentStatus);
+    if (paymentMethod) sp.set('paymentMethod', paymentMethod);
+    if (datePreset && datePreset !== 'custom') sp.set('datePreset', datePreset);
+    if (datePreset === 'custom' || (!datePreset && (dateFrom || dateTo))) {
+      if (dateFrom) sp.set('from', dateFrom);
+      if (dateTo) sp.set('to', dateTo);
+    }
+    if (sortBy && sortBy !== 'newest') sp.set('sort', sortBy);
     if (q.trim()) sp.set('q', q.trim());
     return `/orders?${sp.toString()}`;
   };
-  const { items: orders, setItems: setOrders, meta, loading, goTo, reload } = useAdminList(makePath, [q, filter], { limit: 10 });
+
+  const { items: orders, setItems: setOrders, meta, loading, goTo, reload } = useAdminList(
+    makePath,
+    [q, filter, paymentStatus, paymentMethod, datePreset, dateFrom, dateTo, sortBy],
+    { limit: 10 }
+  );
 
   /*
    * No optimistic update here: "refunded" doesn't just flip a field — it asks
@@ -57,7 +135,9 @@ export default function AdminOrders() {
   };
 
   const requestStatusChange = (order, newStatus) => {
-    if (!order || order.status === newStatus) return;
+    if (!order) return;
+    const currentNorm = normalizeOrderStatus(order.status);
+    if (currentNorm === newStatus) return;
     setStatusConfirm({
       orderId: order._id,
       orderNumber: shortId(order._id),
@@ -81,22 +161,238 @@ export default function AdminOrders() {
     }
   };
 
+  const requestDeleteOrder = (order) => {
+    if (!order) return;
+    setOrderToDelete({
+      id: order._id,
+      orderNumber: shortId(order._id),
+      customerName: order.user?.name || order.user?.email || 'Customer',
+      total: order.total,
+      status: order.status,
+      date: fmtDate(order.createdAt),
+    });
+  };
+
+  const handleConfirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    setDeletingOrder(true);
+    try {
+      await api.delete(`/orders/${orderToDelete.id}`);
+      toast.success(`Order ${orderToDelete.orderNumber} deleted successfully`);
+      setOrders((list) => list.filter((o) => o._id !== orderToDelete.id));
+      if (viewing?._id === orderToDelete.id) {
+        setViewing(null);
+      }
+      setOrderToDelete(null);
+      reload();
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete order');
+    } finally {
+      setDeletingOrder(false);
+    }
+  };
+
   return (
     <div>
       <Seo title="Admin — Orders" noIndex />
+
+      {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl text-ink sm:text-3xl">Orders</h1>
-        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-          <AdminSearch value={q} onChange={setQ} placeholder="Search by order id, customer…" className="flex-1 sm:w-80 sm:flex-none" />
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-display text-2xl text-ink sm:text-3xl">Orders</h1>
+            {meta.total > 0 && (
+              <span className="rounded-full bg-gold/15 px-2.5 py-0.5 text-xs font-semibold text-gold-deep">
+                {meta.total} {meta.total === 1 ? 'order' : 'orders'}
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 text-xs text-ink-muted">
+            Manage customer orders, track payments, update fulfillment, and filter records.
+          </p>
+        </div>
+
+        <div className="flex w-full flex-wrap items-center gap-2.5 sm:w-auto">
+          <AdminSearch
+            value={q}
+            onChange={setQ}
+            placeholder="Search by order ID, customer…"
+            className="flex-1 sm:w-72 sm:flex-none"
+          />
+
+          {/* Sort Selector */}
           <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="rounded-lg border border-hairline bg-bone px-3 py-2.5 text-sm text-ink-soft outline-none focus:border-gold"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-lg border border-hairline bg-bone px-3 py-2 text-xs font-medium text-ink-soft outline-none transition focus:border-gold"
           >
-            <option value="">All statuses</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            {SORT_OPTIONS.map((s) => (
+              <option key={s.value} value={s.value}>
+                Sort: {s.label}
+              </option>
+            ))}
           </select>
         </div>
+      </div>
+
+      {/* Filter Bar Panel */}
+      <div className="mt-4 rounded-2xl border border-hairline/70 bg-bone/70 p-3.5 sm:p-4 shadow-2xs">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-ink-muted pr-1">
+            <FiFilter size={13} className="text-gold-deep" />
+            <span className="uppercase tracking-wider text-[10px]">Filter by:</span>
+          </div>
+
+          {/* 1. Order Status */}
+          <div className="min-w-[140px] flex-1 sm:flex-none">
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="w-full rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-gold font-medium"
+            >
+              <option value="">Status: All</option>
+              {ORDER_STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  Status: {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 2. Payment Status */}
+          <div className="min-w-[140px] flex-1 sm:flex-none">
+            <select
+              value={paymentStatus}
+              onChange={(e) => setPaymentStatus(e.target.value)}
+              className="w-full rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-gold font-medium"
+            >
+              <option value="">Payment: All</option>
+              {PAYMENT_STATUS_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  Payment: {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. Payment Method */}
+          <div className="min-w-[140px] flex-1 sm:flex-none">
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-gold font-medium"
+            >
+              <option value="">Method: All</option>
+              {PAYMENT_METHOD_OPTIONS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  Method: {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4. Date Range Preset */}
+          <div className="min-w-[140px] flex-1 sm:flex-none">
+            <select
+              value={datePreset}
+              onChange={(e) => {
+                const val = e.target.value;
+                setDatePreset(val);
+                if (val !== 'custom') {
+                  setDateFrom('');
+                  setDateTo('');
+                }
+              }}
+              className="w-full rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-gold font-medium"
+            >
+              <option value="">Date: All Time</option>
+              {DATE_PRESET_OPTIONS.map((d) => (
+                <option key={d.value} value={d.value}>
+                  Date: {d.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-xs font-semibold text-sale transition hover:border-sale/40 hover:bg-sale/10 ml-auto"
+              title="Reset all filters"
+            >
+              <FiX size={12} /> Clear Filters
+            </button>
+          )}
+        </div>
+
+        {/* Custom Date Range Pickers (only shown if 'custom' is selected) */}
+        {datePreset === 'custom' && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-hairline/60 pt-3 text-xs">
+            <span className="font-semibold text-ink-muted">Custom Date:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-ink-muted">From</span>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="rounded-lg border border-hairline bg-white px-2.5 py-1 text-xs text-ink outline-none focus:border-gold"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-ink-muted">To</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="rounded-lg border border-hairline bg-white px-2.5 py-1 text-xs text-ink outline-none focus:border-gold"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Active Filter Chips Row */}
+        {hasActiveFilters && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-hairline/50 pt-2.5">
+            <span className="text-[10px] uppercase font-bold text-ink-muted tracking-wider mr-1">Active:</span>
+
+            {filter && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-hairline bg-white px-2.5 py-0.5 text-[11px] text-ink-soft">
+                <span>Status: <strong>{statusLabelFor(filter)}</strong></span>
+                <button type="button" onClick={() => setFilter('')} className="text-ink-muted hover:text-sale ml-0.5" aria-label="Remove status filter"><FiX size={11} /></button>
+              </span>
+            )}
+
+            {paymentStatus && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-hairline bg-white px-2.5 py-0.5 text-[11px] text-ink-soft">
+                <span>Payment: <strong>{PAYMENT_STATUS_OPTIONS.find((p) => p.value === paymentStatus)?.label || paymentStatus}</strong></span>
+                <button type="button" onClick={() => setPaymentStatus('')} className="text-ink-muted hover:text-sale ml-0.5" aria-label="Remove payment filter"><FiX size={11} /></button>
+              </span>
+            )}
+
+            {paymentMethod && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-hairline bg-white px-2.5 py-0.5 text-[11px] text-ink-soft">
+                <span>Method: <strong>{PAYMENT_METHOD_OPTIONS.find((m) => m.value === paymentMethod)?.label || paymentMethod}</strong></span>
+                <button type="button" onClick={() => setPaymentMethod('')} className="text-ink-muted hover:text-sale ml-0.5" aria-label="Remove method filter"><FiX size={11} /></button>
+              </span>
+            )}
+
+            {(datePreset || dateFrom || dateTo) && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-hairline bg-white px-2.5 py-0.5 text-[11px] text-ink-soft">
+                <span>Date: <strong>{datePreset === 'custom' ? `${dateFrom || 'start'} → ${dateTo || 'end'}` : (DATE_PRESET_OPTIONS.find((d) => d.value === datePreset)?.label || 'Custom')}</strong></span>
+                <button type="button" onClick={() => { setDatePreset(''); setDateFrom(''); setDateTo(''); }} className="text-ink-muted hover:text-sale ml-0.5" aria-label="Remove date filter"><FiX size={11} /></button>
+              </span>
+            )}
+
+            {q && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-hairline bg-white px-2.5 py-0.5 text-[11px] text-ink-soft">
+                <span>Search: <strong>"{q}"</strong></span>
+                <button type="button" onClick={() => setQ('')} className="text-ink-muted hover:text-sale ml-0.5" aria-label="Remove search filter"><FiX size={11} /></button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {loading ? <AdminListSkeleton cols={8} withAvatar={false} /> : (<>
@@ -115,20 +411,48 @@ export default function AdminOrders() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <select
-                value={o.status}
+                value={normalizeOrderStatus(o.status)}
                 onChange={(e) => requestStatusChange(o, e.target.value)}
-                className="min-w-0 flex-1 rounded-lg border border-hairline bg-bone-soft px-2 py-2 text-xs text-ink-soft outline-none focus:border-gold"
+                className="min-w-0 flex-1 rounded-lg border border-hairline bg-bone-soft px-2 py-2 text-xs font-medium text-ink-soft outline-none focus:border-gold"
               >
-                {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                {ORDER_STATUS_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
               </select>
-              <button onClick={() => setViewing(o)} className="shrink-0 rounded-lg border border-hairline bg-bone-soft px-3 py-2 text-ink-soft transition hover:text-ink" aria-label="View"><FiEye size={15} /></button>
+              <button
+                onClick={() => setViewing(o)}
+                className="shrink-0 rounded-lg border border-hairline bg-bone-soft px-3 py-2 text-ink-soft transition hover:text-ink"
+                aria-label="View"
+                title="View order details"
+              >
+                <FiEye size={15} />
+              </button>
+              <button
+                onClick={() => requestDeleteOrder(o)}
+                className="shrink-0 rounded-lg border border-hairline bg-bone-soft px-3 py-2 text-ink-muted transition hover:border-sale/40 hover:bg-sale/10 hover:text-sale"
+                aria-label="Delete"
+                title="Delete order"
+              >
+                <FiTrash2 size={15} />
+              </button>
             </div>
           </div>
         ))}
         {!loading && orders.length === 0 && (
-          <p className="rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">
-            {q ? `No orders match “${q}”.` : 'No orders found.'}
-          </p>
+          <div className="rounded-2xl border border-hairline/60 bg-bone py-10 text-center text-ink-muted">
+            <p>{hasActiveFilters ? 'No orders match the selected filters.' : 'No orders found.'}</p>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-gold-deep hover:underline"
+              >
+                <FiX size={12} /> Clear all filters
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -152,7 +476,24 @@ export default function AdminOrders() {
             {orders.map((o) => (
               <tr key={o._id} className="border-b border-hairline/40 last:border-0">
                 <td className="px-4 py-3">
-                  <button onClick={() => setViewing(o)} className="text-ink-soft hover:text-ink" aria-label="View"><FiEye size={15} /></button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setViewing(o)}
+                      className="rounded-lg p-1.5 text-ink-soft transition hover:bg-bone-muted hover:text-ink"
+                      aria-label="View"
+                      title="View details"
+                    >
+                      <FiEye size={15} />
+                    </button>
+                    <button
+                      onClick={() => requestDeleteOrder(o)}
+                      className="rounded-lg p-1.5 text-ink-muted transition hover:bg-sale/10 hover:text-sale"
+                      aria-label="Delete"
+                      title="Delete order"
+                    >
+                      <FiTrash2 size={15} />
+                    </button>
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setViewing(o)} className="font-medium text-ink hover:text-gold-deep">{shortId(o._id)}</button>
@@ -165,17 +506,34 @@ export default function AdminOrders() {
                 <td className="px-4 py-3"><PaymentStatusBadge status={o.paymentStatus} /></td>
                 <td className="px-4 py-3">
                   <select
-                    value={o.status}
+                    value={normalizeOrderStatus(o.status)}
                     onChange={(e) => requestStatusChange(o, e.target.value)}
-                    className="rounded-lg border border-hairline bg-bone px-2 py-1.5 text-xs text-ink-soft outline-none focus:border-gold"
+                    className="rounded-lg border border-hairline bg-bone px-2 py-1.5 text-xs font-medium text-ink-soft outline-none focus:border-gold"
                   >
-                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    {ORDER_STATUS_OPTIONS.map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
                   </select>
                 </td>
               </tr>
             ))}
             {!loading && orders.length === 0 && (
-              <tr><td colSpan={9} className="py-10 text-center text-ink-muted">{q ? `No orders match “${q}”.` : 'No orders found.'}</td></tr>
+              <tr>
+                <td colSpan={9} className="py-12 text-center text-ink-muted">
+                  <p>{hasActiveFilters ? 'No orders match the selected filters.' : 'No orders found.'}</p>
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={clearAllFilters}
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-gold-deep hover:underline"
+                    >
+                      <FiX size={12} /> Clear all filters
+                    </button>
+                  )}
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
@@ -198,16 +556,30 @@ export default function AdminOrders() {
           </div>
         )}
         footer={viewing && (
-          <label className="flex items-center justify-between gap-3">
-            <span className="text-sm font-medium text-ink">Update status</span>
-            <select
-              value={viewing.status}
-              onChange={(e) => requestStatusChange(viewing, e.target.value)}
-              className="rounded-lg border border-hairline bg-bone px-3 py-2 text-sm text-ink-soft outline-none focus:border-gold"
+          <div className="flex w-full flex-wrap items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => requestDeleteOrder(viewing)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-bone-soft px-3.5 py-2 text-xs font-semibold text-sale transition hover:border-sale/50 hover:bg-sale/10"
+              title="Delete this order"
             >
-              {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </label>
+              <FiTrash2 size={14} /> Delete Order
+            </button>
+            <label className="flex items-center gap-3">
+              <span className="text-sm font-medium text-ink">Update status:</span>
+              <select
+                value={normalizeOrderStatus(viewing.status)}
+                onChange={(e) => requestStatusChange(viewing, e.target.value)}
+                className="rounded-lg border border-hairline bg-bone px-3 py-2 text-sm font-medium text-ink-soft outline-none focus:border-gold"
+              >
+                {ORDER_STATUS_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         )}
       >
         {viewing && (
@@ -357,8 +729,13 @@ export default function AdminOrders() {
             <p className="text-xs leading-relaxed text-ink-soft">
               Are you sure you want to change the status of{' '}
               <strong className="text-ink font-semibold">{statusConfirm.orderNumber}</strong> from{' '}
-              <span className="font-semibold uppercase text-ink">{statusConfirm.currentStatus}</span> to{' '}
-              <span className="font-semibold uppercase text-gold-deep">{statusConfirm.newStatus}</span>?
+              <span className="font-semibold uppercase text-ink">
+                {statusLabelFor(statusConfirm.currentStatus)}
+              </span>{' '}
+              to{' '}
+              <span className="font-semibold uppercase text-gold-deep">
+                {statusLabelFor(statusConfirm.newStatus)}
+              </span>?
             </p>
 
             {statusConfirm.newStatus === 'delivered' && (
@@ -369,7 +746,7 @@ export default function AdminOrders() {
 
             {statusConfirm.newStatus === 'shipped' && (
               <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3 text-xs text-blue-800">
-                <strong>Shipment Notice:</strong> This will mark the order as dispatched and update customer tracking.
+                <strong>Processing &amp; Shipping Notice:</strong> This will mark the order as processed / dispatched and update tracking for the customer.
               </div>
             )}
 
@@ -378,6 +755,76 @@ export default function AdminOrders() {
                 <strong>Warning:</strong> Marking an order as {statusConfirm.newStatus} cannot be undone automatically and may trigger customer notifications or refund adjustments.
               </div>
             )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Delete order confirmation modal */}
+      <Modal
+        open={!!orderToDelete}
+        onClose={() => !deletingOrder && setOrderToDelete(null)}
+        title="Delete Order"
+        subtitle={
+          orderToDelete && (
+            <span className="text-xs text-ink-muted">
+              {orderToDelete.orderNumber} · {orderToDelete.customerName}
+            </span>
+          )
+        }
+        maxWidth="max-w-md"
+        footer={
+          orderToDelete && (
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                disabled={deletingOrder}
+                onClick={() => setOrderToDelete(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                disabled={deletingOrder}
+                onClick={handleConfirmDeleteOrder}
+                className="bg-sale text-bone hover:bg-sale/90 border-transparent shadow-xs"
+              >
+                {deletingOrder ? 'Deleting…' : 'Delete Order'}
+              </Button>
+            </div>
+          )
+        }
+      >
+        {orderToDelete && (
+          <div className="space-y-4 text-sm text-ink-soft">
+            <div className="rounded-xl border border-sale/30 bg-sale/5 p-4 text-xs text-sale leading-relaxed">
+              <p className="font-semibold text-sale mb-1 flex items-center gap-1.5">
+                <FiTrash2 size={14} /> Permanently delete this order?
+              </p>
+              <p>This action cannot be undone. Order records, payment details, and audit logs will be permanently deleted for clean-up.</p>
+            </div>
+
+            <div className="rounded-xl border border-hairline/80 bg-bone p-3.5 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-ink-muted">Order ID:</span>
+                <span className="font-mono font-bold text-ink">{orderToDelete.orderNumber}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-ink-muted">Customer:</span>
+                <span className="font-semibold text-ink">{orderToDelete.customerName}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-ink-muted">Total:</span>
+                <span className="font-semibold text-ink">{formatINR(orderToDelete.total)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-ink-muted">Status:</span>
+                <OrderStatusBadge status={orderToDelete.status} />
+              </div>
+            </div>
           </div>
         )}
       </Modal>

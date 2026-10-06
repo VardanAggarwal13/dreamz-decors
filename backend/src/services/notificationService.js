@@ -93,14 +93,14 @@ async function dispatchExternal(doc, { user, type, title, message, link, email, 
           emailContext?.order?.shippingAddress?.name ||
           'there';
 
-        const { subject, html } = buildEmail(type, {
+        const { subject, html, text: plainText } = buildEmail(type, {
           name: recipientName,
           title,
           message,
           link,
           ...emailContext,
         });
-        const sentEmail = await sendEmail({ to: recipientEmail, subject, html, text: message });
+        const sentEmail = await sendEmail({ to: recipientEmail, subject, html, text: plainText || message });
         if (sentEmail) {
           doc.channels.email = true;
           doc.markModified('channels');

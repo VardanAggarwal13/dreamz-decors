@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiUploadCloud, FiEye, FiHelpCircle } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiUploadCloud, FiEye, FiHelpCircle, FiLayers, FiCopy, FiList, FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import { Input } from '@/components/ui/Input';
@@ -43,6 +43,12 @@ export default function AdminProducts() {
   const [imgLink, setImgLink] = useState('');
   const [guideOpen, setGuideOpen] = useState(false);
   const [newFrameName, setNewFrameName] = useState('');
+  const [matrixViewMode, setMatrixViewMode] = useState('cards'); // 'cards' | 'flat'
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
+  const [copyTargetFrame, setCopyTargetFrame] = useState('');
+  const [copySourceFrame, setCopySourceFrame] = useState('');
+  const [copyPriceMarkup, setCopyPriceMarkup] = useState('');
+  const [collapsedFrames, setCollapsedFrames] = useState({});
   const fileRef = useRef(null);
   useBodyScrollLock(!!editing); // view modal manages its own lock via <Modal/>
 
@@ -65,6 +71,9 @@ export default function AdminProducts() {
       frameOptions: [...PRESET_FRAMES],
       variants: [{ size: '18x36', frame: 'Without Frame', price: '', mrp: '', stock: 10 }],
     });
+    setMatrixViewMode('cards');
+    setCopyModalOpen(false);
+    setCollapsedFrames({});
     setEditing({});
   };
 
@@ -98,6 +107,9 @@ export default function AdminProducts() {
       images: p.images || [],
       variants: initialVariants,
     });
+    setMatrixViewMode('cards');
+    setCopyModalOpen(false);
+    setCollapsedFrames({});
     setEditing(p);
   };
 
@@ -105,20 +117,18 @@ export default function AdminProducts() {
   const editFromView = (p) => { setViewing(null); openEdit(p); };
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const toggleFrameOption = (frameName) => {
-    setForm((f) => {
-      const current = f.frameOptions || [];
-      const exists = current.includes(frameName);
-      const next = exists ? current.filter((x) => x !== frameName) : [...current, frameName];
-      return { ...f, frameOptions: next };
-    });
+  const toggleCollapseFrame = (frameName) => {
+    setCollapsedFrames((prev) => ({
+      ...prev,
+      [frameName]: !prev[frameName],
+    }));
   };
 
-  const addCustomFrameOption = () => {
-    const trimmed = newFrameName.trim();
+  const addFrameOption = (frameName) => {
+    const trimmed = String(frameName || newFrameName).trim();
     if (!trimmed) return;
     if ((form.frameOptions || []).some((f) => f.toLowerCase() === trimmed.toLowerCase())) {
-      toast.info(`Frame "${trimmed}" is already added`);
+      toast.info(`Frame "${trimmed}" is already enabled.`);
       return;
     }
     setForm((f) => ({
@@ -126,64 +136,182 @@ export default function AdminProducts() {
       frameOptions: [...(f.frameOptions || []), trimmed],
     }));
     setNewFrameName('');
-    toast.success(`Added "${trimmed}" to framing finishes`);
+    toast.success(`Frame "${trimmed}" enabled. You can now add sizes for it below.`);
+  };
+
+  const removeFrameWithConfirmation = (frameName) => {
+    if ((form.frameOptions || []).length <= 1) {
+      toast.info('At least one framing option is required for a product.');
+      return;
+    }
+    const matchingVariants = (form.variants || []).filter(
+      (v) => (v.frame || '').toLowerCase() === frameName.toLowerCase()
+    );
+    const count = matchingVariants.length;
+    const msg = count > 0
+      ? `Remove frame "${frameName}" and its ${count} size variant(s)?`
+      : `Remove frame "${frameName}" from framing options?`;
+    if (!window.confirm(msg)) return;
+
+    setForm((f) => {
+      const nextFrames = (f.frameOptions || []).filter((fr) => fr.toLowerCase() !== frameName.toLowerCase());
+      const nextVariants = f.variants.filter((v) => (v.frame || '').toLowerCase() !== frameName.toLowerCase());
+      const finalVariants = nextVariants.length > 0
+        ? nextVariants
+        : [{ size: '18x36', frame: nextFrames[0] || 'Without Frame', price: '', mrp: '', stock: 10 }];
+
+
+      return {
+        ...f,
+        frameOptions: nextFrames,
+        variants: finalVariants,
+      };
+    });
+    toast.success(`Removed "${frameName}"`);
+  };
+
+  const toggleFrameOption = (frameName) => {
+    const isEnabled = (form.frameOptions || []).some(
+      (f) => f.toLowerCase() === frameName.toLowerCase()
+    );
+    if (isEnabled) {
+      removeFrameWithConfirmation(frameName);
+    } else {
+      addFrameOption(frameName);
+    }
+  };
+
+  const openCopyModalForFrame = (targetFrame) => {
+    setCopyTargetFrame(targetFrame);
+    const possibleSources = (form.frameOptions || []).filter(
+      (fr) =>
+        fr.toLowerCase() !== targetFrame.toLowerCase() &&
+        form.variants.some((v) => (v.frame || '').toLowerCase() === fr.toLowerCase())
+    );
+    setCopySourceFrame(possibleSources[0] || '');
+    setCopyPriceMarkup('');
+    setCopyModalOpen(true);
+  };
+
+  const copySizesToAllEmptyFrames = (markup = 500) => {
+    const sourceFrame = (form.frameOptions || []).find((fr) =>
+      form.variants.some((v) => (v.frame || '').toLowerCase() === fr.toLowerCase())
+    );
+    if (!sourceFrame) {
+      toast.info('Please configure sizes for at least one frame first.');
+      return;
+    }
+    const sourceVariants = form.variants.filter(
+      (v) => (v.frame || '').toLowerCase() === sourceFrame.toLowerCase()
+    );
+
+    const emptyFrames = (form.frameOptions || []).filter(
+      (fr) =>
+        fr.toLowerCase() !== sourceFrame.toLowerCase() &&
+        !form.variants.some((v) => (v.frame || '').toLowerCase() === fr.toLowerCase())
+    );
+
+    if (emptyFrames.length === 0) {
+      toast.info('All enabled frames already have sizes configured.');
+      return;
+    }
+
+    const numMarkup = Number(markup) || 0;
+    const newVariants = [...form.variants];
+
+    emptyFrames.forEach((targetFrame) => {
+      sourceVariants.forEach((v) => {
+        const newPrice = v.price !== '' ? Math.max(0, Number(v.price) + numMarkup) : '';
+        const newMrp = v.mrp !== '' ? Math.max(0, Number(v.mrp) + numMarkup) : '';
+        newVariants.push({
+          size: v.size,
+          frame: targetFrame,
+          price: newPrice,
+          mrp: newMrp,
+          stock: v.stock != null ? v.stock : 10,
+        });
+      });
+    });
+
+    setForm((f) => ({ ...f, variants: newVariants }));
+    toast.success(`Copied sizes from "${sourceFrame}" to ${emptyFrames.length} empty frame(s)${numMarkup ? ` (+₹${numMarkup} markup)` : ''}!`);
+  };
+
+  const addSizeToFrame = (frameName, presetSize = '') => {
+    const targetFrame = frameName || form.frameOptions?.[0] || 'Without Frame';
+    setForm((f) => ({
+      ...f,
+      variants: [
+        ...f.variants,
+        { size: presetSize || '', frame: targetFrame, price: '', mrp: '', stock: 10 },
+      ],
+    }));
+  };
+
+  const copySizesFromFrame = (sourceFrame, targetFrame, markup = 0) => {
+    if (!sourceFrame || !targetFrame || sourceFrame === targetFrame) {
+      toast.info('Please select a different source frame to copy from.');
+      return;
+    }
+    const numMarkup = Number(markup) || 0;
+
+    setForm((f) => {
+      const sourceVariants = f.variants.filter(
+        (v) => (v.frame || '').toLowerCase() === sourceFrame.toLowerCase()
+      );
+      if (sourceVariants.length === 0) {
+        toast.info(`No sizes found in "${sourceFrame}" to copy.`);
+        return f;
+      }
+
+      const existingInTarget = new Set(
+        f.variants
+          .filter((v) => (v.frame || '').toLowerCase() === targetFrame.toLowerCase())
+          .map((v) => (v.size || '').toLowerCase().trim())
+      );
+
+      const added = [];
+      sourceVariants.forEach((v) => {
+        const sKey = (v.size || '').toLowerCase().trim();
+        if (!existingInTarget.has(sKey)) {
+          const newPrice = v.price !== '' ? Math.max(0, Number(v.price) + numMarkup) : '';
+          const newMrp = v.mrp !== '' ? Math.max(0, Number(v.mrp) + numMarkup) : '';
+          added.push({
+            size: v.size,
+            frame: targetFrame,
+            price: newPrice,
+            mrp: newMrp,
+            stock: v.stock != null ? v.stock : 10,
+          });
+        }
+      });
+
+      if (added.length === 0) {
+        toast.info(`All sizes from "${sourceFrame}" already exist in "${targetFrame}".`);
+        return f;
+      }
+
+      toast.success(`Copied ${added.length} size(s) from "${sourceFrame}" to "${targetFrame}"${numMarkup ? ` (+₹${numMarkup})` : ''}`);
+      return {
+        ...f,
+        variants: [...f.variants, ...added],
+      };
+    });
+    setCopyModalOpen(false);
+    setCopyPriceMarkup('');
   };
 
   const addVariantRow = (presetSize = '', defaultFrame = '') => {
     setForm((f) => {
-      let chosenSize = presetSize;
-      if (!chosenSize) {
-        const used = new Set(f.variants.map((v) => (v.size || '').trim().toLowerCase()));
-        chosenSize = SUGGESTED_SIZES.find((s) => !used.has(s.toLowerCase())) || '24x24';
-      }
       const chosenFrame = defaultFrame || (f.frameOptions && f.frameOptions[0]) || 'Without Frame';
       return {
         ...f,
         variants: [
           ...f.variants,
-          { size: chosenSize, frame: chosenFrame, price: '', mrp: '', stock: 10 },
+          { size: presetSize || '', frame: chosenFrame, price: '', mrp: '', stock: 10 },
         ],
       };
     });
-  };
-
-  const generateFramesForFirstSize = () => {
-    const targetSize = form.variants[0]?.size || '18x36';
-    const basePrice = form.variants[0]?.price || form.price || '';
-    const baseMrp = form.variants[0]?.mrp || form.mrp || '';
-    const baseStock = form.variants[0]?.stock != null ? form.variants[0].stock : 10;
-    const framesToApply = form.frameOptions && form.frameOptions.length > 0
-      ? form.frameOptions
-      : PRESET_FRAMES;
-
-    const existingKeys = new Set(
-      form.variants.map((v) => `${(v.size || '').toLowerCase()}::${(v.frame || '').toLowerCase()}`)
-    );
-
-    const newRows = [];
-    framesToApply.forEach((fr) => {
-      const key = `${targetSize.toLowerCase()}::${fr.toLowerCase()}`;
-      if (!existingKeys.has(key)) {
-        newRows.push({
-          size: targetSize,
-          frame: fr,
-          price: basePrice,
-          mrp: baseMrp,
-          stock: baseStock,
-        });
-      }
-    });
-
-    if (newRows.length === 0) {
-      toast.info(`All active frames already exist for size ${targetSize}`);
-      return;
-    }
-
-    setForm((f) => ({
-      ...f,
-      variants: [...f.variants, ...newRows],
-    }));
-    toast.success(`Generated ${newRows.length} framing options for ${targetSize}`);
   };
 
   const updateVariantRow = (idx, field, val) => {
@@ -272,14 +400,18 @@ export default function AdminProducts() {
       ? cleanedVariants[0].mrp
       : (form.mrp ? Number(form.mrp) : undefined);
 
+    const baseStock = cleanedVariants.length > 0
+      ? cleanedVariants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0)
+      : (Number(form.stock) || 0);
+
     const payload = {
       title: form.title,
-      slug: form.slug || slugify(form.title),
+      slug: slugify(form.slug || form.title),
       description: form.description,
       category: form.category || undefined,
       price: basePrice,
       mrp: baseMrp,
-      stock: Number(form.stock) || 0,
+      stock: baseStock,
       badge: form.badge || undefined,
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
       images: form.images,
@@ -438,250 +570,689 @@ export default function AdminProducts() {
               </Field>
             </div>
 
-            {/* ── Framing Options & Finishes (Admin Dynamic Authority) ──── */}
-            <div className="mt-5 rounded-2xl border border-hairline/80 bg-bone p-4 sm:p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="block text-[12px] font-bold uppercase tracking-[0.16em] text-ink">
-                      🖼️ Framing Options &amp; Finishes
-                    </span>
-                    <span className="rounded-full bg-gold/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-deep">
-                      Admin Authority
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-ink-muted">
-                    Enable preset frames or add custom dynamic frame finishes (like Antique Frame, Stretched Frame, Floater Frame) that appear in the customer selector.
-                  </p>
-                </div>
-              </div>
+            {/* ── Frame-First Pricing & Size Manager (Multi-Frame Stacked Cards) ──── */}
+            {(() => {
+              const enabledFrames = form.frameOptions || [];
+              const allAvailableFrames = [
+                ...PRESET_FRAMES,
+                ...enabledFrames.filter((f) => !PRESET_FRAMES.includes(f)),
+              ];
 
-              {/* Active Frame Badges with remove buttons */}
-              <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                {(form.frameOptions || []).map((fr) => (
-                  <span
-                    key={fr}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-gold/50 bg-gold/10 px-3 py-1 text-xs font-semibold text-ink shadow-2xs"
-                  >
-                    <span>{fr}</span>
-                    <button
-                      type="button"
-                      onClick={() => toggleFrameOption(fr)}
-                      className="rounded-full p-0.5 text-ink/60 transition hover:bg-gold/25 hover:text-ink"
-                      title={`Remove ${fr}`}
-                    >
-                      <FiX size={12} />
-                    </button>
-                  </span>
-                ))}
-                {(!form.frameOptions || form.frameOptions.length === 0) && (
-                  <span className="text-xs italic text-ink-muted">No frame finishes enabled for this product.</span>
-                )}
-              </div>
+              const framesWithSizes = enabledFrames.filter((fr) =>
+                form.variants.some((v) => (v.frame || '').toLowerCase() === fr.toLowerCase())
+              );
 
-              {/* Preset Quick Toggles */}
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
-                <span className="text-[11px] font-semibold text-ink-muted mr-1">Presets:</span>
-                {PRESET_FRAMES.map((preset) => {
-                  const isActive = (form.frameOptions || []).includes(preset);
-                  return (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => toggleFrameOption(preset)}
-                      className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                        isActive
-                          ? 'border-gold bg-gold/20 text-gold-deep font-semibold shadow-2xs'
-                          : 'border-hairline bg-bone-soft text-ink-soft hover:border-gold/60 hover:text-ink'
-                      }`}
-                    >
-                      {isActive ? `✓ ${preset}` : `+ ${preset}`}
-                    </button>
-                  );
-                })}
-              </div>
+              const emptyFrames = enabledFrames.filter(
+                (fr) => !form.variants.some((v) => (v.frame || '').toLowerCase() === fr.toLowerCase())
+              );
 
-              {/* Add Custom Dynamic Frame Input */}
-              <div className="mt-3.5 flex items-center gap-2">
-                <input
-                  value={newFrameName}
-                  onChange={(e) => setNewFrameName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addCustomFrameOption();
-                    }
-                  }}
-                  placeholder="Type dynamic frame option (e.g. Antique Gold Frame, Floater Frame)..."
-                  className="min-w-0 flex-1 rounded-lg border border-hairline bg-white px-3 py-1.5 text-xs text-ink placeholder:text-ink-muted outline-none transition focus:border-gold"
-                />
-                <button
-                  type="button"
-                  onClick={addCustomFrameOption}
-                  className="shrink-0 rounded-lg border border-gold/40 bg-gold/15 px-3 py-1.5 text-xs font-semibold text-gold-deep transition hover:bg-gold/25 active:scale-95"
-                >
-                  + Add Custom Frame
-                </button>
-              </div>
-            </div>
+              const firstFrameWithSizes = framesWithSizes[0] || '';
 
-            {/* Size & Framing Variants Matrix Section */}
-            <div className="mt-5 rounded-2xl border border-gold/30 bg-gradient-to-b from-gold/5 via-bone to-bone p-4 sm:p-5 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <div>
-                  <span className="block text-[12px] font-bold uppercase tracking-[0.16em] text-gold-deep">
-                    📏 Size &amp; Framing Variants (Pricing Matrix)
-                  </span>
-                  <p className="text-[11px] text-ink-muted mt-0.5">
-                    Configure price, MRP, and stock for each Size and Frame combination.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => addVariantRow()}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-gold/60 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold-deep transition hover:bg-gold hover:text-ink active:scale-95"
-                  >
-                    <FiPlus size={14} /> Add Row
-                  </button>
-                  {(form.frameOptions?.length || 0) > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => generateFramesForFirstSize()}
-                      className="inline-flex items-center gap-1 rounded-xl border border-hairline bg-bone-soft px-2.5 py-1.5 text-xs font-medium text-ink-soft transition hover:border-gold hover:text-gold-deep"
-                      title="Quick-generate all active frame finishes for the current size"
-                    >
-                      ⚡ Apply All Frames to Size
-                    </button>
-                  )}
-                </div>
-              </div>
+              const activeTargetForModal = copyTargetFrame || (emptyFrames[0] || enabledFrames[0] || '');
+              const possibleSourcesForModal = enabledFrames.filter(
+                (fr) =>
+                  fr.toLowerCase() !== activeTargetForModal.toLowerCase() &&
+                  form.variants.some((v) => (v.frame || '').toLowerCase() === fr.toLowerCase())
+              );
+              const selectedSourceForModal =
+                copySourceFrame && possibleSourcesForModal.includes(copySourceFrame)
+                  ? copySourceFrame
+                  : possibleSourcesForModal[0] || '';
 
-              {/* Quick Add Suggestions */}
-              <div className="mb-3.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-                <span className="text-ink-muted">Quick add size:</span>
-                {SUGGESTED_SIZES.map((sz) => (
-                  <button
-                    key={sz}
-                    type="button"
-                    onClick={() => addVariantRow(sz)}
-                    className="rounded-lg border border-hairline/80 bg-bone-soft px-2 py-0.5 text-ink-soft transition hover:border-gold hover:text-gold-deep"
-                  >
-                    +{sz}"
-                  </button>
-                ))}
-              </div>
+              const sourceVariantsForModal = selectedSourceForModal
+                ? form.variants.filter((v) => (v.frame || '').toLowerCase() === selectedSourceForModal.toLowerCase())
+                : [];
 
-              {/* Variant Rows Table */}
-              <div className="space-y-2.5">
-                {form.variants.map((v, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex flex-wrap items-center gap-2.5 rounded-xl border p-2.5 transition sm:flex-nowrap ${
-                      idx === 0
-                        ? 'border-gold/50 bg-gold/[0.04] shadow-xs'
-                        : 'border-hairline/80 bg-bone-soft'
-                    }`}
-                  >
-                    {/* Default Badge */}
-                    <div className="w-full sm:w-auto shrink-0 flex items-center justify-between sm:justify-start">
-                      <span className="text-[10px] font-mono font-bold text-ink-muted w-5">
-                        #{idx + 1}
-                      </span>
-                      {idx === 0 ? (
-                        <span className="rounded-md bg-gold/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-deep">
-                          Default
+              return (
+                <div className="mt-5 rounded-2xl border border-gold/40 bg-gradient-to-b from-gold/[0.05] via-bone-soft to-bone p-4 sm:p-5 shadow-xs">
+                  {/* Top Bar: Section Title + Master View Switcher */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline/60 pb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="block text-[12px] font-bold uppercase tracking-[0.16em] text-ink">
+                          🖼️ Frame &amp; Size Pricing Manager
                         </span>
-                      ) : (
-                        <span className="sm:hidden text-[10px] text-ink-muted">Option</span>
+                        <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-deep">
+                          Admin Authority
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-ink-muted">
+                        Select multiple frames for this product below. Each selected frame gets its own dedicated size &amp; pricing card.
+                      </p>
+                    </div>
+
+                    {/* View Switcher: Stacked Frame Cards vs Flat Master Table */}
+                    <div className="flex items-center rounded-xl border border-hairline bg-bone-muted p-1 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setMatrixViewMode('cards')}
+                        className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                          matrixViewMode === 'cards'
+                            ? 'bg-white text-ink shadow-xs'
+                            : 'text-ink-muted hover:text-ink'
+                        }`}
+                      >
+                        <FiLayers size={13} className={matrixViewMode === 'cards' ? 'text-gold-deep' : ''} />
+                        Frame Cards ({enabledFrames.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMatrixViewMode('flat')}
+                        className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                          matrixViewMode === 'flat'
+                            ? 'bg-white text-ink shadow-xs'
+                            : 'text-ink-muted hover:text-ink'
+                        }`}
+                      >
+                        <FiList size={13} className={matrixViewMode === 'flat' ? 'text-gold-deep' : ''} />
+                        All Sizes Table ({form.variants.length})
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Multi-Select Framing Options Checkboxes */}
+                  <div className="mt-3.5 space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-ink">
+                        Select Frames Available for this Product (Check Multiple):
+                      </span>
+                      <span className="text-[11px] text-ink-muted">
+                        {enabledFrames.length} selected · {form.variants.length} total size variants
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {allAvailableFrames.map((fr) => {
+                        const isChecked = enabledFrames.includes(fr);
+                        const isPreset = PRESET_FRAMES.includes(fr);
+                        const count = form.variants.filter(
+                          (v) => (v.frame || '').toLowerCase() === fr.toLowerCase()
+                        ).length;
+
+                        return (
+                          <label
+                            key={fr}
+                            className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition select-none ${
+                              isChecked
+                                ? 'border-gold bg-gold/15 text-ink font-semibold shadow-xs ring-1 ring-gold/40'
+                                : 'border-hairline bg-white/90 text-ink-muted hover:border-gold/50 hover:bg-gold/5 hover:text-ink'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleFrameOption(fr)}
+                              className="h-4 w-4 rounded border-hairline accent-gold cursor-pointer"
+                            />
+                            <span>{fr}</span>
+                            {isChecked && (
+                              <span className="rounded-full bg-gold/30 px-2 py-0.2 text-[10px] font-bold text-gold-deep">
+                                {count} {count === 1 ? 'size' : 'sizes'}
+                              </span>
+                            )}
+                            {!isPreset && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  removeFrameWithConfirmation(fr);
+                                }}
+                                className="rounded p-0.5 text-ink-muted hover:text-sale"
+                                title={`Delete custom frame ${fr}`}
+                              >
+                                <FiX size={12} />
+                              </button>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    {/* Add Custom Frame Option Input */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <div className="flex flex-1 items-center gap-1.5 min-w-[260px]">
+                        <input
+                          value={newFrameName}
+                          onChange={(e) => setNewFrameName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addFrameOption(newFrameName);
+                            }
+                          }}
+                          placeholder="Add custom frame finish (e.g. Floater Frame, Champagne Gold)..."
+                          className="min-w-0 flex-1 rounded-lg border border-hairline bg-white px-3 py-1.5 text-xs text-ink placeholder:text-ink-muted outline-none focus:border-gold"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => addFrameOption(newFrameName)}
+                          className="shrink-0 rounded-lg border border-gold/40 bg-gold/15 px-3 py-1.5 text-xs font-semibold text-gold-deep transition hover:bg-gold/25 active:scale-95"
+                        >
+                          + Add Frame
+                        </button>
+                      </div>
+
+                      {/* Expand / Collapse All */}
+                      {enabledFrames.length > 1 && matrixViewMode === 'cards' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const allAreCollapsed = enabledFrames.every((fr) => collapsedFrames[fr]);
+                            const next = {};
+                            if (!allAreCollapsed) {
+                              enabledFrames.forEach((fr) => { next[fr] = true; });
+                            }
+                            setCollapsedFrames(next);
+                          }}
+                          className="text-[11px] font-medium text-ink-muted hover:text-gold-deep transition underline"
+                        >
+                          {enabledFrames.every((fr) => collapsedFrames[fr]) ? 'Expand All Cards' : 'Collapse All Cards'}
+                        </button>
                       )}
                     </div>
 
-                    {/* Size Input */}
-                    <div className="flex-1 min-w-[95px] sm:min-w-[100px]">
-                      <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Size (Inches)</span>
-                      <input
-                        value={v.size}
-                        onChange={(e) => updateVariantRow(idx, 'size', e.target.value)}
-                        placeholder="18x36"
-                        className="w-full rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-xs font-medium text-ink placeholder:text-ink-muted outline-none focus:border-gold"
-                      />
-                    </div>
-
-                    {/* Frame Finish Selector */}
-                    <div className="flex-1 min-w-[130px] sm:min-w-[160px]">
-                      <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Frame Finish</span>
-                      <select
-                        value={v.frame || ''}
-                        onChange={(e) => updateVariantRow(idx, 'frame', e.target.value)}
-                        className="w-full rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-xs font-medium text-ink outline-none focus:border-gold"
-                      >
-                        <option value="">No Frame / Default</option>
-                        {(form.frameOptions || []).map((fr) => (
-                          <option key={fr} value={fr}>{fr}</option>
-                        ))}
-                        {v.frame && !(form.frameOptions || []).includes(v.frame) && (
-                          <option value={v.frame}>{v.frame}</option>
-                        )}
-                      </select>
-                    </div>
-
-                    {/* Price Input */}
-                    <div className="w-24 sm:w-28">
-                      <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Price (₹)</span>
-                      <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-muted">₹</span>
-                        <input
-                          type="number"
-                          value={v.price}
-                          onChange={(e) => updateVariantRow(idx, 'price', e.target.value)}
-                          placeholder="1600"
-                          className="w-full rounded-lg border border-hairline bg-white pl-6 pr-2.5 py-1.5 text-xs font-bold text-ink placeholder:text-ink-muted outline-none focus:border-gold"
-                        />
+                    {/* Quick-fill helper banner if some frames have 0 sizes */}
+                    {emptyFrames.length > 0 && firstFrameWithSizes && matrixViewMode === 'cards' && (
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gold/40 bg-gold/10 p-2.5 sm:p-3 text-xs">
+                        <div className="flex items-center gap-2 text-ink">
+                          <span className="text-sm font-bold">⚡ Quick Fill:</span>
+                          <span className="text-[11px] sm:text-xs">
+                            You have <strong>{emptyFrames.length}</strong> empty frame(s). Clone all sizes from <strong>{firstFrameWithSizes}</strong>?
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => copySizesToAllEmptyFrames(500)}
+                            className="rounded-lg border border-gold bg-gold px-2.5 py-1 text-[11px] font-bold text-ink hover:bg-gold-light active:scale-95 shadow-2xs"
+                          >
+                            Copy All (+₹500 markup)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => copySizesToAllEmptyFrames(0)}
+                            className="rounded-lg border border-hairline bg-white px-2 py-1 text-[11px] font-semibold text-ink hover:border-gold active:scale-95"
+                          >
+                            Copy Exact (+₹0)
+                          </button>
+                        </div>
                       </div>
-                    </div>
-
-                    {/* MRP Input */}
-                    <div className="w-20 sm:w-24">
-                      <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">MRP (₹)</span>
-                      <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-muted">₹</span>
-                        <input
-                          type="number"
-                          value={v.mrp || ''}
-                          onChange={(e) => updateVariantRow(idx, 'mrp', e.target.value)}
-                          placeholder="MRP"
-                          className="w-full rounded-lg border border-hairline bg-white pl-6 pr-2.5 py-1.5 text-xs text-ink-soft placeholder:text-ink-muted outline-none focus:border-gold"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Stock */}
-                    <div className="w-14 sm:w-16">
-                      <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Stock</span>
-                      <input
-                        type="number"
-                        value={v.stock != null ? v.stock : 10}
-                        onChange={(e) => updateVariantRow(idx, 'stock', e.target.value)}
-                        placeholder="Stock"
-                        className="w-full rounded-lg border border-hairline bg-white px-2 py-1.5 text-xs text-center text-ink outline-none focus:border-gold"
-                      />
-                    </div>
-
-                    {/* Remove Button */}
-                    <button
-                      type="button"
-                      onClick={() => removeVariantRow(idx)}
-                      disabled={form.variants.length <= 1}
-                      className="rounded-lg p-1.5 text-ink-muted transition hover:bg-sale/10 hover:text-sale disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-muted"
-                      title="Remove variant"
-                    >
-                      <FiTrash2 size={14} />
-                    </button>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
+
+                  {/* ── Mode 1: STACKED MULTI-FRAME CARDS ──── */}
+                  {matrixViewMode === 'cards' && (
+                    <div className="mt-4 space-y-3.5">
+                      {enabledFrames.map((fr) => {
+                        const isCollapsed = !!collapsedFrames[fr];
+                        const frameVariants = (form.variants || [])
+                          .map((v, originalIndex) => ({ ...v, originalIndex }))
+                          .filter((v) => (v.frame || '').toLowerCase() === fr.toLowerCase());
+
+                        const hasSizes = frameVariants.length > 0;
+                        const otherFramesWithSizes = framesWithSizes.filter(
+                          (other) => other.toLowerCase() !== fr.toLowerCase()
+                        );
+
+                        return (
+                          <div
+                            key={fr}
+                            className={`rounded-xl border transition shadow-2xs ${
+                              hasSizes
+                                ? 'border-gold/35 bg-white'
+                                : 'border-hairline/90 bg-bone-soft/80'
+                            }`}
+                          >
+                            {/* Card Header Bar */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 p-3 sm:px-4 border-b border-hairline/50">
+                              <div
+                                onClick={() => toggleCollapseFrame(fr)}
+                                className="flex items-center gap-2.5 cursor-pointer select-none"
+                              >
+                                <button
+                                  type="button"
+                                  className="text-ink-muted hover:text-ink transition"
+                                  aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                                >
+                                  {isCollapsed ? <FiChevronDown size={16} /> : <FiChevronUp size={16} />}
+                                </button>
+                                <span className="font-display text-sm font-semibold text-ink">
+                                  🖼️ {fr}
+                                </span>
+                                <span
+                                  className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                                    hasSizes
+                                      ? 'bg-gold/20 text-gold-deep'
+                                      : 'bg-bone-muted text-ink-muted'
+                                  }`}
+                                >
+                                  {frameVariants.length} {frameVariants.length === 1 ? 'Size' : 'Sizes'}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {otherFramesWithSizes.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => openCopyModalForFrame(fr)}
+                                    className="inline-flex items-center gap-1 rounded-lg border border-gold/40 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-gold-deep hover:bg-gold hover:text-ink transition active:scale-95"
+                                    title="Copy sizes and prices from another frame into this frame"
+                                  >
+                                    <FiCopy size={12} />
+                                    <span>Copy sizes</span>
+                                  </button>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (isCollapsed) toggleCollapseFrame(fr);
+                                    addSizeToFrame(fr);
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-bone-soft px-2.5 py-1 text-[11px] font-semibold text-ink hover:border-gold hover:text-gold-deep transition active:scale-95"
+                                >
+                                  <FiPlus size={12} /> Add Size
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Card Content (Sizes Table) */}
+                            {!isCollapsed && (
+                              <div className="p-3 sm:p-4">
+                                {/* Quick Add Size Chips for this frame */}
+                                <div className="mb-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+                                  <span className="font-medium text-ink-muted">Quick add size:</span>
+                                  {SUGGESTED_SIZES.map((sz) => {
+                                    const alreadyExists = frameVariants.some(
+                                      (v) => (v.size || '').toLowerCase().trim() === sz.toLowerCase().trim()
+                                    );
+                                    return (
+                                      <button
+                                        key={sz}
+                                        type="button"
+                                        onClick={() => addSizeToFrame(fr, sz)}
+                                        disabled={alreadyExists}
+                                        className={`rounded-lg border px-2 py-0.5 text-xs transition ${
+                                          alreadyExists
+                                            ? 'border-hairline bg-bone-muted text-ink-muted opacity-50 cursor-not-allowed'
+                                            : 'border-hairline bg-bone-soft text-ink-soft hover:border-gold hover:text-gold-deep'
+                                        }`}
+                                        title={alreadyExists ? `Size ${sz}" already added to ${fr}` : `Add ${sz}" to ${fr}`}
+                                      >
+                                        {alreadyExists ? `✓ ${sz}"` : `+ ${sz}"`}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+
+                                {hasSizes ? (
+                                  <div className="space-y-2">
+                                    <div className="hidden sm:grid sm:grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wider text-ink-muted px-2.5 py-1">
+                                      <span className="col-span-1">#</span>
+                                      <span className="col-span-3">Size (Inches)</span>
+                                      <span className="col-span-3">Selling Price (₹)</span>
+                                      <span className="col-span-2">MRP (₹)</span>
+                                      <span className="col-span-2 text-center">Stock</span>
+                                      <span className="col-span-1 text-right">Delete</span>
+                                    </div>
+
+                                    {frameVariants.map((v, i) => (
+                                      <div
+                                        key={v.originalIndex}
+                                        className={`flex flex-wrap items-center gap-2 rounded-xl border p-2.5 transition sm:grid sm:grid-cols-12 ${
+                                          v.originalIndex === 0
+                                            ? 'border-gold/50 bg-gold/[0.04]'
+                                            : 'border-hairline/80 bg-bone-soft/60'
+                                        }`}
+                                      >
+                                        {/* Order & Default Pill */}
+                                        <div className="col-span-1 flex items-center gap-1">
+                                          <span className="font-mono text-[11px] font-bold text-ink-muted">
+                                            #{i + 1}
+                                          </span>
+                                          {v.originalIndex === 0 && (
+                                            <span className="rounded bg-gold/20 px-1.5 py-0.2 text-[8px] font-bold uppercase tracking-wider text-gold-deep">
+                                              Main
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        {/* Size Input */}
+                                        <div className="col-span-3 min-w-[95px] flex-1 sm:flex-initial">
+                                          <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Size</span>
+                                          <input
+                                            value={v.size}
+                                            onChange={(e) => updateVariantRow(v.originalIndex, 'size', e.target.value)}
+                                            placeholder="e.g. 18x36"
+                                            className="w-full rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-xs font-semibold text-ink placeholder:text-ink-muted outline-none focus:border-gold"
+                                          />
+                                        </div>
+
+                                        {/* Selling Price (₹) */}
+                                        <div className="col-span-3 min-w-[90px] flex-1 sm:flex-initial">
+                                          <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Price (₹)</span>
+                                          <div className="relative">
+                                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gold-deep">₹</span>
+                                            <input
+                                              type="number"
+                                              value={v.price}
+                                              onChange={(e) => updateVariantRow(v.originalIndex, 'price', e.target.value)}
+                                              placeholder="1600"
+                                              className="w-full rounded-lg border border-hairline bg-white pl-6 pr-2 py-1.5 text-xs font-bold text-ink placeholder:text-ink-muted outline-none focus:border-gold"
+                                            />
+                                          </div>
+                                        </div>
+
+                                        {/* MRP (₹) */}
+                                        <div className="col-span-2 min-w-[80px] flex-1 sm:flex-initial">
+                                          <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">MRP (₹)</span>
+                                          <div className="relative">
+                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-ink-muted">₹</span>
+                                            <input
+                                              type="number"
+                                              value={v.mrp || ''}
+                                              onChange={(e) => updateVariantRow(v.originalIndex, 'mrp', e.target.value)}
+                                              placeholder="MRP"
+                                              className="w-full rounded-lg border border-hairline bg-white pl-5 pr-2 py-1.5 text-xs text-ink-soft placeholder:text-ink-muted outline-none focus:border-gold"
+                                            />
+                                          </div>
+                                        </div>
+
+                                        {/* Stock */}
+                                        <div className="col-span-2 min-w-[70px] w-20 sm:w-auto">
+                                          <span className="block sm:hidden text-[9px] uppercase font-bold text-ink-muted mb-0.5">Stock</span>
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            value={v.stock != null ? v.stock : 10}
+                                            onChange={(e) => updateVariantRow(v.originalIndex, 'stock', e.target.value)}
+                                            placeholder="10"
+                                            className="w-full rounded-lg border border-hairline bg-white px-2 py-1.5 text-xs text-center font-bold text-ink placeholder:text-ink-muted outline-none transition focus:border-gold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                          />
+                                        </div>
+
+                                        {/* Delete button */}
+                                        <div className="col-span-1 flex justify-end">
+                                          <button
+                                            type="button"
+                                            onClick={() => removeVariantRow(v.originalIndex)}
+                                            disabled={form.variants.length <= 1}
+                                            className="rounded-lg p-1.5 text-ink-muted transition hover:bg-sale/10 hover:text-sale disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-muted"
+                                            title="Remove this size"
+                                            aria-label="Remove this size"
+                                          >
+                                            <FiTrash2 size={14} />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  /* Empty State for this specific frame */
+                                  <div className="rounded-xl border border-dashed border-hairline/90 bg-white/70 p-4 text-center">
+                                    <p className="text-xs font-semibold text-ink">
+                                      No sizes configured for “{fr}” yet.
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-ink-muted">
+                                      Add sizes directly or copy in 1 click from another frame.
+                                    </p>
+                                    <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => addSizeToFrame(fr, '')}
+                                        className="inline-flex items-center gap-1 rounded-lg border border-gold/40 bg-gold/15 px-3 py-1.5 text-xs font-semibold text-gold-deep hover:bg-gold hover:text-ink transition"
+                                      >
+                                        <FiPlus size={12} /> Add Size Manually
+                                      </button>
+                                      {otherFramesWithSizes.length > 0 && (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={() => copySizesFromFrame(otherFramesWithSizes[0], fr, 500)}
+                                            className="inline-flex items-center gap-1 rounded-lg border border-gold/50 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold-deep hover:bg-gold hover:text-ink transition"
+                                          >
+                                            <FiCopy size={12} /> Copy from {otherFramesWithSizes[0]} (+₹500)
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => copySizesFromFrame(otherFramesWithSizes[0], fr, 0)}
+                                            className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-xs font-medium text-ink hover:border-gold transition"
+                                          >
+                                            Exact Price (+₹0)
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ── Mode 2: ALL VARIANTS FLAT MASTER TABLE ──── */}
+                  {matrixViewMode === 'flat' && (
+                    <div className="mt-4 rounded-xl border border-hairline bg-white p-3.5 sm:p-4 shadow-2xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline/60 pb-2.5 mb-3">
+                        <span className="text-xs font-bold uppercase tracking-wider text-ink">
+                          Master Variants Table ({form.variants.length} rows)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => addVariantRow('', enabledFrames[0] || 'Without Frame')}
+                          className="inline-flex items-center gap-1 rounded-lg border border-gold/50 bg-gold/10 px-2.5 py-1 text-xs font-semibold text-gold-deep hover:bg-gold/25"
+                        >
+                          <FiPlus size={13} /> Add Row
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {/* Table Header */}
+                        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-ink-muted">
+                          <span className="w-6">#</span>
+                          <span className="w-24 sm:w-28">Size (Inches)</span>
+                          <span className="flex-1 min-w-[130px]">Frame Finish</span>
+                          <span className="w-24">Price (₹)</span>
+                          <span className="w-20">MRP (₹)</span>
+                          <span className="w-20 text-center">Stock</span>
+                          <span className="w-7 text-right">Del</span>
+                        </div>
+
+                        {form.variants.map((v, idx) => (
+                          <div
+                            key={idx}
+                            className={`flex flex-wrap items-center gap-2 rounded-xl border p-2 sm:flex-nowrap ${
+                              idx === 0 ? 'border-gold/40 bg-gold/[0.04]' : 'border-hairline/80 bg-bone-soft/60'
+                            }`}
+                          >
+                            <span className="w-6 font-mono text-[11px] font-bold text-ink-muted">
+                              #{idx + 1}
+                            </span>
+
+                            {/* Size */}
+                            <div className="w-24 sm:w-28">
+                              <input
+                                value={v.size}
+                                onChange={(e) => updateVariantRow(idx, 'size', e.target.value)}
+                                placeholder="18x36"
+                                className="w-full rounded-lg border border-hairline bg-white px-2 py-1.5 text-xs font-medium text-ink outline-none focus:border-gold"
+                              />
+                            </div>
+
+                            {/* Frame Finish Selector */}
+                            <div className="flex-1 min-w-[130px]">
+                              <select
+                                value={v.frame || ''}
+                                onChange={(e) => updateVariantRow(idx, 'frame', e.target.value)}
+                                className="w-full rounded-lg border border-hairline bg-white px-2 py-1.5 text-xs font-medium text-ink outline-none focus:border-gold"
+                              >
+                                <option value="">No Frame / Default</option>
+                                {enabledFrames.map((fr) => (
+                                  <option key={fr} value={fr}>{fr}</option>
+                                ))}
+                                {v.frame && !enabledFrames.includes(v.frame) && (
+                                  <option value={v.frame}>{v.frame}</option>
+                                )}
+                              </select>
+                            </div>
+
+                            {/* Price */}
+                            <div className="w-24">
+                              <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-gold-deep">₹</span>
+                                <input
+                                  type="number"
+                                  value={v.price}
+                                  onChange={(e) => updateVariantRow(idx, 'price', e.target.value)}
+                                  placeholder="Price"
+                                  className="w-full rounded-lg border border-hairline bg-white pl-5 pr-1.5 py-1.5 text-xs font-bold text-ink outline-none focus:border-gold"
+                                />
+                              </div>
+                            </div>
+
+                            {/* MRP */}
+                            <div className="w-20">
+                              <div className="relative">
+                                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-ink-muted">₹</span>
+                                <input
+                                  type="number"
+                                  value={v.mrp || ''}
+                                  onChange={(e) => updateVariantRow(idx, 'mrp', e.target.value)}
+                                  placeholder="MRP"
+                                  className="w-full rounded-lg border border-hairline bg-white pl-4 pr-1 py-1.5 text-xs text-ink-soft outline-none focus:border-gold"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Stock */}
+                            <div className="w-20">
+                              <input
+                                type="number"
+                                min="0"
+                                value={v.stock != null ? v.stock : 10}
+                                onChange={(e) => updateVariantRow(idx, 'stock', e.target.value)}
+                                placeholder="10"
+                                className="w-full rounded-lg border border-hairline bg-white px-2 py-1.5 text-xs text-center font-bold text-ink outline-none transition focus:border-gold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                            </div>
+
+                            {/* Remove */}
+                            <button
+                              type="button"
+                              onClick={() => removeVariantRow(idx)}
+                              disabled={form.variants.length <= 1}
+                              className="rounded-lg p-1.5 text-ink-muted transition hover:bg-sale/10 hover:text-sale disabled:opacity-30"
+                            >
+                              <FiTrash2 size={13} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 1-CLICK COPY / CLONE MODAL POPUP ──── */}
+                  {copyModalOpen && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs">
+                      <div
+                        className="relative w-full max-w-md rounded-2xl border border-hairline bg-bone-soft p-5 shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center justify-between border-b border-hairline/60 pb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold/20 text-gold-deep">
+                              <FiCopy size={15} />
+                            </span>
+                            <h3 className="font-display text-base font-semibold text-ink">
+                              Copy Sizes to “{activeTargetForModal}”
+                            </h3>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setCopyModalOpen(false)}
+                            className="rounded-lg p-1 text-ink-muted hover:text-ink"
+                            aria-label="Close"
+                          >
+                            <FiX size={16} />
+                          </button>
+                        </div>
+
+                        <div className="mt-4 space-y-3.5 text-xs">
+                          <div>
+                            <label className="block font-semibold uppercase tracking-wider text-ink-muted mb-1 text-[10px]">
+                              Copy sizes from:
+                            </label>
+                            <select
+                              value={selectedSourceForModal}
+                              onChange={(e) => setCopySourceFrame(e.target.value)}
+                              className="w-full rounded-xl border border-hairline bg-white px-3 py-2 text-xs font-medium text-ink outline-none focus:border-gold"
+                            >
+                              {possibleSourcesForModal.map((fr) => {
+                                const cnt = form.variants.filter(
+                                  (v) => (v.frame || '').toLowerCase() === fr.toLowerCase()
+                                ).length;
+                                return (
+                                  <option key={fr} value={fr}>
+                                    {fr} ({cnt} sizes)
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block font-semibold uppercase tracking-wider text-ink-muted mb-1 text-[10px]">
+                              Optional Price Markup (₹):
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-muted">+₹</span>
+                              <input
+                                type="number"
+                                value={copyPriceMarkup}
+                                onChange={(e) => setCopyPriceMarkup(e.target.value)}
+                                placeholder="0 (e.g. 500 to add ₹500 to each size)"
+                                className="w-full rounded-xl border border-hairline bg-white pl-8 pr-3 py-2 text-xs font-medium text-ink outline-none focus:border-gold"
+                              />
+                            </div>
+                            <p className="mt-1 text-[11px] text-ink-muted">
+                              Leave empty or 0 to copy exact prices. Entering 500 will make a ₹1,600 size become ₹2,100.
+                            </p>
+                          </div>
+
+                          {selectedSourceForModal && (
+                            <div className="rounded-xl border border-hairline/80 bg-white/80 p-2.5 text-[11px] text-ink-soft">
+                              <span className="font-semibold text-ink">Preview:</span> Will copy{' '}
+                              <strong>{sourceVariantsForModal.length} size(s)</strong> ({sourceVariantsForModal.map((v) => `${v.size}"`).join(', ')}) from “{selectedSourceForModal}” to “{activeTargetForModal}”.
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-5 flex items-center justify-end gap-2 border-t border-hairline/60 pt-3">
+                          <button
+                            type="button"
+                            onClick={() => setCopyModalOpen(false)}
+                            className="rounded-xl border border-hairline bg-bone px-3.5 py-2 text-xs font-medium text-ink-soft hover:text-ink"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => copySizesFromFrame(selectedSourceForModal, activeTargetForModal, copyPriceMarkup)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-gold/50 bg-gold px-4 py-2 text-xs font-bold text-ink shadow-xs transition hover:bg-gold-light active:scale-95"
+                          >
+                            <FiCheck size={14} /> Copy Sizes Now
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Images */}
             <div className="mt-5">

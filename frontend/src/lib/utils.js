@@ -64,7 +64,7 @@ export function normalizeProduct(p) {
 
   return {
     id: p._id || p.id,
-    slug: p.slug,
+    slug: p.slug ? slugify(p.slug) : slugify(p.title || p._id || p.id),
     title: p.title,
     description: p.description || '',
     price: p.price,

@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS = {
     name: 'DreamzDecors',
     tagline: 'Creative Decors · Innovative Design',
     description:
-      'Handcrafted canvas paintings, gallery sets, and spiritual art designed to bring warmth, soul, and quiet luxury to modern Indian homes.',
+      'Handcrafted canvas printing, gallery sets, and spiritual art designed to bring warmth, soul, and quiet luxury to modern Indian homes.',
   },
   contact: { email: 'dreamzdecor30@gmail.com', phone: '+91 82848 65051', address: 'Made in India, delivering pan India', hours: 'Mon–Sat: 10:00 AM – 7:00 PM\nSunday: Closed' },
   social: { instagram: '', facebook: '', pinterest: '', youtube: '', whatsapp: 'https://wa.me/918284865051' },

@@ -78,7 +78,7 @@ const FAQS = [
   },
   {
     q: 'What happens if my parcel is damaged during courier delivery?',
-    a: 'We offer a 100% Damage-Free Delivery Guarantee. In the rare event of transit damage, share photos with our support team within 48 hours of delivery and we will dispatch an expedited replacement at zero extra cost.',
+    a: 'We offer a 100% Damage-Free Delivery Guarantee. In the rare event of transit damage, an uncut parcel unboxing video (from opening the courier package to inspecting the artwork) is strictly mandatory. Share the video with our support team within 48 hours of delivery, and we will dispatch an expedited replacement at zero extra cost.',
   },
 ];
 
@@ -644,7 +644,7 @@ export default function ProductDetail() {
                 <FiShield className="mt-0.5 text-gold-deep shrink-0" size={16} />
                 <div>
                   <span className="font-semibold text-ink">100% Transit Protection Guarantee: </span>
-                  Damage-free arrival guaranteed, or we ship a free replacement immediately.
+                  Damage-free arrival guaranteed, or we ship a free replacement immediately (uncut unboxing video required).
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -792,7 +792,7 @@ export default function ProductDetail() {
                       <FiShield className="mt-1 text-gold-deep shrink-0" size={18} />
                       <div>
                         <strong className="text-ink">Zero-Risk Transit Guarantee: </strong>
-                        If your shipment is compromised or damaged during courier transit, contact our concierge within 48 hours and we will ship a brand-new replacement immediately at no extra charge.
+                        If your shipment arrives compromised or damaged, an uncut unboxing video (recorded from opening the sealed courier box) is strictly mandatory. Contact our concierge within 48 hours with your video, and we will ship a brand-new replacement immediately at zero extra charge.
                       </div>
                     </div>
                   </div>

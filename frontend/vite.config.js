@@ -37,6 +37,12 @@ export default defineConfig({
         ws: true,
         changeOrigin: true,
         secure: false,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            // Quietly ignore transient connection drops during server startup
+            if (err.code === 'ECONNREFUSED' || err.code === 'EPIPE') return;
+          });
+        },
       },
     },
   },

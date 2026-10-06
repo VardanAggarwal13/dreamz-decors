@@ -349,7 +349,7 @@ function FaqPage({ page }) {
                 <div className="text-xs">
                   <p className="font-semibold text-ink">100% Free Doorstep Replacement</p>
                   <p className="mt-0.5 text-ink-muted leading-relaxed">
-                    Transit damage reported within 48h is replaced immediately at zero extra charge.
+                    Transit damage reported within 48h with an uncut unboxing video is replaced immediately at zero extra charge.
                   </p>
                 </div>
               </div>
@@ -1048,7 +1048,7 @@ function ContactPage({ page }) {
                 100% Free Doorstep Damage Replacement
               </h3>
               <p className="mt-1.5 text-xs text-ink-soft leading-relaxed">
-                We take full responsibility for shipping. If the outer carton or artwork arrives damaged, share 2–3 photos within 48 hours to WhatsApp or email. We dispatch a fresh replacement immediately at zero extra charge with no return-pickup hassle.
+                We take full responsibility for shipping. If the outer carton or artwork arrives damaged, share a continuous uncut unboxing video within 48 hours to WhatsApp or email. An uncut unboxing video is strictly mandatory for damage claim approval, and we dispatch a fresh replacement immediately at zero extra charge with no return-pickup hassle.
               </p>
             </div>
 
@@ -1165,7 +1165,7 @@ const DEFAULT_SHIPPING_FAQS = [
   {
     question: 'What happens if my package arrives damaged in transit?',
     answer:
-      'We offer an unconditional 100% Free Doorstep Replacement Guarantee. If the outer carton or artwork shows any transit damage, take 2–3 photos or an unboxing video and share it with us via WhatsApp (+91 82848 65051) or dreamzdecor30@gmail.com within 48 hours. We dispatch a brand-new replacement immediately at zero extra cost, with no return-pickup hassle.',
+      'We offer an unconditional 100% Free Doorstep Replacement Guarantee. If the outer carton or artwork shows any transit damage, an uncut, continuous parcel unboxing video (recorded from opening the sealed courier box to inspecting the artwork) is strictly mandatory for claim approval. Share it with us via WhatsApp (+91 82848 65051) or dreamzdecor30@gmail.com within 48 hours, and we will dispatch a brand-new replacement immediately at zero extra cost.',
   },
   {
     question: 'Are large and oversized gallery sets handled safely?',
@@ -1405,7 +1405,7 @@ function ShippingPage({ page }) {
                     <div>
                       <p className="text-sm font-semibold text-ink">100% Free Doorstep Replacement</p>
                       <p className="text-xs text-ink-muted leading-relaxed mt-0.5">
-                        Zero return hassle if your parcel sustains transit damage. Brand-new piece dispatched immediately.
+                        Zero return hassle if your parcel sustains transit damage (uncut unboxing video required). Brand-new piece dispatched immediately.
                       </p>
                     </div>
                   </div>
@@ -1697,7 +1697,7 @@ function ShippingPage({ page }) {
                     <h4 className="text-sm font-semibold text-ink">100% Free Doorstep Replacement</h4>
                   </div>
                   <p className="mt-2 text-xs text-ink-soft leading-relaxed">
-                    If your artwork sustains any transit damage, notify us within 48 hours with 2 photos. We dispatch a brand-new replacement immediately with zero return paperwork.
+                    If your artwork sustains any transit damage, notify us within 48 hours with a continuous, uncut unboxing video. An unboxing video is strictly mandatory for claim approval, and we dispatch a brand-new replacement immediately with zero return paperwork.
                   </p>
                 </div>
 
@@ -1864,7 +1864,7 @@ function TermsPage({ page }) {
               <ul className="mt-3 space-y-2.5 text-xs text-ink-soft">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-600" />
-                  <span><strong>Zero Transit Risk:</strong> 100% free doorstep replacement if parcel is damaged in transit.</span>
+                  <span><strong>Zero Transit Risk:</strong> 100% free doorstep replacement if parcel is damaged in transit (uncut unboxing video mandatory within 48h).</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-600" />
@@ -1944,7 +1944,7 @@ function TermsPage({ page }) {
                     <div>
                       <p className="font-semibold">Transit Damage Protection Window:</p>
                       <p className="mt-0.5 leading-relaxed">
-                        Please take 2–3 photos or an unboxing video within 48 hours of doorstep delivery and share it via WhatsApp (+91 82848 65051) or email dreamzdecor30@gmail.com for immediate free replacement.
+                        A continuous, uncut parcel unboxing video (from sealed courier carton to inspecting the artwork) is strictly mandatory for any damage or replacement claim. Please share the video within 48 hours of doorstep delivery via WhatsApp (+91 82848 65051) or email dreamzdecor30@gmail.com for immediate free replacement dispatch.
                       </p>
                     </div>
                   </div>

@@ -69,7 +69,7 @@ export const contentPages = {
       {
         title: 'About Us',
         body: [
-          'We specialize in premium canvas paintings, gold foil wall art, and luxury decor pieces designed to elevate modern interiors. Every artwork is thoughtfully crafted with precision, premium materials, and sophisticated finishes that bring timeless beauty into your home or workspace.',
+          'We specialize in handcrafted canvas printing, gold foil wall art, and luxury decor pieces designed to elevate modern interiors. Every artwork is thoughtfully crafted with precision, premium materials, and sophisticated finishes that bring timeless beauty into your home or workspace.',
           'As manufacturers, our products are designed and produced in-house using advanced printing technology, premium textures, and handcrafted detailing to ensure exceptional quality in every frame.',
           'From elegant gold foil artworks to modern abstract canvas designs, our collections are created to transform ordinary walls into stunning statement spaces.',
         ],
@@ -211,7 +211,7 @@ export const contentPages = {
               'Yes. Every Dreamz Decor artwork is conceived, printed, hand-textured, and framed in-house at our studio in Amritsar, Punjab, by master craftspeople using archival-grade materials.',
           },
           {
-            question: 'Do the canvas paintings arrive framed and ready to hang?',
+            question: 'Do the handcrafted canvas prints arrive framed and ready to hang?',
             answer:
               'Yes! Every framed canvas arrives 100% ready-to-hang out of the box with pre-installed heavy-duty sawtooth hangers or steel hanging wire, wall-mounting screws, and anchors included.',
           },
@@ -278,7 +278,7 @@ export const contentPages = {
           {
             question: 'What happens if my package arrives damaged?',
             answer:
-              'We provide an unconditional 100% Free Doorstep Replacement Guarantee. If the carton or artwork shows transit damage, simply send 2–3 unboxing photos or a short video to WhatsApp (+91 82848 65051) or dreamzdecor30@gmail.com within 48 hours of delivery. We will immediately dispatch a fresh replacement at zero cost.',
+              'We provide an unconditional 100% Free Doorstep Replacement Guarantee. If the carton or artwork shows transit damage, a continuous, uncut parcel unboxing video (recorded from opening the sealed courier box to inspecting the artwork) is strictly mandatory for replacement approval. Please share the unboxing video via WhatsApp (+91 82848 65051) or dreamzdecor30@gmail.com within 48 hours of delivery. We will immediately dispatch a fresh replacement at zero cost.',
           },
           {
             question: 'How are fragile and oversized frames packaged?',
@@ -362,7 +362,7 @@ export const contentPages = {
       {
         title: 'Returns & Refunds',
         body: [
-          'Dreamz Decor accepts replacement requests within 48 hours of delivery, exclusively for items that arrive damaged or significantly different from the product description. To initiate a claim, customers must contact our support team within the return window, providing photographic evidence or an unboxing video of the damage. Items must be returned in their original packaging. Refunds will be processed within 7–10 business days of receiving the returned item and verifying its condition. Custom or made-to-order pieces are non-returnable unless damaged in transit. Dreamz Decor does not accept returns for change of mind or buyer\'s remorse.',
+          'Dreamz Decor accepts replacement requests within 48 hours of delivery, exclusively for items that arrive damaged or defective in transit. To initiate a replacement claim, customers must contact our support team within 48 hours with a continuous, uncut parcel unboxing video recorded from the unopened courier carton to inspecting the artwork. An unboxing video is strictly mandatory for transit damage or replacement approval under our 100% Free Doorstep Replacement Guarantee. Once verified, a brand-new replacement is dispatched immediately at zero cost. Custom or made-to-order pieces are protected under this transit replacement guarantee with the mandatory unboxing video. Dreamz Decor does not accept returns for change of mind or buyer\'s remorse.',
         ],
       },
       {

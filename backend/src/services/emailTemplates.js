@@ -158,6 +158,19 @@ function renderEmail({ preheader, heading, bodyHtml, cta, imageUrl, footerNote, 
 
 // ─── Transactional emails (orders, account) ────────────────────────────────────
 
+function unboxingNoticeHtml() {
+  return `<div style="margin:24px 0 10px;padding:16px 18px;background-color:${COLORS.bone};border-left:3px solid ${COLORS.gold};border-radius:8px;font-size:13px;line-height:1.65;color:${COLORS.inkSoft};">
+    <strong style="color:${COLORS.ink};display:block;margin-bottom:6px;font-size:12px;text-transform:uppercase;letter-spacing:1px;">
+      📦 Important: Transit Protection & Unboxing Policy
+    </strong>
+    Every shipment is fully insured under our <strong>100% Free Doorstep Replacement Guarantee</strong>. In the rare event of transit damage or defect, an <strong>uncut, continuous parcel unboxing video</strong> (recorded from opening the sealed courier box to inspecting the artwork) is <strong>strictly mandatory</strong> for replacement approval. Please notify us within <strong>48 hours of delivery</strong> via WhatsApp (+91 82848 65051) or email <a href="mailto:${supportEmail()}" style="color:${COLORS.goldDeep};text-decoration:underline;">${supportEmail()}</a> with your video for an immediate free replacement.
+  </div>`;
+}
+
+function unboxingNoticeText() {
+  return `\n\n[IMPORTANT: TRANSIT PROTECTION & UNBOXING POLICY]\nEvery shipment is fully insured under our 100% Free Doorstep Replacement Guarantee. In the rare event of transit damage or defect, an uncut, continuous parcel unboxing video (recorded from opening the sealed courier box to inspecting the artwork) is strictly mandatory for replacement approval. Please notify us within 48 hours of delivery via WhatsApp (+91 82848 65051) or email ${supportEmail()} with your video for an immediate free replacement dispatch.`;
+}
+
 // Map a notification type to a branded email. `ctx` carries { name, order, origin, … }.
 export function buildEmail(type, ctx = {}) {
   const baseUrl = clientUrl(ctx);
@@ -171,50 +184,55 @@ export function buildEmail(type, ctx = {}) {
     case 'order_placed':
       return {
         subject: `Order confirmed — thank you, ${name}!`,
+        text: `Hi ${name}, we've received your order${total ? ` of ${total}` : ''}. We'll start preparing it and notify you the moment it ships.${unboxingNoticeText()}\n\nView order: ${orderUrl}`,
         html: renderEmail({
           preheader: `We've received your order${total ? ` of ${total}` : ''}.`,
           heading: 'Your order is confirmed',
-          bodyHtml: `Hi ${name}, we've received your order${total ? ` of <strong>${total}</strong>` : ''}. We'll start preparing it and notify you the moment it ships.`,
+          bodyHtml: `<p style="margin:0 0 12px;">Hi ${name}, we've received your order${total ? ` of <strong>${total}</strong>` : ''}. We'll start preparing it and notify you the moment it ships.</p>${unboxingNoticeHtml()}`,
           cta: viewOrder,
         }, ctx),
       };
     case 'order_paid':
       return {
         subject: `Order confirmed — thank you, ${name}! (${orderId ? `#${orderId}` : ''})`.trim(),
+        text: `Hi ${name}, thank you for your order! Your payment${total ? ` of ${total}` : ''} was successful. Our studio has received your order and our artisans are now hand-finishing, framing, and carefully packaging your artwork. We'll send you tracking details as soon as it ships.${unboxingNoticeText()}\n\nView order: ${orderUrl}`,
         html: renderEmail({
           preheader: `Your payment${total ? ` of ${total}` : ''} was successful and your order is confirmed.`,
           heading: 'Order Confirmed & In Production',
-          bodyHtml: `Hi ${name}, thank you for your order! Your payment${total ? ` of <strong>${total}</strong>` : ''} was successful. Our studio has received your order and our artisans are now hand-finishing, framing, and carefully packaging your artwork. We'll send you tracking details as soon as it ships.`,
+          bodyHtml: `<p style="margin:0 0 12px;">Hi ${name}, thank you for your order! Your payment${total ? ` of <strong>${total}</strong>` : ''} was successful. Our studio has received your order and our artisans are now hand-finishing, framing, and carefully packaging your artwork. We'll send you tracking details as soon as it ships.</p>${unboxingNoticeHtml()}`,
           cta: viewOrder,
         }, ctx),
       };
     case 'order_processing':
       return {
         subject: `Your order is being prepared 🎨`,
+        text: `Hi ${name}, our studio has begun preparing your order${total ? ` of ${total}` : ''}. Each piece is carefully inspected, framed, and packaged with archival care. We'll notify you the moment it ships.${unboxingNoticeText()}\n\nView order: ${orderUrl}`,
         html: renderEmail({
           preheader: `We're preparing your order${total ? ` of ${total}` : ''} for dispatch.`,
           heading: 'Order in preparation',
-          bodyHtml: `Hi ${name}, our studio has begun preparing your order${total ? ` of <strong>${total}</strong>` : ''}. Each piece is carefully inspected, framed, and packaged with archival care. We'll notify you the moment it ships.`,
+          bodyHtml: `<p style="margin:0 0 12px;">Hi ${name}, our studio has begun preparing your order${total ? ` of <strong>${total}</strong>` : ''}. Each piece is carefully inspected, framed, and packaged with archival care. We'll notify you the moment it ships.</p>${unboxingNoticeHtml()}`,
           cta: viewOrder,
         }, ctx),
       };
     case 'order_shipped':
       return {
         subject: 'Your order has shipped 🚚',
+        text: `Good news, ${name}! Your order has been dispatched and is on its way. Tracking details will follow shortly.${unboxingNoticeText()}\n\nTrack order: ${orderUrl}`,
         html: renderEmail({
           preheader: 'Your order is on its way.',
           heading: 'On its way to you',
-          bodyHtml: `Good news, ${name}! Your order has been dispatched and is on its way. Tracking details will follow shortly.`,
+          bodyHtml: `<p style="margin:0 0 12px;">Good news, ${name}! Your order has been dispatched and is on its way. Tracking details will follow shortly.</p>${unboxingNoticeHtml()}`,
           cta: { label: 'Track order', url: orderUrl },
         }, ctx),
       };
     case 'order_delivered':
       return {
         subject: 'Your order has been delivered',
+        text: `Hi ${name}, your order has been delivered. We hope you love your new artwork! Please remember to inspect your package upon arrival.${unboxingNoticeText()}\n\nView order: ${orderUrl}`,
         html: renderEmail({
           preheader: 'We hope you love it!',
           heading: 'Delivered',
-          bodyHtml: `Hi ${name}, your order has been delivered. We hope you love it! Tap below to leave a review.`,
+          bodyHtml: `<p style="margin:0 0 12px;">Hi ${name}, your order has been delivered. We hope you love your new artwork! Please remember to inspect your package upon arrival.</p>${unboxingNoticeHtml()}<p style="margin:16px 0 0;">If everything looks perfect, tap below to view your order and leave a review.</p>`,
           cta: viewOrder,
         }, ctx),
       };

@@ -103,10 +103,64 @@ export const listProducts = asyncHandler(async (req, res) => {
   });
 });
 
+const escapeRegex = (string) => String(string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const slugify = (text) =>
+  String(text || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 export const getProduct = asyncHandler(async (req, res) => {
-  const product = await Product.findOne({ slug: req.params.slug, isActive: true })
+  const rawParam = String(req.params.slug || '').trim();
+  let decoded = rawParam;
+  try {
+    decoded = decodeURIComponent(rawParam).trim();
+  } catch {}
+
+  const slugKebab = slugify(decoded);
+  const slugSpace = decoded.replace(/-/g, ' ').trim();
+
+  // Build candidate slugs to query
+  const candidates = Array.from(
+    new Set([
+      rawParam,
+      decoded,
+      decoded.toLowerCase(),
+      slugKebab,
+      slugSpace,
+      `${decoded} `,
+      `${slugKebab} `,
+      `${slugSpace} `,
+    ])
+  ).filter(Boolean);
+
+  const queryOr = [
+    { slug: { $in: candidates } },
+    { slug: new RegExp(`^${escapeRegex(slugKebab).replace(/-/g, '[- ]*')}\\s*$`, 'i') },
+  ];
+
+  if (mongoose.Types.ObjectId.isValid(decoded) && decoded.length === 24) {
+    queryOr.push({ _id: new mongoose.Types.ObjectId(decoded) });
+  }
+
+  let product = await Product.findOne({
+    isActive: true,
+    $or: queryOr,
+  })
     .populate('category', 'title slug')
     .lean();
+
+  if (!product && decoded) {
+    // Fallback: match by title prefix if slug didn't directly match
+    product = await Product.findOne({
+      isActive: true,
+      title: new RegExp(`^${escapeRegex(decoded)}`, 'i'),
+    })
+      .populate('category', 'title slug')
+      .lean();
+  }
+
   if (!product) {
     res.status(404);
     throw new Error('Product not found');
@@ -117,6 +171,9 @@ export const getProduct = asyncHandler(async (req, res) => {
 
 export const createProduct = asyncHandler(async (req, res) => {
   const payload = { ...req.body };
+  if (payload.slug || payload.title) {
+    payload.slug = slugify(payload.slug || payload.title);
+  }
   if (Array.isArray(payload.frameOptions)) {
     payload.frameOptions = payload.frameOptions.map((f) => String(f).trim()).filter(Boolean);
   }
@@ -142,6 +199,9 @@ export const createProduct = asyncHandler(async (req, res) => {
 
 export const updateProduct = asyncHandler(async (req, res) => {
   const payload = { ...req.body };
+  if (payload.slug || payload.title) {
+    payload.slug = slugify(payload.slug || payload.title);
+  }
   if (Array.isArray(payload.frameOptions)) {
     payload.frameOptions = payload.frameOptions.map((f) => String(f).trim()).filter(Boolean);
   }

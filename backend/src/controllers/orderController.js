@@ -17,18 +17,20 @@ const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
  *     the money moved. Telling a customer "refund processed" before that is a lie.
  */
 const STATUS_NOTIFICATION = {
-  processing: { type: 'order_processing', title: 'Order processing',  message: () => 'Your order is being prepared for dispatch.', email: false },
-  shipped:    { type: 'order_shipped',    title: 'Order shipped',     message: () => 'Your order has been dispatched and is on its way.', email: true },
+  processing: { type: 'order_processing', title: 'Order processing & shipping', message: () => 'Your order is being processed and prepared for shipping.', email: false },
+  shipped:    { type: 'order_shipped',    title: 'Order processed & shipped', message: () => 'Your order has been processed and dispatched, and is on its way.', email: true },
   delivered:  { type: 'order_delivered',  title: 'Order delivered',   message: () => 'Your order has been delivered. We hope you love it!', email: true },
   cancelled:  { type: 'order_cancelled',  title: 'Order cancelled',   message: () => 'Your order has been cancelled.', email: true },
 };
 
-// The admin UI still speaks the legacy vocabulary; translate it to orderStatus.
+// The admin UI speaks generic stages; translate them to canonical orderStatus.
 const LEGACY_TO_ORDER_STATUS = {
   pending: 'pending',
   paid: 'confirmed',
-  processing: 'processing',
+  processing: 'shipped',
   shipped: 'shipped',
+  'processing & shipping': 'shipped',
+  'processing_shipping': 'shipped',
   delivered: 'delivered',
   cancelled: 'cancelled',
   refunded: 'refunded',
@@ -180,9 +182,90 @@ export const getOrder = asyncHandler(async (req, res) => {
 });
 
 export const listOrders = asyncHandler(async (req, res) => {
-  const { status } = req.query;
+  const { status, paymentStatus, paymentMethod, datePreset, from, to, sort } = req.query;
   const filter = {};
-  if (status) filter.status = status;
+
+  // Status filter (generic stages)
+  if (status) {
+    if (status === 'shipped' || status === 'processing' || status === 'processing & shipping') {
+      filter.status = { $in: ['shipped', 'processing'] };
+    } else {
+      filter.status = status;
+    }
+  }
+
+  // Payment status filter
+  if (paymentStatus) {
+    const ps = String(paymentStatus).toLowerCase();
+    if (ps === 'paid' || ps === 'captured') {
+      filter.paymentStatus = { $in: ['captured', 'paid', 'authorized'] };
+    } else if (ps === 'unpaid' || ps === 'pending') {
+      filter.paymentStatus = { $in: ['pending', null] };
+    } else if (ps === 'failed') {
+      filter.paymentStatus = 'failed';
+    } else if (ps === 'refunded') {
+      filter.paymentStatus = { $in: ['refunded', 'refund_initiated', 'partially_refunded'] };
+    } else {
+      filter.paymentStatus = ps;
+    }
+  }
+
+  // Payment method filter (e.g. razorpay vs cod)
+  if (paymentMethod) {
+    filter['payment.method'] = paymentMethod;
+  }
+
+  // Date range filter (preset or custom from/to)
+  let dateFrom = null;
+  let dateTo = null;
+
+  if (datePreset) {
+    const now = new Date();
+    if (datePreset === 'today') {
+      dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      dateTo = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    } else if (datePreset === 'yesterday') {
+      const yest = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      dateFrom = new Date(yest.getFullYear(), yest.getMonth(), yest.getDate(), 0, 0, 0);
+      dateTo = new Date(yest.getFullYear(), yest.getMonth(), yest.getDate(), 23, 59, 59, 999);
+    } else if (datePreset === '7days') {
+      dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      dateTo = now;
+    } else if (datePreset === '30days') {
+      dateFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      dateTo = now;
+    } else if (datePreset === 'this_month') {
+      dateFrom = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+      dateTo = now;
+    }
+  }
+
+  if (from) {
+    const parsedFrom = new Date(from);
+    if (!isNaN(parsedFrom.getTime())) {
+      dateFrom = new Date(parsedFrom.getFullYear(), parsedFrom.getMonth(), parsedFrom.getDate(), 0, 0, 0);
+    }
+  }
+
+  if (to) {
+    const parsedTo = new Date(to);
+    if (!isNaN(parsedTo.getTime())) {
+      dateTo = new Date(parsedTo.getFullYear(), parsedTo.getMonth(), parsedTo.getDate(), 23, 59, 59, 999);
+    }
+  }
+
+  if (dateFrom || dateTo) {
+    filter.createdAt = {};
+    if (dateFrom) filter.createdAt.$gte = dateFrom;
+    if (dateTo) filter.createdAt.$lte = dateTo;
+  }
+
+  // Min / max amount filter
+  if (req.query.minAmount || req.query.maxAmount) {
+    filter.total = {};
+    if (req.query.minAmount) filter.total.$gte = Number(req.query.minAmount);
+    if (req.query.maxAmount) filter.total.$lte = Number(req.query.maxAmount);
+  }
 
   // Optional search: by customer name/email, or by the order id text.
   const q = String(req.query.q || '').trim();
@@ -195,10 +278,16 @@ export const listOrders = asyncHandler(async (req, res) => {
     ];
   }
 
+  // Sorting
+  let sortOption = { createdAt: -1 };
+  if (sort === 'oldest') sortOption = { createdAt: 1 };
+  else if (sort === 'total_high') sortOption = { total: -1, createdAt: -1 };
+  else if (sort === 'total_low') sortOption = { total: 1, createdAt: -1 };
+
   const { page, limit, skip } = buildPagination(req.query.page, req.query.limit, paginationPresets.order);
   const [items, total] = await Promise.all([
     Order.find(filter)
-      .sort({ createdAt: -1 })
+      .sort(sortOption)
       .skip(skip)
       .limit(limit)
       .populate('user', 'name email')
@@ -274,3 +363,16 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 
   res.json({ success: true, data: order, ...(refundNote && { message: refundNote }) });
 });
+
+export const deleteOrder = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
+  }
+
+  await Order.findByIdAndDelete(req.params.id);
+
+  res.json({ success: true, message: 'Order deleted successfully' });
+});
+

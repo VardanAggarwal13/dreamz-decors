@@ -1,11 +1,21 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { betterAuth } from 'better-auth';
 import { MongoClient } from 'mongodb';
 import { mongodbAdapter } from 'better-auth/adapters/mongodb';
 import { sendEmail } from '../services/mailer.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+dotenv.config();
+
 // Reuse the same Mongo database mongoose connects to (db name comes from the URI).
 // The driver connects lazily on first query, so no await is needed here.
-const client = new MongoClient(process.env.MONGODB_URI);
+const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/dreamzdecors';
+const client = new MongoClient(mongoUri);
 const db = client.db();
 
 const clientUrl = () => process.env.CLIENT_URL || 'http://localhost:5173';
@@ -53,6 +63,11 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   database: mongodbAdapter(db, { client }),
   trustedOrigins: clientUrls(),
+
+  session: {
+    expiresIn: 60 * 60 * 24 * 30, // 30 days
+    updateAge: 60 * 60 * 24, // update every 1 day on active use
+  },
 
   // Let MongoDB generate native ObjectId _id so existing ObjectId relations
   // (Order.user, Notification.user, wishlist, …) keep working.

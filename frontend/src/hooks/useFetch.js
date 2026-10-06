@@ -15,8 +15,8 @@ const readCache = (key) => {
   }
 };
 
-// Tiny GET helper. For more, swap in TanStack Query later — same shape.
-export default function useFetch(url, { deps = [], skip = false, cache } = {}) {
+// Tiny GET helper with automatic retry on transient startup/network errors.
+export default function useFetch(url, { deps = [], skip = false, cache, retries = 2 } = {}) {
   const [data, setData] = useState(() => readCache(cache));
   const [error, setError] = useState(null);
   // When we have a cached value, don't block the UI with a loading state — we
@@ -29,27 +29,52 @@ export default function useFetch(url, { deps = [], skip = false, cache } = {}) {
     cancelled.current = false;
     if (!readCache(cache)) setLoading(true);
     setError(null);
-    api
-      .get(url)
-      .then((res) => {
-        if (cancelled.current) return;
-        setData(res);
-        setLoading(false);
-        if (cache) {
-          try {
-            localStorage.setItem(cache, JSON.stringify(res));
-          } catch {
-            /* quota / private mode — ignore */
+
+    let retryTimer = null;
+    let attempt = 0;
+
+    const execute = () => {
+      api
+        .get(url)
+        .then((res) => {
+          if (cancelled.current) return;
+          setData(res);
+          setError(null);
+          setLoading(false);
+          if (cache) {
+            try {
+              localStorage.setItem(cache, JSON.stringify(res));
+            } catch {
+              /* quota / private mode — ignore */
+            }
           }
-        }
-      })
-      .catch((err) => {
-        if (cancelled.current) return;
-        setError(err);
-        setLoading(false);
-      });
+        })
+        .catch((err) => {
+          if (cancelled.current) return;
+          attempt += 1;
+          const isTransient =
+            !err.response ||
+            err.response?.status === 503 ||
+            err.message?.includes('Network') ||
+            err.message?.includes('starting up') ||
+            err.code === 'ECONNABORTED';
+
+          if (isTransient && attempt <= retries) {
+            // Server may still be booting; retry after a brief delay
+            retryTimer = setTimeout(execute, Math.min(attempt * 1200, 3000));
+            return;
+          }
+
+          setError(err);
+          setLoading(false);
+        });
+    };
+
+    execute();
+
     return () => {
       cancelled.current = true;
+      if (retryTimer) clearTimeout(retryTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, skip, ...deps]);

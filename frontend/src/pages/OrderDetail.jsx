@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { FiArrowLeft, FiCheck } from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiShield } from 'react-icons/fi';
 import Seo from '@/components/common/Seo';
 import OrderStatusBadge from '@/components/common/OrderStatusBadge';
 import { Button } from '@/components/ui/Button';
@@ -23,17 +23,18 @@ const shortId = (id) => (id ? `#${String(id).slice(-8).toUpperCase()}` : '');
 // Happy-path progress steps. cancelled/refunded are handled separately.
 const STEPS = [
   { key: 'confirmed', label: 'Confirmed' },
-  { key: 'processing', label: 'Processing' },
-  { key: 'shipped', label: 'Shipped' },
+  { key: 'shipped', label: 'Processing & Shipping' },
   { key: 'delivered', label: 'Delivered' },
 ];
 
 const STEP_INDEX = {
   pending: 0,
   paid: 0,
+  confirmed: 0,
   processing: 1,
-  shipped: 2,
-  delivered: 3,
+  shipped: 1,
+  'processing & shipping': 1,
+  delivered: 2,
 };
 
 function ProgressTracker({ status }) {
@@ -192,6 +193,16 @@ export default function OrderDetail() {
                   {order.payment?.paidAt && (
                     <p className="mt-1 text-sm text-ink-soft">Paid on {fmtDateTime(order.payment.paidAt)}</p>
                   )}
+                </div>
+
+                <div className="rounded-2xl border border-gold/40 bg-gold/10 p-5 sm:p-6 text-xs text-ink-soft">
+                  <div className="flex items-center gap-2 text-ink font-semibold text-xs tracking-wider uppercase">
+                    <FiShield className="text-gold-deep" size={16} />
+                    Transit Protection &amp; Unboxing Policy
+                  </div>
+                  <p className="mt-2.5 leading-relaxed">
+                    All orders are backed by our <strong>100% Free Doorstep Replacement Guarantee</strong>. In the rare event of transit damage, an <strong>uncut, continuous parcel unboxing video</strong> (recorded from opening the sealed courier box) is <strong>strictly mandatory</strong>. Please notify us within <strong>48 hours of delivery</strong> via WhatsApp (+91 82848 65051) or email dreamzdecor30@gmail.com for instant replacement dispatch.
+                  </p>
                 </div>
               </div>
             </div>

@@ -59,7 +59,9 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 app.use(mongoSanitize());
-if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan('dev', { skip: (req) => req.url === '/api/health' }));
+}
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

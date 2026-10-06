@@ -37,6 +37,23 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+productSchema.pre('validate', function (next) {
+  if (this.slug) {
+    this.slug = String(this.slug)
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  } else if (this.title) {
+    this.slug = String(this.title)
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+  next();
+});
+
 productSchema.index({ title: 'text', description: 'text', tags: 'text' });
 productSchema.index({ isActive: 1, createdAt: -1 });
 productSchema.index({ isActive: 1, sales: -1 });

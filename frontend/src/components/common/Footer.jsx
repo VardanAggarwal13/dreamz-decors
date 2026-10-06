@@ -53,10 +53,12 @@ export default function Footer() {
     : FALLBACK_SHOP_LINKS;
   const navColumns = [{ title: 'Shop', links: shopLinks }, ...STATIC_COLUMNS];
 
-  const displayDescription =
+  const rawDescription =
     !brand?.description || brand.description.includes('secure packaging and safe online checkout')
-      ? 'Handcrafted canvas paintings, gallery sets, and spiritual art designed to bring warmth, soul, and quiet luxury to modern Indian homes.'
+      ? 'Handcrafted canvas printing, gallery sets, and spiritual art designed to bring warmth, soul, and quiet luxury to modern Indian homes.'
       : brand.description;
+
+  const displayDescription = rawDescription.replace(/canvas paintings/gi, 'canvas printing');
 
   const footerEmail =
     !contact?.email || contact.email.toLowerCase().includes('support@dreamzdecor.com')

@@ -9,7 +9,7 @@ const settingsSchema = new mongoose.Schema(
       description: {
         type: String,
         default:
-          'Handcrafted canvas paintings, gallery sets, and spiritual art designed to bring warmth, soul, and quiet luxury to modern Indian homes.',
+          'Handcrafted canvas printing, gallery sets, and spiritual art designed to bring warmth, soul, and quiet luxury to modern Indian homes.',
       },
     },
     contact: {
@@ -49,6 +49,12 @@ settingsSchema.statics.getSingleton = async function () {
   let doc = await this.findOne();
   if (!doc) doc = await this.create({});
   let modified = false;
+  if (!doc.brand || !doc.brand.description || doc.brand.description.includes('canvas paintings')) {
+    if (!doc.brand) doc.brand = {};
+    doc.brand.description =
+      'Handcrafted canvas printing, gallery sets, and spiritual art designed to bring warmth, soul, and quiet luxury to modern Indian homes.';
+    modified = true;
+  }
   if (!doc.contact || !doc.contact.email || doc.contact.email.includes('support@dreamzdecor.com')) {
     if (!doc.contact) doc.contact = {};
     doc.contact.email = 'dreamzdecor30@gmail.com';
@@ -64,6 +70,7 @@ settingsSchema.statics.getSingleton = async function () {
     modified = true;
   }
   if (modified) {
+    doc.markModified('brand');
     doc.markModified('contact');
     doc.markModified('social');
     await doc.save();

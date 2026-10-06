@@ -81,6 +81,19 @@ export default function Home() {
           <ProductGridSkeleton columns={4} count={8} layout="editorial" />
         ) : bestList.length > 0 ? (
           <ProductGrid products={bestList} columns={4} layout="editorial" />
+        ) : bestsellers.error ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-ink-muted">
+              Unable to reach product catalog.
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-3 inline-flex items-center rounded-lg bg-gold-deep px-4 py-2 text-xs font-semibold uppercase tracking-wider text-bone hover:bg-gold transition"
+            >
+              Retry
+            </button>
+          </div>
         ) : (
           <p className="py-10 text-center text-sm text-ink/50">
             No products available at the moment.
@@ -105,6 +118,10 @@ export default function Home() {
           <ProductGridSkeleton columns={4} count={4} layout="editorial" />
         ) : newList.length > 0 ? (
           <ProductGrid products={newList} columns={4} layout="editorial" />
+        ) : newArrivals.error ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-ink-muted">Unable to reach product catalog.</p>
+          </div>
         ) : (
           <p className="py-10 text-center text-sm text-ink/50">
             No products available at the moment.

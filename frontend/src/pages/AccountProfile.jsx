@@ -15,7 +15,8 @@ export default function AccountProfile() {
   const [savingProfile, setSavingProfile] = useState(false);
 
   const [pw, setPw] = useState({ current: '', next: '' });
-  const [showPw, setShowPw] = useState(false);
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNextPw, setShowNextPw] = useState(false);
   const [savingPw, setSavingPw] = useState(false);
 
   const saveProfile = async (e) => {
@@ -76,12 +77,43 @@ export default function AccountProfile() {
           <form onSubmit={changePassword} className="rounded-2xl border border-hairline/60 bg-bone p-6 sm:p-7">
             <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">Change password</h2>
             <div className="mt-5 space-y-4">
-              <Field label="Current password"><Input type="password" value={pw.current} onChange={(e) => setPw((p) => ({ ...p, current: e.target.value }))} /></Field>
+              <Field label="Current password">
+                <div className="relative">
+                  <Input
+                    type={showCurrentPw ? 'text' : 'password'}
+                    value={pw.current}
+                    onChange={(e) => setPw((p) => ({ ...p, current: e.target.value }))}
+                    placeholder="Enter current password"
+                    className="pr-11"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPw((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted transition hover:text-ink"
+                    aria-label={showCurrentPw ? 'Hide current password' : 'Show current password'}
+                    title={showCurrentPw ? 'Hide password' : 'Show password'}
+                  >
+                    {showCurrentPw ? <FiEyeOff size={17} /> : <FiEye size={17} />}
+                  </button>
+                </div>
+              </Field>
               <Field label="New password">
                 <div className="relative">
-                  <Input type={showPw ? 'text' : 'password'} value={pw.next} onChange={(e) => setPw((p) => ({ ...p, next: e.target.value }))} placeholder="Min. 8 characters" className="pr-11" />
-                  <button type="button" onClick={() => setShowPw((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink" aria-label="Toggle">
-                    {showPw ? <FiEyeOff size={17} /> : <FiEye size={17} />}
+                  <Input
+                    type={showNextPw ? 'text' : 'password'}
+                    value={pw.next}
+                    onChange={(e) => setPw((p) => ({ ...p, next: e.target.value }))}
+                    placeholder="Min. 8 characters"
+                    className="pr-11"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNextPw((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted transition hover:text-ink"
+                    aria-label={showNextPw ? 'Hide new password' : 'Show new password'}
+                    title={showNextPw ? 'Hide password' : 'Show password'}
+                  >
+                    {showNextPw ? <FiEyeOff size={17} /> : <FiEye size={17} />}
                   </button>
                 </div>
               </Field>

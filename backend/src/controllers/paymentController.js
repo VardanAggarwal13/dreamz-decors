@@ -10,6 +10,7 @@ import {
   markRefundProcessed,
   initiateRefund,
 } from '../services/paymentService.js';
+import { normalizeOrigin } from '../services/emailTemplates.js';
 
 const requireRazorpay = (res) => {
   const razorpay = getRazorpay();
@@ -81,6 +82,8 @@ export const createRazorpayOrder = asyncHandler(async (req, res) => {
 
   order.payment.razorpayOrderId = rzpOrder.id;
   order.payment.amount = amount;
+  const origin = normalizeOrigin(req.headers.origin || req.headers.referer);
+  if (origin && !order.origin) order.origin = origin;
   order.events.push({ type: 'payment.order_created', source: 'api', meta: { razorpayOrderId: rzpOrder.id, amount } });
   await order.save();
 
@@ -117,11 +120,13 @@ export const verifyRazorpayPayment = asyncHandler(async (req, res) => {
     throw new Error('Payment order mismatch');
   }
 
+  const origin = normalizeOrigin(req.headers.origin || req.headers.referer);
   const { order: updated } = await markOrderPaid(order._id, {
     paymentId: razorpay_payment_id,
     razorpayOrderId: razorpay_order_id,
     signature: razorpay_signature,
     source: 'verify',
+    origin,
   });
 
   res.json({ success: true, data: updated });

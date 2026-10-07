@@ -22,6 +22,7 @@ import ScrollToTop from '@/components/common/ScrollToTop';
 import MobileCartToast from '@/components/common/MobileCartToast';
 import { NotificationBootstrap } from '@/components/common/NotificationBootstrap';
 import { WishlistSync } from '@/components/common/WishlistSync';
+import { CartSync } from '@/components/common/CartSync';
 import { SettingsBootstrap } from '@/components/common/SettingsBootstrap';
 import AuthPromptModal from '@/components/common/AuthPromptModal';
 import PushOptInModal from '@/components/common/PushOptInModal';
@@ -85,6 +86,8 @@ export default function App() {
       <NotificationBootstrap />
       {/* Syncs the wishlist with the user account on login/logout */}
       <WishlistSync />
+      {/* Syncs the cart with the user account on login/logout */}
+      <CartSync />
       {/* Loads store-wide settings (CMS) */}
       <SettingsBootstrap />
       {/* Login prompt for gated actions (e.g. wishlist) */}

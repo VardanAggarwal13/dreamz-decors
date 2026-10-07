@@ -6,7 +6,7 @@ import Category from '../models/Category.js';
 import User from '../models/User.js';
 import NewsletterSubscriber from '../models/NewsletterSubscriber.js';
 import { sendEmail } from '../services/mailer.js';
-import { buildNewsletterCampaign } from '../services/emailTemplates.js';
+import { buildNewsletterCampaign, normalizeOrigin } from '../services/emailTemplates.js';
 import { unsubscribeUrlFor } from './newsletterController.js';
 import { buildPagination, buildPaginationMeta, escapeRegex } from '../utils/query.js';
 
@@ -297,7 +297,7 @@ export const sendCampaign = asyncHandler(async (req, res) => {
   let sent = 0;
   let failed = 0;
 
-  const origin = req.headers.origin || req.headers.referer;
+  const origin = normalizeOrigin(req.headers.origin || req.headers.referer);
 
   // Send in batches of 10 with the shared mailer (which never throws).
   const BATCH = 10;
@@ -332,6 +332,7 @@ export const sendCampaign = asyncHandler(async (req, res) => {
 // Used by the composer's live preview so what you see is what subscribers get.
 export const previewCampaign = asyncHandler(async (req, res) => {
   const { subject, heading, body, ctaLabel, ctaUrl, imageUrl } = req.body || {};
+  const origin = normalizeOrigin(req.headers.origin || req.headers.referer);
   const { html } = buildNewsletterCampaign({
     subject: String(subject || '').trim() || 'Subject preview',
     heading,
@@ -340,6 +341,6 @@ export const previewCampaign = asyncHandler(async (req, res) => {
     ctaUrl,
     imageUrl,
     unsubscribeUrl: '#',
-  });
+  }, { origin });
   res.json({ success: true, data: { html } });
 });

@@ -6,6 +6,7 @@ import Product from '../models/Product.js';
 import { buildPagination, buildPaginationMeta, paginationPresets, escapeRegex } from '../utils/query.js';
 import { notify, notifyAdmins } from '../services/notificationService.js';
 import { initiateRefund } from '../services/paymentService.js';
+import { normalizeOrigin } from '../services/emailTemplates.js';
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 
@@ -102,6 +103,8 @@ export const createOrder = asyncHandler(async (req, res) => {
     }
   }
 
+  const origin = normalizeOrigin(req.headers.origin || req.headers.referer);
+
   const order = await Order.create({
     user: req.user._id,
     items,
@@ -110,6 +113,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     total,
     shippingAddress,
     notes,
+    origin,
     payment: { method: paymentMethod },
     orderStatus: paymentMethod === 'cod' ? 'processing' : 'pending',
     paymentStatus: 'pending',
@@ -124,8 +128,6 @@ export const createOrder = asyncHandler(async (req, res) => {
       }
     }
   }
-
-  const origin = req.headers.origin || req.headers.referer;
 
   // Fire the "order placed" notification to the customer (in-app + email + push).
   // For Razorpay, paymentService sends the full confirmation email upon capture so the customer isn't spammed.
@@ -160,6 +162,18 @@ export const createOrder = asyncHandler(async (req, res) => {
 export const myOrders = asyncHandler(async (req, res) => {
   const { page, limit, skip } = buildPagination(req.query.page, req.query.limit, paginationPresets.order);
   const filter = { user: req.user._id };
+
+  const { status } = req.query;
+  if (status && status !== 'all') {
+    if (status === 'active') {
+      filter.status = { $in: ['pending', 'paid', 'processing', 'shipped', 'processing & shipping'] };
+    } else if (status === 'cancelled') {
+      filter.status = { $in: ['cancelled', 'refunded'] };
+    } else {
+      filter.status = status;
+    }
+  }
+
   const [orders, total] = await Promise.all([
     Order.find(filter).select(ORDER_LIST_SELECT).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
     Order.countDocuments(filter),
@@ -169,7 +183,9 @@ export const myOrders = asyncHandler(async (req, res) => {
 });
 
 export const getOrder = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id).lean();
+  const order = await Order.findById(req.params.id)
+    .populate('items.product', 'slug title images')
+    .lean();
   if (!order) {
     res.status(404);
     throw new Error('Order not found');
@@ -268,7 +284,8 @@ export const listOrders = asyncHandler(async (req, res) => {
   }
 
   // Optional search: by customer name/email, or by the order id text.
-  const q = String(req.query.q || '').trim();
+  const rawQ = String(req.query.q || '').trim();
+  const q = rawQ.replace(/^#/, '').trim();
   if (q) {
     const rx = new RegExp(escapeRegex(q), 'i');
     const userIds = await User.find({ $or: [{ name: rx }, { email: rx }] }).distinct('_id');
@@ -347,7 +364,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 
   const spec = STATUS_NOTIFICATION[target];
   if (changed && spec) {
-    const origin = req.headers.origin || req.headers.referer;
+    const origin = normalizeOrigin(req.headers.origin || req.headers.referer) || order.origin;
     await notify({
       user: order.user,
       type: spec.type,

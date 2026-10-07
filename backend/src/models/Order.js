@@ -90,6 +90,7 @@ const orderSchema = new mongoose.Schema(
     orderStatus: { type: String, enum: ORDER_STATUS, default: 'pending', index: true },
     paymentStatus: { type: String, enum: PAYMENT_STATUS, default: 'pending', index: true },
     fulfillmentStatus: { type: String, enum: FULFILLMENT_STATUS, default: 'unfulfilled' },
+    origin: { type: String }, // Client origin where order was placed (e.g. 'http://localhost:5173' or 'https://www.dreamdecords.com')
 
     // Deprecated mirror of orderStatus — see note above. Do not write directly.
     status: {

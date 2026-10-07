@@ -1,14 +1,25 @@
 import asyncHandler from 'express-async-handler';
 import NewsletterSubscriber from '../models/NewsletterSubscriber.js';
+import { clientUrl, normalizeOrigin } from '../services/emailTemplates.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Public base URL of THIS API, used to build unsubscribe links in emails.
-const serverUrl = () =>
-  (process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5000}`).replace(/\/$/, '');
+const serverUrl = (origin) => {
+  const norm = normalizeOrigin(origin);
+  if (norm) {
+    if (norm.includes('localhost') || norm.includes('127.0.0.1')) {
+      return `http://localhost:${process.env.PORT || 5000}`;
+    }
+    return process.env.SERVER_URL || 'https://api.dreamdecords.com';
+  }
+  if (process.env.SERVER_URL) return process.env.SERVER_URL.replace(/\/$/, '');
+  if (process.env.NODE_ENV === 'production') return 'https://api.dreamdecords.com';
+  return `http://localhost:${process.env.PORT || 5000}`;
+};
 
-export const unsubscribeUrlFor = (sub) =>
-  `${serverUrl()}/api/newsletter/unsubscribe?token=${sub.unsubscribeToken}`;
+export const unsubscribeUrlFor = (sub, origin) =>
+  `${serverUrl(origin)}/api/newsletter/unsubscribe?token=${sub.unsubscribeToken}`;
 
 // Welcome email trigger on subscription has been disabled per user requirement.
 export function sendWelcomeEmail(_sub, _origin) {
@@ -62,6 +73,8 @@ export const unsubscribeByToken = asyncHandler(async (req, res) => {
     ? `<strong>${sub.email}</strong> has been removed from the DreamzDecors newsletter. You can resubscribe anytime from our website.`
     : 'This unsubscribe link is invalid or has expired. If you keep receiving emails, reply to one and we’ll remove you.';
 
+  const backUrl = clientUrl({ origin: req.headers.origin || req.headers.referer });
+
   res.status(ok ? 200 : 404).type('html').send(`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -71,10 +84,10 @@ export const unsubscribeByToken = asyncHandler(async (req, res) => {
     <div style="font-size:18px;font-weight:700;letter-spacing:2px;">DREAMZDECORS</div>
     <h1 style="margin:24px 0 12px;font-size:22px;">${heading}</h1>
     <p style="font-size:14px;line-height:1.7;color:#5a5751;">${message}</p>
-    <a href="${(process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '')}"
-       style="display:inline-block;margin-top:20px;background:#c59e59;color:#fff;text-decoration:none;
-              font-size:13px;letter-spacing:1px;text-transform:uppercase;padding:12px 26px;border-radius:999px;">
-      Back to store
+    <a href="${backUrl}"
+       style="display:inline-block;margin-top:20px;background:#a17f37;color:#fff;text-decoration:none;
+              font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;padding:13px 30px;border-radius:999px;">
+      Return to Store
     </a>
   </div>
 </body></html>`);

@@ -12,7 +12,12 @@ function socketUrl() {
  * Connect the socket. Auth is the Better Auth session cookie, sent
  * automatically via withCredentials — no token needed.
  */
-export function connectSocket() {
+export function connectSocket(forceReconnect = false) {
+  if (forceReconnect && socket) {
+    socket.disconnect();
+    socket = null;
+  }
+
   if (socket?.connected) return socket;
   if (socket) {
     socket.connect();

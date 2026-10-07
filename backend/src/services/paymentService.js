@@ -4,6 +4,7 @@ import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import { getRazorpay } from '../config/razorpay.js';
 import { notify, notifyAdmins } from '../services/notificationService.js';
+import { normalizeOrigin } from './emailTemplates.js';
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 
@@ -46,7 +47,7 @@ const logEvent = (order, type, source, meta) => {
  *
  * @returns {{ changed: boolean, order: object, duplicate?: boolean }}
  */
-export async function markOrderPaid(orderId, { paymentId, razorpayOrderId, signature, amount, source }) {
+export async function markOrderPaid(orderId, { paymentId, razorpayOrderId, signature, amount, source, origin }) {
   // Atomic claim: only the first caller flips paymentStatus to 'captured'.
   const claimed = await Order.findOneAndUpdate(
     { _id: orderId, paymentStatus: { $ne: 'captured' } },
@@ -99,6 +100,13 @@ export async function markOrderPaid(orderId, { paymentId, razorpayOrderId, signa
   const orderShortId = String(claimed._id).slice(-8).toUpperCase();
   const customerName = claimed.shippingAddress?.name || 'A customer';
 
+  const cleanOrigin = normalizeOrigin(origin);
+  if (cleanOrigin && !claimed.origin) {
+    claimed.origin = cleanOrigin;
+  }
+
+  const effectiveOrigin = cleanOrigin || claimed.origin;
+
   await notify({
     user: claimed.user,
     type: 'order_paid',
@@ -108,7 +116,7 @@ export async function markOrderPaid(orderId, { paymentId, razorpayOrderId, signa
     link: `/account/orders/${claimed._id}`,
     email: true,
     push: true,
-    emailContext: { order: claimed },
+    emailContext: { order: claimed, origin: effectiveOrigin },
   });
 
   await notifyAdmins({
@@ -117,7 +125,7 @@ export async function markOrderPaid(orderId, { paymentId, razorpayOrderId, signa
     message: `Payment of ${amountLabel} confirmed for order #${orderShortId} from ${customerName}.`,
     data: { orderId: claimed._id },
     link: '/admin/orders',
-    emailContext: { order: claimed, customerName },
+    emailContext: { order: claimed, customerName, origin: effectiveOrigin },
   });
 
   return { changed: true, order: claimed };
@@ -209,7 +217,7 @@ export async function markRefundProcessed(orderId, { refundId, amount, source })
     link: `/account/orders/${order._id}`,
     email: true,
     push: true,
-    emailContext: { order },
+    emailContext: { order, origin: order.origin },
   });
 
   return { changed: true, order };

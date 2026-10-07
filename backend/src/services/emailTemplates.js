@@ -19,34 +19,67 @@ const COLORS = {
   muted: '#9a948a',
 };
 
+export function normalizeOrigin(input) {
+  if (!input || typeof input !== 'string') return null;
+  const trimmed = input.trim();
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) return null;
+  try {
+    const u = new URL(trimmed);
+    return u.origin.replace(/\/+$/, '');
+  } catch {
+    return null;
+  }
+}
+
+export function isLocalhost(urlStr) {
+  if (!urlStr || typeof urlStr !== 'string') return false;
+  return /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?/i.test(urlStr);
+}
+
 export function clientUrl(ctx = {}) {
-  // 1. If explicit origin was provided in ctx (e.g. from req.headers.origin on live site)
-  if (ctx.origin && typeof ctx.origin === 'string' && ctx.origin.startsWith('http')) {
-    return ctx.origin.replace(/\/+$/, '');
+  // 1. Explicit origin provided in ctx (e.g. from req.headers.origin or referer)
+  const explicitOrigin = normalizeOrigin(ctx.origin);
+  if (explicitOrigin) {
+    return explicitOrigin;
   }
 
-  // 2. If LIVE_SITE_URL or SITE_URL is defined
-  const explicit = process.env.LIVE_SITE_URL || process.env.SITE_URL;
-  if (explicit && typeof explicit === 'string' && explicit.startsWith('http')) {
-    return explicit.replace(/\/+$/, '');
+  // 2. Origin saved on order (e.g. ctx.order?.origin)
+  const orderOrigin = normalizeOrigin(ctx.order?.origin);
+  if (orderOrigin) {
+    return orderOrigin;
   }
 
-  // 3. Check comma-separated CLIENT_URL in env
+  // 3. If req is provided in ctx, check its origin or referer
+  if (ctx.req && ctx.req.headers) {
+    const reqOrigin = normalizeOrigin(ctx.req.headers.origin || ctx.req.headers.referer);
+    if (reqOrigin) {
+      return reqOrigin;
+    }
+  }
+
+  // Parse configured CLIENT_URL origins (which may be comma-separated)
   const raw = process.env.CLIENT_URL || '';
-  const origins = raw
+  const configuredOrigins = raw
     .split(',')
-    .map((o) => o.trim().replace(/\/+$/, ''))
+    .map((o) => normalizeOrigin(o))
     .filter(Boolean);
 
-  // If in production or live origin is present in CLIENT_URL, prefer non-localhost URL!
-  const live = origins.find((o) => !o.includes('localhost') && !o.includes('127.0.0.1'));
-  if (live) return live;
+  const localConfigured = configuredOrigins.find((o) => isLocalhost(o));
+  const liveConfigured = configuredOrigins.find((o) => !isLocalhost(o));
+  const liveExplicit = normalizeOrigin(process.env.LIVE_SITE_URL || process.env.SITE_URL);
 
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://www.dreamdecords.com';
+  // 4. In development environment (local testing):
+  // Always default to localhost URL unless an explicit live origin was provided above
+  if (process.env.NODE_ENV !== 'production') {
+    return localConfigured || 'http://localhost:5173';
   }
 
-  return origins[0] || 'http://localhost:5173';
+  // 5. In production environment:
+  // Default to live site URL
+  if (liveExplicit) return liveExplicit;
+  if (liveConfigured) return liveConfigured;
+
+  return 'https://www.dreamdecords.com';
 }
 
 const supportEmail = () => process.env.SUPPORT_EMAIL || 'dreamzdecor30@gmail.com';
@@ -145,7 +178,7 @@ function renderEmail({ preheader, heading, bodyHtml, cta, imageUrl, footerNote, 
             ${note}${unsubscribe}
           </p>
           <p style="margin:12px 0 0;font-size:11px;color:${COLORS.muted};">
-            © ${currentYear()} ${BRAND} · <a href="${baseUrl}" style="color:${COLORS.muted};text-decoration:underline;">dreamzdecors.com</a>
+            © ${currentYear()} ${BRAND} · <a href="${baseUrl}" style="color:${COLORS.muted};text-decoration:underline;">${(() => { try { return new URL(baseUrl).host; } catch { return 'dreamdecords.com'; } })()}</a>
           </p>
         </td></tr>
 
@@ -176,124 +209,130 @@ export function buildEmail(type, ctx = {}) {
   const baseUrl = clientUrl(ctx);
   const name = ctx.name || ctx.order?.shippingAddress?.name || 'there';
   const orderId = ctx.order?._id || ctx.orderId;
+  const shortId = orderId ? String(orderId).slice(-8).toUpperCase() : null;
   const orderUrl = orderId ? `${baseUrl}/account/orders/${orderId}` : `${baseUrl}/account/orders`;
   const total = ctx.order?.total != null ? `₹${Number(ctx.order.total).toLocaleString('en-IN')}` : null;
-  const viewOrder = { label: 'View order', url: orderUrl };
 
   switch (type) {
     case 'order_placed':
       return {
-        subject: `Order confirmed — thank you, ${name}!`,
-        text: `Hi ${name}, we've received your order${total ? ` of ${total}` : ''}. We'll start preparing it and notify you the moment it ships.${unboxingNoticeText()}\n\nView order: ${orderUrl}`,
+        subject: `Order confirmed — thank you, ${name}! (${shortId ? `#${shortId}` : ''})`.trim(),
+        text: `Hi ${name}, we've received your order${total ? ` of ${total}` : ''}. We'll start preparing it and notify you the moment it ships.${unboxingNoticeText()}\n\nView Order Details: ${orderUrl}`,
         html: renderEmail({
           preheader: `We've received your order${total ? ` of ${total}` : ''}.`,
           heading: 'Your order is confirmed',
           bodyHtml: `<p style="margin:0 0 12px;">Hi ${name}, we've received your order${total ? ` of <strong>${total}</strong>` : ''}. We'll start preparing it and notify you the moment it ships.</p>${unboxingNoticeHtml()}`,
-          cta: viewOrder,
+          cta: { label: 'View Order Details', url: orderUrl },
         }, ctx),
       };
     case 'order_paid':
       return {
-        subject: `Order confirmed — thank you, ${name}! (${orderId ? `#${orderId}` : ''})`.trim(),
-        text: `Hi ${name}, thank you for your order! Your payment${total ? ` of ${total}` : ''} was successful. Our studio has received your order and our artisans are now hand-finishing, framing, and carefully packaging your artwork. We'll send you tracking details as soon as it ships.${unboxingNoticeText()}\n\nView order: ${orderUrl}`,
+        subject: `Order confirmed — thank you, ${name}! (${shortId ? `#${shortId}` : ''})`.trim(),
+        text: `Hi ${name}, thank you for your order! Your payment${total ? ` of ${total}` : ''} was successful. Our studio has received your order and our artisans are now hand-finishing, framing, and carefully packaging your artwork. We'll send you tracking details as soon as it ships.${unboxingNoticeText()}\n\nView Order Details: ${orderUrl}`,
         html: renderEmail({
           preheader: `Your payment${total ? ` of ${total}` : ''} was successful and your order is confirmed.`,
           heading: 'Order Confirmed & In Production',
           bodyHtml: `<p style="margin:0 0 12px;">Hi ${name}, thank you for your order! Your payment${total ? ` of <strong>${total}</strong>` : ''} was successful. Our studio has received your order and our artisans are now hand-finishing, framing, and carefully packaging your artwork. We'll send you tracking details as soon as it ships.</p>${unboxingNoticeHtml()}`,
-          cta: viewOrder,
+          cta: { label: 'View Order Details', url: orderUrl },
         }, ctx),
       };
     case 'order_processing':
       return {
-        subject: `Your order is being prepared 🎨`,
-        text: `Hi ${name}, our studio has begun preparing your order${total ? ` of ${total}` : ''}. Each piece is carefully inspected, framed, and packaged with archival care. We'll notify you the moment it ships.${unboxingNoticeText()}\n\nView order: ${orderUrl}`,
+        subject: `Your order is being prepared 🎨 (${shortId ? `#${shortId}` : ''})`.trim(),
+        text: `Hi ${name}, our studio has begun preparing your order${total ? ` of ${total}` : ''}. Each piece is carefully inspected, framed, and packaged with archival care. We'll notify you the moment it ships.${unboxingNoticeText()}\n\nTrack Order Progress: ${orderUrl}`,
         html: renderEmail({
           preheader: `We're preparing your order${total ? ` of ${total}` : ''} for dispatch.`,
           heading: 'Order in preparation',
           bodyHtml: `<p style="margin:0 0 12px;">Hi ${name}, our studio has begun preparing your order${total ? ` of <strong>${total}</strong>` : ''}. Each piece is carefully inspected, framed, and packaged with archival care. We'll notify you the moment it ships.</p>${unboxingNoticeHtml()}`,
-          cta: viewOrder,
+          cta: { label: 'Track Order Progress', url: orderUrl },
         }, ctx),
       };
     case 'order_shipped':
       return {
-        subject: 'Your order has shipped 🚚',
-        text: `Good news, ${name}! Your order has been dispatched and is on its way. Tracking details will follow shortly.${unboxingNoticeText()}\n\nTrack order: ${orderUrl}`,
+        subject: `Your order has shipped 🚚 (${shortId ? `#${shortId}` : ''})`.trim(),
+        text: `Good news, ${name}! Your order has been dispatched and is on its way. Tracking details will follow shortly.${unboxingNoticeText()}\n\nTrack Shipment & Delivery: ${orderUrl}`,
         html: renderEmail({
           preheader: 'Your order is on its way.',
           heading: 'On its way to you',
           bodyHtml: `<p style="margin:0 0 12px;">Good news, ${name}! Your order has been dispatched and is on its way. Tracking details will follow shortly.</p>${unboxingNoticeHtml()}`,
-          cta: { label: 'Track order', url: orderUrl },
+          cta: { label: 'Track Shipment & Delivery', url: orderUrl },
         }, ctx),
       };
     case 'order_delivered':
       return {
-        subject: 'Your order has been delivered',
-        text: `Hi ${name}, your order has been delivered. We hope you love your new artwork! Please remember to inspect your package upon arrival.${unboxingNoticeText()}\n\nView order: ${orderUrl}`,
+        subject: `Your order has been delivered 🎉 (${shortId ? `#${shortId}` : ''})`.trim(),
+        text: `Hi ${name}, your order has been delivered. We hope you love your new artwork! Please remember to inspect your package upon arrival.${unboxingNoticeText()}\n\nView Order & Leave Review: ${orderUrl}`,
         html: renderEmail({
           preheader: 'We hope you love it!',
           heading: 'Delivered',
           bodyHtml: `<p style="margin:0 0 12px;">Hi ${name}, your order has been delivered. We hope you love your new artwork! Please remember to inspect your package upon arrival.</p>${unboxingNoticeHtml()}<p style="margin:16px 0 0;">If everything looks perfect, tap below to view your order and leave a review.</p>`,
-          cta: viewOrder,
+          cta: { label: 'View Order & Leave Review', url: orderUrl },
         }, ctx),
       };
     case 'order_cancelled':
       return {
-        subject: 'Your order was cancelled',
+        subject: `Your order was cancelled (${shortId ? `#${shortId}` : ''})`.trim(),
+        text: `Hi ${name}, your order${shortId ? ` #${shortId}` : ''} has been cancelled. If this wasn't expected or you need a refund update, reply to this email.\n\nView Order Summary: ${orderUrl}`,
         html: renderEmail({
           preheader: 'Your order has been cancelled.',
           heading: 'Order cancelled',
           bodyHtml: `Hi ${name}, your order has been cancelled. If this wasn't expected or you need a refund update, reply to this email.`,
-          cta: viewOrder,
+          cta: { label: 'View Order Summary', url: orderUrl },
         }, ctx),
       };
     case 'order_refunded':
       return {
-        subject: 'Refund processed',
+        subject: `Refund processed (${shortId ? `#${shortId}` : ''})`.trim(),
+        text: `Hi ${name}, your refund${total ? ` of ${total}` : ''} has been processed and should reflect in your account soon.\n\nView Refund Status: ${orderUrl}`,
         html: renderEmail({
           preheader: `Your refund${total ? ` of ${total}` : ''} has been processed.`,
           heading: 'Refund processed',
           bodyHtml: `Hi ${name}, your refund${total ? ` of <strong>${total}</strong>` : ''} has been processed and should reflect in your account soon.`,
-          cta: viewOrder,
+          cta: { label: 'View Refund Status', url: orderUrl },
         }, ctx),
       };
     case 'account_welcome':
       return {
         subject: `Welcome to ${BRAND}`,
+        text: `Hi ${name}, thanks for joining ${BRAND}! Explore hand-finished canvases, gallery sets, and statement pieces curated for spaces that linger.\n\nExplore Handcrafted Art: ${baseUrl}/shop`,
         html: renderEmail({
           preheader: 'Hand-finished canvases, gallery sets and statement pieces await.',
           heading: `Welcome, ${name}!`,
           bodyHtml: `Thanks for joining ${BRAND}. Explore hand-finished canvases, gallery sets, and statement pieces curated for spaces that linger.`,
-          cta: { label: 'Start shopping', url: `${baseUrl}/shop` },
+          cta: { label: 'Explore Handcrafted Art', url: `${baseUrl}/shop` },
         }, ctx),
       };
     case 'admin_new_order':
       return {
-        subject: `New order received${total ? ` — ${total}` : ''}`,
+        subject: `New order received${total ? ` — ${total}` : ''} (${shortId ? `#${shortId}` : ''})`.trim(),
+        text: `A new order has been placed${ctx.customerName ? ` by ${ctx.customerName}` : ''}${total ? ` for ${total}` : ''}.\n\nReview Order in Dashboard: ${baseUrl}/admin/orders`,
         html: renderEmail({
           preheader: `A new order was placed${total ? ` for ${total}` : ''}.`,
           heading: 'New order received',
           bodyHtml: `A new order has been placed${ctx.customerName ? ` by <strong>${ctx.customerName}</strong>` : ''}${total ? ` for <strong>${total}</strong>` : ''}. Open the dashboard to review and process it.`,
-          cta: { label: 'Open admin orders', url: `${baseUrl}/admin/orders` },
+          cta: { label: 'Review Order in Dashboard', url: `${baseUrl}/admin/orders` },
         }, ctx),
       };
     case 'admin_order_paid':
       return {
-        subject: `Payment received${total ? ` — ${total}` : ''}`,
+        subject: `Payment received${total ? ` — ${total}` : ''} (${shortId ? `#${shortId}` : ''})`.trim(),
+        text: `Payment has been confirmed${ctx.customerName ? ` from ${ctx.customerName}` : ''}${total ? ` for ${total}` : ''}.\n\nReview Payment in Dashboard: ${baseUrl}/admin/orders`,
         html: renderEmail({
           preheader: `Payment confirmed${total ? ` of ${total}` : ''}.`,
           heading: 'Payment received',
           bodyHtml: `Payment has been confirmed${ctx.customerName ? ` from <strong>${ctx.customerName}</strong>` : ''}${total ? ` for <strong>${total}</strong>` : ''}. The order is ready to be processed and shipped.`,
-          cta: { label: 'Open admin orders', url: `${baseUrl}/admin/orders` },
+          cta: { label: 'Review Payment in Dashboard', url: `${baseUrl}/admin/orders` },
         }, ctx),
       };
     default:
       return {
         subject: ctx.title || `Update from ${BRAND}`,
+        text: `${ctx.title || 'Notification'}\n\n${ctx.message || ''}${ctx.link ? `\n\n${ctx.ctaLabel || 'View Details'}: ${baseUrl}${ctx.link.startsWith('/') ? '' : '/'}${ctx.link}` : ''}`,
         html: renderEmail({
           preheader: ctx.message || '',
           heading: ctx.title || 'Notification',
           bodyHtml: ctx.message || '',
-          cta: ctx.link ? { label: 'View', url: `${baseUrl}${ctx.link.startsWith('/') ? '' : '/'}${ctx.link}` } : undefined,
+          cta: ctx.link ? { label: ctx.ctaLabel || 'View Details', url: `${baseUrl}${ctx.link.startsWith('/') ? '' : '/'}${ctx.link}` } : undefined,
         }, ctx),
       };
   }
@@ -341,7 +380,7 @@ export function buildContactMessage({ name, email, subject, message }, ctx = {})
       preheader: `New message from ${name} (${email})`,
       heading: 'New contact message',
       bodyHtml,
-      cta: { label: 'Reply by email', url: `mailto:${email}?subject=${encodeURIComponent('Re: ' + safeSubject)}` },
+      cta: { label: 'Reply to Customer via Email', url: `mailto:${email}?subject=${encodeURIComponent('Re: ' + safeSubject)}` },
       footerNote: `Sent from the ${BRAND} website contact form. Reply directly to respond to the customer.`,
     }, ctx),
   };
@@ -360,7 +399,7 @@ export function buildNewsletterWelcome({ unsubscribeUrl } = {}, ctx = {}) {
       preheader: 'First access to new collections, limited prints & members-only offers.',
       heading: 'Welcome to the inner circle',
       bodyHtml: `Thanks for subscribing! You'll be the first to hear about new collections, limited-edition prints, and members-only offers — no spam, ever.`,
-      cta: { label: 'Explore new arrivals', url: `${baseUrl}/shop` },
+      cta: { label: 'Explore Curated Collections', url: `${baseUrl}/shop` },
       footerNote: NEWSLETTER_NOTE,
       unsubscribeUrl,
     }, ctx),
@@ -383,7 +422,7 @@ export function buildNewsletterCampaign({ subject, heading, body, ctaLabel, ctaU
       preheader: String(body || '').replace(/<[^>]+>/g, '').slice(0, 110),
       heading: heading || subject || BRAND,
       bodyHtml: htmlBody,
-      cta: ctaLabel && safeCtaUrl ? { label: ctaLabel, url: safeCtaUrl } : undefined,
+      cta: ctaLabel && safeCtaUrl ? { label: ctaLabel, url: safeCtaUrl } : (safeCtaUrl ? { label: 'Explore Collection', url: safeCtaUrl } : undefined),
       imageUrl,
       footerNote: NEWSLETTER_NOTE,
       unsubscribeUrl,

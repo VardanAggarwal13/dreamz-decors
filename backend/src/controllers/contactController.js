@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import Settings from '../models/Settings.js';
 import { sendEmail, mailFrom } from '../services/mailer.js';
-import { buildContactMessage } from '../services/emailTemplates.js';
+import { buildContactMessage, normalizeOrigin } from '../services/emailTemplates.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -34,7 +34,7 @@ export const submitContact = asyncHandler(async (req, res) => {
   }
 
   const to = await contactRecipient();
-  const origin = req.headers.origin || req.headers.referer;
+  const origin = normalizeOrigin(req.headers.origin || req.headers.referer);
   const { subject: emailSubject, html } = buildContactMessage({ name, email, subject, message }, { origin });
 
   const sent = await sendEmail({ to, subject: emailSubject, html, replyTo: email });

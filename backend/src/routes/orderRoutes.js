@@ -3,6 +3,7 @@ import {
   createOrder,
   myOrders,
   getOrder,
+  getOrderReviews,
   listOrders,
   updateOrderStatus,
   deleteOrder,
@@ -16,6 +17,7 @@ router.use(protect);
 router.post('/', createOrder);
 router.get('/me', myOrders);
 router.get('/:id', getOrder);
+router.get('/:id/reviews', getOrderReviews);
 
 router.get('/', adminOnly, listOrders);
 router.patch('/:id/status', adminOnly, updateOrderStatus);

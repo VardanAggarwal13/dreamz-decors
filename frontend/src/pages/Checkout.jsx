@@ -290,8 +290,11 @@ export default function Checkout() {
                 <Row label="Subtotal" value={formatINR(subtotal)} />
                 <Row label="Shipping" value={shipping === 0 ? 'Standard Delivery' : formatINR(shipping)} valueClass={shipping === 0 ? 'text-ink-soft' : ''} />
               </dl>
-              <div className="mt-4 flex items-center justify-between border-t border-hairline/70 pt-4">
-                <span className="text-base font-semibold text-ink">Total</span>
+              <div className="mt-4 flex items-baseline justify-between border-t border-hairline/70 pt-4">
+                <div>
+                  <span className="text-base font-semibold text-ink">Total</span>
+                  <span className="block text-[11px] font-normal text-ink-muted">(includes all taxes)</span>
+                </div>
                 <span className="font-display text-2xl text-gold-deep">{formatINR(total)}</span>
               </div>
 

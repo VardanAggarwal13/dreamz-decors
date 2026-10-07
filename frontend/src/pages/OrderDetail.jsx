@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import OrderStatusBadge from '@/components/common/OrderStatusBadge';
 import OrderInvoiceModal from '@/components/common/OrderInvoiceModal';
+import OrderReviewSection from '@/components/common/OrderReviewSection';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import { formatINR } from '@/lib/utils';
@@ -313,11 +314,21 @@ export default function OrderDetail() {
                         {/* Artwork Preview Image */}
                         <div className="relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 overflow-hidden rounded-xl border border-hairline bg-bone-muted shadow-2xs">
                           {it.image ? (
-                            <img
-                              src={it.image}
-                              alt={it.title || 'Canvas artwork'}
-                              className="h-full w-full object-cover transition duration-300 hover:scale-105"
-                            />
+                            productSlug ? (
+                              <Link to={`/product/${productSlug}`} className="block h-full w-full">
+                                <img
+                                  src={it.image}
+                                  alt={it.title || 'Canvas artwork'}
+                                  className="h-full w-full object-cover transition duration-300 hover:scale-105"
+                                />
+                              </Link>
+                            ) : (
+                              <img
+                                src={it.image}
+                                alt={it.title || 'Canvas artwork'}
+                                className="h-full w-full object-cover transition duration-300 hover:scale-105"
+                              />
+                            )
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-ink-muted">
                               <FiPackage size={26} />
@@ -330,7 +341,7 @@ export default function OrderDetail() {
                           <div>
                             {productSlug ? (
                               <Link
-                                to={`/shop/${productSlug}`}
+                                to={`/product/${productSlug}`}
                                 className="group inline-flex items-center gap-1.5 font-medium text-ink hover:text-gold-deep text-sm sm:text-base leading-snug line-clamp-1"
                               >
                                 <span>{it.title || 'Handcrafted Canvas Artwork'}</span>
@@ -576,6 +587,11 @@ export default function OrderDetail() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Rate & Review Purchased Artworks (Delivered within 30 days) */}
+          <div className="mt-8">
+            <OrderReviewSection order={order} />
           </div>
 
           {/* Standardized Tax Invoice Modal (Only opens for delivered orders) */}

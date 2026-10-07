@@ -3,6 +3,7 @@ import Order, { ORDER_STATUS } from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import User from '../models/User.js';
 import Product from '../models/Product.js';
+import ProductReview from '../models/ProductReview.js';
 import { buildPagination, buildPaginationMeta, paginationPresets, escapeRegex } from '../utils/query.js';
 import { notify, notifyAdmins } from '../services/notificationService.js';
 import { initiateRefund } from '../services/paymentService.js';
@@ -195,6 +196,33 @@ export const getOrder = asyncHandler(async (req, res) => {
     throw new Error('Not authorized to view this order');
   }
   res.json({ success: true, data: order });
+});
+
+export const getOrderReviews = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id).lean();
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
+  }
+  if (String(order.user) !== String(req.user._id) && req.user.role !== 'admin') {
+    res.status(403);
+    throw new Error('Not authorized to view reviews for this order');
+  }
+  const productIds = (order.items || [])
+    .map((it) => it.product?._id || it.product)
+    .filter(Boolean);
+
+  const reviews = await ProductReview.find({
+    user: req.user._id,
+    product: { $in: productIds },
+  }).lean();
+
+  const map = {};
+  reviews.forEach((r) => {
+    map[String(r.product)] = r;
+  });
+
+  res.json({ success: true, data: map });
 });
 
 export const listOrders = asyncHandler(async (req, res) => {

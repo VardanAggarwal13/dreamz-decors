@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FiShoppingBag } from 'react-icons/fi';
 import { toast } from 'sonner';
 import Seo from '@/components/common/Seo';
 import AuthShell from '@/components/common/AuthShell';
@@ -25,7 +26,13 @@ export default function Login() {
   const setSession = useAuthStore((s) => s.setSession);
   const navigate   = useNavigate();
   const location   = useLocation();
-  const from       = location.state?.from?.pathname || '/account';
+
+  const searchParams = new URLSearchParams(location.search);
+  const redirectParam = searchParams.get('redirect');
+  const rawFrom = redirectParam || location.state?.from?.pathname || '/';
+  const from = rawFrom === '/login' || rawFrom === '/register' ? '/' : rawFrom;
+  const isCheckoutRedirect = from.startsWith('/checkout') || from.startsWith('/cart');
+  const registerUrl = from && from !== '/' ? `/register?redirect=${encodeURIComponent(from)}` : '/register';
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -59,7 +66,7 @@ export default function Login() {
         title="Your wall story continues here."
         description="Access saved pieces, track orders, and move through checkout without the friction."
         points={['Track every order live', 'Save and revisit favourites', 'One-tap checkout']}
-        cta={{ label: "Don't have an account? Join us", href: '/register' }}
+        cta={{ label: "Don't have an account? Join us", href: registerUrl }}
       >
         {/* Form heading */}
         <div>
@@ -70,6 +77,17 @@ export default function Login() {
             Sign in to access your orders and saved pieces.
           </p>
         </div>
+
+        {/* Notice if coming from cart/checkout */}
+        {isCheckoutRedirect && (
+          <div className="mt-4 rounded-xl border border-gold/40 bg-gold/10 p-3.5 text-xs text-ink flex items-start gap-2.5">
+            <FiShoppingBag className="text-gold-deep shrink-0 mt-0.5" size={16} />
+            <div>
+              <p className="font-semibold text-ink">Sign in to complete your order</p>
+              <p className="mt-0.5 text-ink-muted">Your cart items are saved and you will be directed straight to checkout.</p>
+            </div>
+          </div>
+        )}
 
         {/* Error */}
         {error && (
@@ -127,12 +145,12 @@ export default function Login() {
           <span className="h-px flex-1 bg-hairline" />
         </div>
 
-        <GoogleButton />
+        <GoogleButton redirectTo={from} />
 
         {/* Switch */}
         <p className="mt-7 text-center text-sm text-ink-soft">
           New to Dreamz Decor?{' '}
-          <Link to="/register" className="font-medium text-accent hover:text-accent-deep">
+          <Link to={registerUrl} className="font-medium text-accent hover:text-accent-deep">
             Create an account
           </Link>
         </p>

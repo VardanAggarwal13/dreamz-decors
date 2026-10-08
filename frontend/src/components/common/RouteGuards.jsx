@@ -22,16 +22,31 @@ export function RequireAuth({ children }) {
 
   if (status === 'loading') return null; // wait for the session check
   if (status !== 'authenticated') {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    const returnPath = location.pathname + location.search;
+    return (
+      <Navigate
+        to={`/login?redirect=${encodeURIComponent(returnPath)}`}
+        replace
+        state={{ from: location }}
+      />
+    );
   }
   return children;
 }
 
 export function PublicOnlyRoute({ children }) {
   const status = useAuthStore((s) => s.status);
+  const location = useLocation();
 
   if (status === 'loading') return null;
-  if (status === 'authenticated') return <Navigate to="/account" replace />;
+  if (status === 'authenticated') {
+    const searchParams = new URLSearchParams(location.search);
+    const redirectParam = searchParams.get('redirect');
+    const target = redirectParam && redirectParam.startsWith('/') && redirectParam !== '/login' && redirectParam !== '/register'
+      ? redirectParam
+      : '/';
+    return <Navigate to={target} replace />;
+  }
   return children;
 }
 

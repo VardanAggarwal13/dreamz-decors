@@ -54,13 +54,13 @@ export default function Hero() {
 
             {/* ── Mobile Hero Image Showcase (Shown on mobile screens < lg) ── */}
             <div className="mt-4 block lg:hidden">
-              <div className="relative aspect-[4/3] sm:aspect-[16/10] w-full overflow-hidden rounded-2xl border border-hairline/80 bg-bone-soft shadow-[0_10px_30px_rgba(22,22,22,0.08)]">
+              <div className="relative aspect-[4/5] max-h-[420px] w-full overflow-hidden rounded-2xl border border-hairline/80 bg-bone-soft shadow-[0_10px_30px_rgba(22,22,22,0.08)]">
                 <img
-                  src={cldTransform(hero.image, { width: 900, height: 750, gravity: 'north' })}
-                  srcSet={cldSrcSet(hero.image, { widths: [480, 720, 900], aspectRatio: 4 / 3, gravity: 'north' })}
+                  src={cldTransform(hero.image, { width: 800, height: 1000, gravity: 'auto' })}
+                  srcSet={cldSrcSet(hero.image, { widths: [360, 480, 720, 800], aspectRatio: 4 / 5, gravity: 'auto' })}
                   sizes="(max-width: 640px) 100vw, 80vw"
-                  width={900}
-                  height={675}
+                  width={800}
+                  height={1000}
                   alt="DreamzDecors styled interior"
                   fetchPriority="high"
                   decoding="async"
@@ -70,7 +70,7 @@ export default function Hero() {
                       e.currentTarget.src = FALLBACK_HERO_IMAGE;
                     }
                   }}
-                  className="h-full w-full object-cover object-[center_12%]"
+                  className="h-full w-full object-cover object-[center_38%]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/35 via-transparent to-transparent" />
 

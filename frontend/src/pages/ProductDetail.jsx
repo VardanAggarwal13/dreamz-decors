@@ -4,7 +4,7 @@ import { HiStar } from 'react-icons/hi2';
 import { 
   FiHeart, FiShoppingBag, FiShield, FiAward, FiMapPin, FiPackage, 
   FiTruck, FiCheck, FiChevronLeft, FiChevronRight, FiMaximize2, FiX, FiCheckCircle, 
-  FiChevronDown, FiClock, FiLock, FiFeather, FiLayers, FiHelpCircle
+  FiChevronDown, FiClock, FiLock, FiFeather, FiLayers, FiHelpCircle, FiArrowRight
 } from 'react-icons/fi';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
@@ -92,13 +92,13 @@ export default function ProductDetail() {
   });
   const product = useMemo(() => normalizeProduct(data?.data), [data]);
 
-  const related = useFetch(
-    product?.categoryId ? `/products?category=${product.categoryId}&limit=4&sort=bestselling` : null,
-    {
-      deps: [product?.categoryId],
-      cache: product?.categoryId ? `dd:related:${product.categoryId}` : undefined,
-    }
-  );
+  const relatedEndpoint = product?.categoryId
+    ? `/products?category=${product.categoryId}&limit=8&sort=bestselling`
+    : '/products?limit=8&sort=bestselling';
+  const related = useFetch(product?.id ? relatedEndpoint : null, {
+    deps: [product?.id, product?.categoryId],
+    cache: product?.id ? `dd:related:${product.categoryId || 'all'}` : undefined,
+  });
   const relatedList = useMemo(
     () => (related.data?.data || []).map(normalizeProduct),
     [related.data]
@@ -918,11 +918,31 @@ export default function ProductDetail() {
         {/* ── 6. You May Also Like / Related Artworks ──────────── */}
         {(related.loading || relatedList.length > 0) && (
           <section className="mt-10 sm:mt-12 border-t border-hairline/70 pt-8 sm:pt-10">
-            <SectionHeader eyebrow="Curated For You" title="More Masterpieces To Explore" />
+            <SectionHeader
+              eyebrow="Curated For You"
+              title="More Masterpieces To Explore"
+              link={{ label: 'Explore More', href: '/shop' }}
+            />
             {related.loading ? (
               <ProductGridSkeleton columns={4} count={4} />
             ) : (
-              <ProductGrid products={relatedList} columns={4} />
+              <>
+                <ProductGrid products={relatedList} columns={4} />
+                <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+                  <Button asChild variant="primary" size="lg" className="w-full sm:w-auto px-8 shadow-sm hover:shadow-md transition-all">
+                    <Link to="/shop" className="inline-flex items-center justify-center gap-2 font-medium tracking-wide">
+                      Explore More Masterpieces <FiArrowRight size={15} />
+                    </Link>
+                  </Button>
+                  {product?.category && (
+                    <Button asChild variant="outline" size="lg" className="w-full sm:w-auto px-6">
+                      <Link to={`/${product.category}`} className="inline-flex items-center justify-center gap-2">
+                        View All {product.categoryTitle || 'Collection'} <FiArrowRight size={15} />
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </>
             )}
           </section>
         )}

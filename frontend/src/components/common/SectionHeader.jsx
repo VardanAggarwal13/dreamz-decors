@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { FiArrowRight } from 'react-icons/fi';
 
 export default function SectionHeader({ eyebrow, title, link }) {
   return (
@@ -8,8 +9,9 @@ export default function SectionHeader({ eyebrow, title, link }) {
         <h2 className="mt-3 font-display text-3xl text-balance text-ink sm:text-4xl">{title}</h2>
       </div>
       {link && (
-        <Link to={link.href} className="editorial-link hidden sm:inline">
+        <Link to={link.href} className="editorial-link hidden sm:inline-flex items-center gap-1.5">
           {link.label}
+          <FiArrowRight size={13} />
         </Link>
       )}
     </div>

@@ -162,8 +162,8 @@ export default function ProductCard({ product, layout = 'default' }) {
         </div>
 
         {/* Price & Discount */}
-        <div className="mt-2 flex flex-wrap items-baseline gap-1.5 sm:gap-2">
-          <span className="text-[15px] font-bold text-ink sm:text-[17px]">
+        <div className="mt-2 flex min-h-[34px] sm:min-h-[26px] flex-wrap items-baseline gap-1 sm:gap-2">
+          <span className="text-[14px] font-bold text-ink sm:text-[17px]">
             {formatINR(product.price)}
           </span>
           {product.mrp && product.mrp > product.price && (
@@ -181,7 +181,7 @@ export default function ProductCard({ product, layout = 'default' }) {
         </div>
 
         {/* Add to Cart CTA Button */}
-        <div className="mt-3 pt-1">
+        <div className="mt-auto pt-2.5 sm:pt-3">
           <button
             onClick={handleAddToCart}
             className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-[10px] font-bold uppercase tracking-[0.14em] transition-all duration-200 active:scale-[0.98] sm:py-2.5 sm:text-[11px] ${

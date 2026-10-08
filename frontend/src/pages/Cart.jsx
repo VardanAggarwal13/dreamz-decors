@@ -23,6 +23,7 @@ import ProductGridSkeleton from '@/components/common/ProductGridSkeleton';
 import useFetch from '@/hooks/useFetch';
 import api from '@/lib/api';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 import { formatINR, normalizeProduct } from '@/lib/utils';
 
 function QtyButton({ onClick, children, label, disabled = false }) {
@@ -50,6 +51,7 @@ export default function Cart() {
   const patchItem = useCartStore((state) => state.patchItem);
   const clear = useCartStore((state) => state.clear);
   const subtotal = useCartStore((state) => state.subtotal());
+  const user = useAuthStore((state) => state.user);
 
   // Backfill descriptions onto items saved before we started capturing them,
   // so older carts show the product blurb without needing a re-add.
@@ -360,7 +362,7 @@ export default function Cart() {
                 size="md"
                 className="mt-5 w-full bg-gold-deep text-bone hover:bg-gold-deep/90"
               >
-                <Link to="/checkout">
+                <Link to={user ? "/checkout" : "/login?redirect=/checkout"}>
                   <FiShoppingBag size={16} /> Proceed to Checkout
                 </Link>
               </Button>

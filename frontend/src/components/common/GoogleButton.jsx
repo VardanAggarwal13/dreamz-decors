@@ -2,13 +2,16 @@ import { FcGoogle } from 'react-icons/fc';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/authClient';
 
-export default function GoogleButton({ label = 'Continue with Google' }) {
+export default function GoogleButton({ label = 'Continue with Google', redirectTo = '/' }) {
   const handleClick = async () => {
     try {
+      const cleanRedirect = redirectTo && redirectTo.startsWith('/') && redirectTo !== '/login' && redirectTo !== '/register'
+        ? redirectTo
+        : '/';
       // Redirects to Google, then back to callbackURL with a session cookie set.
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: `${window.location.origin}/account?welcome=1`,
+        callbackURL: `${window.location.origin}${cleanRedirect}`,
         errorCallbackURL: `${window.location.origin}/login`,
       });
     } catch {

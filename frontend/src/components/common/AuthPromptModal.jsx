@@ -36,7 +36,7 @@ export default function AuthPromptModal() {
 
         <div className="mt-6 space-y-2.5">
           <Link
-            to="/login"
+            to={`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`}
             state={{ from: location }}
             onClick={hide}
             className="block w-full rounded-lg bg-gold-deep py-3 text-sm font-semibold uppercase tracking-[0.16em] text-bone transition hover:bg-gold"
@@ -44,7 +44,8 @@ export default function AuthPromptModal() {
             Sign in
           </Link>
           <Link
-            to="/register"
+            to={`/register?redirect=${encodeURIComponent(location.pathname + location.search)}`}
+            state={{ from: location }}
             onClick={hide}
             className="block w-full rounded-lg border border-hairline bg-white py-3 text-sm font-medium text-ink transition hover:border-gold/60"
           >

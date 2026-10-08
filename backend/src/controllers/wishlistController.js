@@ -10,9 +10,9 @@ const validId = (id) => mongoose.isValidObjectId(id);
 const loadWishlist = async (userId) => {
   const user = await User.findById(userId)
     .select('wishlist')
-    .populate({ path: 'wishlist', select: PRODUCT_SELECT })
+    .populate({ path: 'wishlist', match: { isActive: true }, select: PRODUCT_SELECT })
     .lean();
-  return user?.wishlist || [];
+  return (user?.wishlist || []).filter(Boolean);
 };
 
 // GET /api/wishlist

@@ -80,6 +80,7 @@ export function normalizeProduct(p) {
     categoryTitle: typeof p.category === 'object' ? p.category?.title : undefined,
     tags: p.tags || [],
     stock: p.stock,
+    isActive: p.isActive !== false,
     variants: p.variants || [],
   };
 }

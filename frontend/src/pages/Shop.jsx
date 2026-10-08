@@ -52,7 +52,9 @@ export default function Shop() {
 
   const gridLoading = loading;
 
-  const products   = (data?.data || []).map(normalizeProduct);
+  const products = (data?.data || [])
+    .filter((p) => p && p.isActive !== false)
+    .map(normalizeProduct);
   const totalPages = Math.max(1, data?.pages || 1);
   const currentPage = Math.min(page, totalPages);
 

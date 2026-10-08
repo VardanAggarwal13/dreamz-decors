@@ -41,9 +41,13 @@ export default function Home() {
     {}
   );
 
-  const bestList = (bestsellers.data?.data || []).map(normalizeProduct);
+  const bestList = (bestsellers.data?.data || [])
+    .filter((p) => p && p.isActive !== false)
+    .map(normalizeProduct);
   const bestIds = new Set(bestList.map((p) => String(p._id || p.id)));
-  const rawNewList = (newArrivals.data?.data || []).map(normalizeProduct);
+  const rawNewList = (newArrivals.data?.data || [])
+    .filter((p) => p && p.isActive !== false)
+    .map(normalizeProduct);
   const distinctNewList = rawNewList.filter((p) => !bestIds.has(String(p._id || p.id)));
   const newList = distinctNewList.length > 0 ? distinctNewList.slice(0, 4) : rawNewList.slice(0, 4);
   const testimonials = reviewsRes.data?.data?.length

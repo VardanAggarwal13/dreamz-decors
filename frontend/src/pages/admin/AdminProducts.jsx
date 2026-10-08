@@ -344,16 +344,57 @@ export default function AdminProducts() {
   };
 
   const onUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const oversized = files.filter((f) => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      const fileNames = oversized.map((f) => `"${f.name}" (${(f.size / (1024 * 1024)).toFixed(1)}MB)`).join(', ');
+      toast.error(`Image limit is 10MB to save storage. Please choose images under 10MB: ${fileNames}`);
+      if (fileRef.current) fileRef.current.value = '';
+      return;
+    }
+
     setUploading(true);
+
+    const toastId = toast.loading(
+      files.length === 1 ? 'Uploading image…' : `Uploading ${files.length} images…`
+    );
+
     try {
-      const fd = new FormData();
-      fd.append('image', file);
-      const res = await api.post('/uploads/single', fd);
-      set('images', [...form.images, res.data]);
+      if (files.length === 1) {
+        const fd = new FormData();
+        fd.append('image', files[0]);
+        const res = await api.post('/uploads/single', fd, { timeout: 60000 });
+        const uploaded = res.data;
+        setForm((prev) => ({
+          ...prev,
+          images: [...(prev.images || []), uploaded],
+        }));
+        toast.success('Image uploaded successfully!', { id: toastId });
+      } else {
+        const BATCH_SIZE = 10;
+        const allUploaded = [];
+
+        for (let i = 0; i < files.length; i += BATCH_SIZE) {
+          const batch = files.slice(i, i + BATCH_SIZE);
+          const fd = new FormData();
+          batch.forEach((file) => fd.append('images', file));
+          const res = await api.post('/uploads/multiple', fd, { timeout: 120000 });
+          const batchUploaded = Array.isArray(res.data) ? res.data : [res.data];
+          allUploaded.push(...batchUploaded);
+        }
+
+        setForm((prev) => ({
+          ...prev,
+          images: [...(prev.images || []), ...allUploaded],
+        }));
+        toast.success(`${allUploaded.length} images added successfully!`, { id: toastId });
+      }
     } catch (err) {
-      toast.error(err.message || 'Upload failed');
+      toast.error(err.message || 'Upload failed. Please check image format/size and retry.', { id: toastId });
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -1269,7 +1310,7 @@ export default function AdminProducts() {
 
               <div className="mb-2.5 rounded-lg border border-hairline/80 bg-bone/60 p-2.5 text-[11px] text-ink-soft flex items-start gap-2">
                 <span className="font-semibold text-gold-deep whitespace-nowrap">📐 Standards:</span>
-                <span><strong>4:5 Vertical (2400×3000px)</strong> for single canvases · <strong>4:3 or 16:9</strong> for Gallery Sets · Min 1600×2000px</span>
+                <span><strong>4:5 Vertical (2400×3000px)</strong> for single canvases · <strong>4:3 or 16:9</strong> for Gallery Sets · Min 1600×2000px · Max 10MB per image</span>
               </div>
 
               <div className="flex flex-wrap gap-3">
@@ -1283,9 +1324,9 @@ export default function AdminProducts() {
                   className="group flex h-24 w-24 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-hairline/90 bg-bone-soft text-ink-muted transition hover:border-gold/60 hover:bg-gold/5 hover:text-gold-deep disabled:opacity-60"
                 >
                   <FiUploadCloud size={20} className={uploading ? 'animate-pulse text-gold' : 'group-hover:scale-110'} />
-                  <span className="text-[10px] font-semibold">{uploading ? 'Uploading…' : 'Add Image'}</span>
+                  <span className="text-[10px] font-semibold">{uploading ? 'Uploading…' : 'Add Images'}</span>
                 </button>
-                <input ref={fileRef} type="file" accept="image/*" onChange={onUpload} className="hidden" />
+                <input ref={fileRef} type="file" accept="image/*" multiple onChange={onUpload} className="hidden" />
               </div>
 
               {/* Or add by direct link */}

@@ -6,7 +6,7 @@ import { buildPagination, buildPaginationMeta, paginationPresets, parseNumber } 
 import mongoose from 'mongoose';
 
 const PRODUCT_LIST_SELECT =
-  'title slug description price mrp badge images rating reviewsCount stock isFeatured sales category variants createdAt';
+  'title slug description price mrp badge images rating reviewsCount stock isFeatured isActive sales category variants createdAt';
 
 const SORT_MAP = {
   new: { createdAt: -1, _id: -1 },
@@ -95,7 +95,7 @@ export const listProducts = asyncHandler(async (req, res) => {
     Product.countDocuments(filter),
   ]);
 
-  res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.json({
     success: true,
     data: items,
@@ -165,7 +165,7 @@ export const getProduct = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Product not found');
   }
-  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.json({ success: true, data: product });
 });
 

@@ -128,34 +128,34 @@ export const createOrder = asyncHandler(async (req, res) => {
         await Product.updateOne({ _id: item.product }, { $inc: { sales: item.qty || 1 } }).catch(() => {});
       }
     }
+
+    // Fire the "order placed" notification to the customer (in-app + email + push)
+    await notify({
+      user: req.user._id,
+      type: 'order_placed',
+      title: 'Order Placed (Cash on Delivery)',
+      message: `Your order for ${inr(total)} has been placed. You can pay via cash on delivery.`,
+      data: { orderId: order._id },
+      link: `/account/orders/${order._id}`,
+      email: true,
+      push: true,
+      emailContext: { order, origin },
+    });
+
+    // Alert every admin about the new COD order (bell + email)
+    await notifyAdmins({
+      type: 'admin_new_order',
+      title: 'New order received (COD)',
+      message: `${req.user.name || 'A customer'} placed a Cash on Delivery order of ${inr(total)}.`,
+      data: { orderId: order._id },
+      link: '/admin/orders',
+      emailContext: { order, customerName: req.user.name, origin },
+    });
   }
 
-  // Fire the "order placed" notification to the customer (in-app + email + push).
-  // For Razorpay, paymentService sends the full confirmation email upon capture so the customer isn't spammed.
-  const isOnlinePayment = paymentMethod === 'razorpay';
-  await notify({
-    user: req.user._id,
-    type: 'order_placed',
-    title: isOnlinePayment ? 'Order Created' : 'Order Placed (Cash on Delivery)',
-    message: isOnlinePayment
-      ? `Your order for ${inr(total)} has been created.`
-      : `Your order for ${inr(total)} has been placed. You can pay via cash on delivery.`,
-    data: { orderId: order._id },
-    link: `/account/orders/${order._id}`,
-    email: !isOnlinePayment,
-    push: true,
-    emailContext: { order, origin },
-  });
-
-  // Alert every admin about the new order (bell + email).
-  await notifyAdmins({
-    type: 'admin_new_order',
-    title: 'New order received',
-    message: `${req.user.name || 'A customer'} placed an order of ${inr(total)}.`,
-    data: { orderId: order._id },
-    link: '/admin/orders',
-    emailContext: { order, customerName: req.user.name, origin },
-  });
+  // NOTE: For online payments (Razorpay), NO email or push is triggered here while the order is pending.
+  // When the customer completes payment, paymentService.markOrderPaid fires 'order_paid' to customer
+  // and 'admin_order_paid' to admins with full verification.
 
   res.status(201).json({ success: true, data: order });
 });

@@ -19,6 +19,14 @@ export const errorHandler = (err, req, res, _next) => {
     status = 400;
     message = Object.values(err.errors).map((e) => e.message).join(', ');
   }
+  if (err.name === 'MulterError') {
+    status = 400;
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      message = 'Image size exceeds the 10MB limit. Please choose images under 10MB.';
+    } else {
+      message = err.message || 'File upload error';
+    }
+  }
 
   res.status(status).json({
     success: false,

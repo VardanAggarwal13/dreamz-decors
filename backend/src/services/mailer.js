@@ -31,6 +31,13 @@ export function isValidRecipient(email) {
  * app sends (notifications, password reset, welcome, etc.).
  */
 export function mailFrom() {
+  if (process.env.RESEND_API_KEY) {
+    if (process.env.RESEND_FROM) return process.env.RESEND_FROM;
+    if (process.env.MAIL_FROM && !process.env.MAIL_FROM.includes('gmail.com')) {
+      return process.env.MAIL_FROM;
+    }
+    return 'DreamzDecor <onboarding@resend.dev>';
+  }
   return process.env.MAIL_FROM || process.env.SMTP_USER || 'DreamzDecor <dreamzdecor30@gmail.com>';
 }
 
@@ -67,9 +74,9 @@ function getTransporter() {
     tls: {
       rejectUnauthorized: false,
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 8000,
   });
 
   return transporter;
@@ -77,7 +84,8 @@ function getTransporter() {
 
 /**
  * Send an email. Returns true on success, false if email is disabled or fails.
- * Never throws — notification dispatch must not break on a mail failure.
+ * Supports both Resend HTTPS API (Port 443 - unblocked on cloud hosts like Render)
+ * and standard SMTP (Nodemailer). Never throws.
  */
 export async function sendEmail({ to, subject, html, text, replyTo }, retryCount = 0) {
   if (!isValidRecipient(to)) {
@@ -85,6 +93,39 @@ export async function sendEmail({ to, subject, html, text, replyTo }, retryCount
     return false;
   }
 
+  // 1. Resend HTTPS API (Port 443 — works seamlessly on Render, Vercel, AWS without SMTP port blocks)
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  if (resendApiKey) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: mailFrom(),
+          to: [to.trim()],
+          subject,
+          html,
+          ...(text ? { text } : {}),
+          ...(replyTo ? { reply_to: replyTo } : {}),
+        }),
+      });
+
+      if (res.ok) {
+        return true;
+      }
+      const errData = await res.json().catch(() => ({}));
+      console.error(`✦ [Resend API] Send failed to ${to}:`, errData.message || res.statusText);
+      return false;
+    } catch (err) {
+      console.error(`✦ [Resend API] Network error to ${to}:`, err.message);
+      return false;
+    }
+  }
+
+  // 2. SMTP Transport (Nodemailer)
   const tx = getTransporter();
   if (!tx) return false;
 
@@ -114,3 +155,4 @@ export async function sendEmail({ to, subject, html, text, replyTo }, retryCount
     return false;
   }
 }
+

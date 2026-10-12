@@ -28,7 +28,8 @@ export function WishlistSync() {
         (async () => {
           try {
             const res = await api.get('/wishlist');
-            useWishlistStore.getState().setItems((res.data || []).map(normalizeProduct));
+            const list = res.data?.data || (Array.isArray(res.data) ? res.data : []);
+            useWishlistStore.getState().setItems(list.map(normalizeProduct));
           } catch {}
         })();
       }
@@ -45,14 +46,15 @@ export function WishlistSync() {
         // Only merge if transitioning from unauthenticated guest state
         const isGuestToUser = !had;
         const localIds = isGuestToUser
-          ? useWishlistStore.getState().items.map((p) => p.id).filter(Boolean)
+          ? useWishlistStore.getState().items.map((p) => p.id || p._id).filter(Boolean)
           : [];
 
         try {
           const res = localIds.length
             ? await api.post('/wishlist/merge', { productIds: localIds })
             : await api.get('/wishlist');
-          useWishlistStore.getState().setItems((res.data || []).map(normalizeProduct));
+          const list = res.data?.data || (Array.isArray(res.data) ? res.data : []);
+          useWishlistStore.getState().setItems(list.map(normalizeProduct));
         } catch {
           /* keep local list if the sync fails */
         }

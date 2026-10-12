@@ -12,8 +12,16 @@ export const useAuthStore = create((set) => ({
   user: null,
   status: 'loading', // 'loading' | 'authenticated' | 'unauthenticated'
 
-  setSession: (user) =>
-    set({ user: user || null, status: user ? 'authenticated' : 'unauthenticated' }),
+  setSession: (user) => {
+    if (user?.id || user?._id) {
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('dd:last_user_id', String(user.id || user._id));
+        } catch {}
+      }
+    }
+    set({ user: user || null, status: user ? 'authenticated' : 'unauthenticated' });
+  },
 
   logout: async () => {
     try {
@@ -41,6 +49,7 @@ export const useAuthStore = create((set) => ({
 
     if (typeof window !== 'undefined') {
       try {
+        localStorage.removeItem('dd:last_user_id');
         localStorage.removeItem('dreamzdecors-cart');
         localStorage.removeItem('dreamzdecors-wishlist');
         localStorage.removeItem('dd:cart:guest');

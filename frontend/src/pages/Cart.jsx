@@ -47,12 +47,15 @@ function QtyButton({ onClick, children, label, disabled = false }) {
 
 export default function Cart() {
   const items = useCartStore((state) => state.items);
+  const loading = useCartStore((state) => state.loading);
+  const loaded = useCartStore((state) => state.loaded);
   const updateQty = useCartStore((state) => state.updateQty);
   const removeItem = useCartStore((state) => state.removeItem);
   const patchItem = useCartStore((state) => state.patchItem);
   const clear = useCartStore((state) => state.clear);
   const subtotal = useCartStore((state) => state.subtotal());
   const user = useAuthStore((state) => state.user);
+  const authStatus = useAuthStore((state) => state.status);
 
   // Backfill descriptions onto items saved before we started capturing them,
   // so older carts show the product blurb without needing a re-add.
@@ -90,6 +93,25 @@ export default function Cart() {
   const seo = (
     <Seo title="Cart — DreamzDecors" description="Review your DreamzDecors items before checkout." canonical="/cart" noIndex />
   );
+
+  // ── Loading state (while hydrating or fetching cart data) ──
+  if (items.length === 0 && (!loaded || loading || authStatus === 'loading')) {
+    return (
+      <div className="bg-bone min-h-[60vh] py-10 sm:py-16">
+        {seo}
+        <div className="container-page max-w-6xl">
+          <div className="h-8 w-48 animate-pulse rounded-lg bg-hairline/60" />
+          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] xl:gap-8 items-start">
+            <div className="space-y-4">
+              <div className="h-32 w-full animate-pulse rounded-2xl border border-hairline/60 bg-bone-soft" />
+              <div className="h-32 w-full animate-pulse rounded-2xl border border-hairline/60 bg-bone-soft" />
+            </div>
+            <div className="h-72 w-full animate-pulse rounded-2xl border border-hairline/60 bg-bone-soft" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ── Empty state ──
   if (items.length === 0) {

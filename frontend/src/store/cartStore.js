@@ -13,7 +13,7 @@ export function transformBackendCartItem(backendItem) {
     (typeof p.image === 'object' && (p.image?.url || p.image?.secure_url)) ||
     '';
   const options = backendItem.options || {};
-  const id = String(p._id || p.id || '');
+  const id = String(p._id || p.id || backendItem.product || '');
   const slug = p.slug || '';
   const key = `${id || slug}-${JSON.stringify(options)}`;
   return {
@@ -26,15 +26,20 @@ export function transformBackendCartItem(backendItem) {
     image: resolvedImage,
     category: p.categoryTitle || p.category || '',
     options,
-    qty: Number(backendItem.qty || 1),
+    qty: Math.max(1, Number(backendItem.qty || 1)),
     stock: p.stock != null ? Number(p.stock) : Infinity,
     itemId: String(backendItem._id || ''),
   };
 }
 
-const getUserId = () => {
+export const getUserId = () => {
   const u = useAuthStore.getState().user;
-  return u?.id || u?._id || null;
+  if (u?.id || u?._id) return String(u.id || u._id);
+  if (typeof window !== 'undefined') {
+    const last = localStorage.getItem('dd:last_user_id');
+    if (last) return last;
+  }
+  return null;
 };
 
 export const getCartStorageKey = (userId) => (userId ? `dd:cart:${userId}` : 'dd:cart:guest');
@@ -45,7 +50,22 @@ export const loadCartFromStorage = (userId) => {
     const raw = localStorage.getItem(getCartStorageKey(userId));
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((item) => {
+        const id = String(item.id || item._id || item.productId || '');
+        const slug = item.slug || '';
+        const options = item.options || {};
+        const key = item.key || `${id || slug}-${JSON.stringify(options)}`;
+        return {
+          ...item,
+          id,
+          slug,
+          key,
+          qty: Math.max(1, Number(item.qty || 1)),
+        };
+      })
+      .filter((i) => i.id || i.slug);
   } catch {
     return [];
   }
@@ -54,20 +74,45 @@ export const loadCartFromStorage = (userId) => {
 export const saveCartToStorage = (userId, items) => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(getCartStorageKey(userId), JSON.stringify(items));
+    const safeItems = Array.isArray(items) ? items : [];
+    localStorage.setItem(getCartStorageKey(userId), JSON.stringify(safeItems));
+    if (userId) {
+      localStorage.setItem('dd:last_user_id', String(userId));
+    }
   } catch {}
+};
+
+// Immediate synchronous hydration on store initialization
+export const getInitialCartItems = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const lastUser = localStorage.getItem('dd:last_user_id');
+    if (lastUser) {
+      const userItems = loadCartFromStorage(lastUser);
+      if (userItems.length > 0) return userItems;
+    }
+    const guestItems = loadCartFromStorage(null);
+    if (guestItems.length > 0) return guestItems;
+
+    const legacy = localStorage.getItem('dreamzdecors-cart');
+    if (legacy) {
+      const parsed = JSON.parse(legacy);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return [];
 };
 
 let syncTimer = null;
 const syncWithServer = (items) => {
-  const userId = getUserId();
+  const userId = useAuthStore.getState().user?.id || useAuthStore.getState().user?._id;
   if (!userId) return;
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(async () => {
     try {
       await api.put('/cart', {
         items: items.map((i) => ({
-          productId: i.id,
+          productId: i.id || i._id || i.productId,
           qty: i.qty,
           options: i.options || {},
         })),
@@ -78,18 +123,20 @@ const syncWithServer = (items) => {
   }, 250);
 };
 
+const initialItems = getInitialCartItems();
+
 export const useCartStore = create((set, get) => ({
-  items: [],
+  items: initialItems,
   lastAddedItem: null,
   loading: false,
-  loaded: false,
+  loaded: initialItems.length > 0,
 
   clearLastAdded: () => set({ lastAddedItem: null }),
 
   setCartItems: (items) => {
     const userId = getUserId();
     const safeItems = Array.isArray(items) ? items : [];
-    set({ items: safeItems });
+    set({ items: safeItems, loaded: true, loading: false });
     saveCartToStorage(userId, safeItems);
   },
 
@@ -109,6 +156,22 @@ export const useCartStore = create((set, get) => ({
         .filter((i) => Boolean(i.product && i.product.isActive !== false))
         .map(transformBackendCartItem);
 
+      if (transformed.length === 0) {
+        // If server cart is empty, check if we have local items that need to be synced
+        const cached = loadCartFromStorage(userId);
+        if (cached.length > 0) {
+          api.put('/cart', {
+            items: cached.map((i) => ({
+              productId: i.id || i._id || i.productId,
+              qty: i.qty,
+              options: i.options || {},
+            })),
+          }).catch(() => {});
+          set({ items: cached, loading: false, loaded: true });
+          return cached;
+        }
+      }
+
       set({ items: transformed, loading: false, loaded: true });
       saveCartToStorage(userId, transformed);
       return transformed;
@@ -125,7 +188,7 @@ export const useCartStore = create((set, get) => ({
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('dd:cart:guest');
-        localStorage.removeItem('dreamzdecors-cart'); // Purge legacy static key
+        localStorage.removeItem('dreamzdecors-cart');
       } catch {}
     }
   },
@@ -136,6 +199,10 @@ export const useCartStore = create((set, get) => ({
       toast.error('This item is currently out of stock');
       return;
     }
+
+    const productId = String(product.id || product._id || '');
+    const productSlug = product.slug || '';
+    if (!productId && !productSlug) return;
 
     const resolvedImage =
       (typeof product.image === 'string' && product.image) ||
@@ -149,7 +216,7 @@ export const useCartStore = create((set, get) => ({
     let nextItems = [];
 
     set((state) => {
-      const key = `${product.id || product.slug}-${JSON.stringify(options)}`;
+      const key = `${productId || productSlug}-${JSON.stringify(options)}`;
       const existing = state.items.find((i) => i.key === key);
 
       if (existing) {
@@ -161,13 +228,14 @@ export const useCartStore = create((set, get) => ({
         const nextQty = Math.min(stockLimit, currentQty + qty);
         addedAmount = nextQty - currentQty;
         nextItems = state.items.map((i) =>
-          i.key === key ? { ...i, qty: nextQty, stock: stockLimit } : i
+          i.key === key ? { ...i, id: productId || i.id, qty: nextQty, stock: stockLimit } : i
         );
         return {
           items: nextItems,
+          loaded: true,
           lastAddedItem: {
-            id: product.id || product.slug,
-            slug: product.slug,
+            id: productId || productSlug,
+            slug: productSlug,
             title: product.title,
             price: product.price,
             image: resolvedImage || existing.image,
@@ -183,8 +251,8 @@ export const useCartStore = create((set, get) => ({
         ...state.items,
         {
           key,
-          id: product.id,
-          slug: product.slug,
+          id: productId,
+          slug: productSlug,
           title: product.title,
           description: product.description || '',
           price: product.price,
@@ -197,9 +265,10 @@ export const useCartStore = create((set, get) => ({
       ];
       return {
         items: nextItems,
+        loaded: true,
         lastAddedItem: {
-          id: product.id || product.slug,
-          slug: product.slug,
+          id: productId || productSlug,
+          slug: productSlug,
           title: product.title,
           price: product.price,
           image: resolvedImage,
@@ -222,7 +291,7 @@ export const useCartStore = create((set, get) => ({
       }
     }
 
-    const userId = getUserId();
+    const userId = useAuthStore.getState().user?.id || useAuthStore.getState().user?._id;
     saveCartToStorage(userId, nextItems);
     syncWithServer(nextItems);
   },
@@ -236,7 +305,7 @@ export const useCartStore = create((set, get) => ({
       const requestedQty = Number(qty);
       if (requestedQty <= 0) {
         nextItems = state.items.filter((i) => i.key !== key);
-        return { items: nextItems };
+        return { items: nextItems, loaded: true };
       }
 
       const stockLimit = item.stock != null ? Number(item.stock) : Infinity;
@@ -245,16 +314,16 @@ export const useCartStore = create((set, get) => ({
         nextItems = state.items.map((i) =>
           i.key === key ? { ...i, qty: stockLimit } : i
         );
-        return { items: nextItems };
+        return { items: nextItems, loaded: true };
       }
 
       nextItems = state.items.map((i) =>
         i.key === key ? { ...i, qty: requestedQty } : i
       );
-      return { items: nextItems };
+      return { items: nextItems, loaded: true };
     });
 
-    const userId = getUserId();
+    const userId = useAuthStore.getState().user?.id || useAuthStore.getState().user?._id;
     saveCartToStorage(userId, nextItems);
     syncWithServer(nextItems);
   },
@@ -263,9 +332,9 @@ export const useCartStore = create((set, get) => ({
     let nextItems = [];
     set((state) => {
       nextItems = state.items.map((i) => (i.key === key ? { ...i, ...patch } : i));
-      return { items: nextItems };
+      return { items: nextItems, loaded: true };
     });
-    const userId = getUserId();
+    const userId = useAuthStore.getState().user?.id || useAuthStore.getState().user?._id;
     saveCartToStorage(userId, nextItems);
   },
 
@@ -273,17 +342,17 @@ export const useCartStore = create((set, get) => ({
     let nextItems = [];
     set((state) => {
       nextItems = state.items.filter((i) => i.key !== key);
-      return { items: nextItems };
+      return { items: nextItems, loaded: true };
     });
-    const userId = getUserId();
+    const userId = useAuthStore.getState().user?.id || useAuthStore.getState().user?._id;
     saveCartToStorage(userId, nextItems);
     syncWithServer(nextItems);
   },
 
   clear: () => {
     if (syncTimer) clearTimeout(syncTimer);
-    const userId = getUserId();
-    set({ items: [], lastAddedItem: null });
+    const userId = useAuthStore.getState().user?.id || useAuthStore.getState().user?._id;
+    set({ items: [], lastAddedItem: null, loaded: true });
     saveCartToStorage(userId, []);
     if (userId) {
       api.delete('/cart').catch(() => {});

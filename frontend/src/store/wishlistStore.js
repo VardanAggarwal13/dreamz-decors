@@ -17,21 +17,25 @@ export const useWishlistStore = create(
 
       // Add if missing, remove if present. Stores the full (normalized) product.
       toggle: (product) => {
-        const exists = get().items.some((p) => p.id === product.id);
+        const prodId = String(product.id || product._id || '');
+        if (!prodId) return;
+        const normalized = { ...product, id: prodId };
+        const exists = get().items.some((p) => String(p.id || p._id) === prodId);
         if (exists) {
-          set((s) => ({ items: s.items.filter((p) => p.id !== product.id) }));
+          set((s) => ({ items: s.items.filter((p) => String(p.id || p._id) !== prodId) }));
           toast('Removed from wishlist', { description: product.title });
-          if (isAuthed()) api.delete(`/wishlist/${product.id}`).catch(() => {});
+          if (isAuthed()) api.delete(`/wishlist/${prodId}`).catch(() => {});
         } else {
-          set((s) => ({ items: [...s.items, product] }));
+          set((s) => ({ items: [...s.items, normalized] }));
           toast.success('Added to wishlist', { description: product.title });
-          if (isAuthed()) api.post('/wishlist', { productId: product.id }).catch(() => {});
+          if (isAuthed()) api.post('/wishlist', { productId: prodId }).catch(() => {});
         }
       },
 
       remove: (id) => {
-        set((s) => ({ items: s.items.filter((p) => p.id !== id) }));
-        if (isAuthed()) api.delete(`/wishlist/${id}`).catch(() => {});
+        const targetId = String(id);
+        set((s) => ({ items: s.items.filter((p) => String(p.id || p._id) !== targetId) }));
+        if (isAuthed()) api.delete(`/wishlist/${targetId}`).catch(() => {});
       },
 
       clear: () => {

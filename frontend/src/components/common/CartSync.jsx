@@ -27,7 +27,11 @@ export function CartSync() {
       if (guestItems.length > 0) {
         try {
           await api.post('/cart/merge', {
-            items: guestItems.map((i) => ({ productId: i.id, qty: i.qty, options: i.options })),
+            items: guestItems.map((i) => ({
+              productId: i.id || i._id || i.productId,
+              qty: i.qty,
+              options: i.options,
+            })),
           });
         } catch {
           // If merge fails, continue to fetch user's account cart
@@ -50,7 +54,11 @@ export function CartSync() {
       } else {
         // Guest user on initial page load
         const guestItems = loadCartFromStorage(null);
-        useCartStore.getState().setCartItems(guestItems);
+        if (guestItems.length > 0) {
+          useCartStore.getState().setCartItems(guestItems);
+        } else if (useCartStore.getState().items.length === 0) {
+          useCartStore.setState({ loaded: true, loading: false });
+        }
       }
       return;
     }

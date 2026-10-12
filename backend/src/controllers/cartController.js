@@ -6,7 +6,7 @@ import { createOptionsFingerprint } from '../utils/query.js';
 const populateCart = (cart) =>
   cart.populate({
     path: 'items.product',
-    select: 'title slug price mrp images stock',
+    select: 'title slug price mrp images stock isActive',
   });
 
 export const getCart = asyncHandler(async (req, res) => {
@@ -124,7 +124,7 @@ export const replaceCart = asyncHandler(async (req, res) => {
   let cart = await Cart.findOne({ user: req.user._id });
   if (!cart) cart = new Cart({ user: req.user._id, items: [] });
 
-  const ids = items.map((i) => i.productId || i.id).filter(Boolean);
+  const ids = items.map((i) => i.productId || i.id || i._id).filter(Boolean);
   const products = await Product.find({ _id: { $in: ids }, isActive: true })
     .select('price')
     .lean();
@@ -132,11 +132,11 @@ export const replaceCart = asyncHandler(async (req, res) => {
 
   cart.items = items
     .filter((i) => {
-      const pid = String(i.productId || i.id || '');
+      const pid = String(i.productId || i.id || i._id || '');
       return priceById.has(pid) && Number(i.qty) > 0;
     })
     .map((i) => {
-      const pid = String(i.productId || i.id || '');
+      const pid = String(i.productId || i.id || i._id || '');
       return {
         product: pid,
         qty: Math.max(1, Number.parseInt(i.qty, 10) || 1),
@@ -161,14 +161,14 @@ export const mergeCart = asyncHandler(async (req, res) => {
   let cart = await Cart.findOne({ user: req.user._id });
   if (!cart) cart = new Cart({ user: req.user._id, items: [] });
 
-  const ids = items.map((i) => i.productId || i.id).filter(Boolean);
+  const ids = items.map((i) => i.productId || i.id || i._id).filter(Boolean);
   const products = await Product.find({ _id: { $in: ids }, isActive: true })
     .select('price stock')
     .lean();
   const productById = new Map(products.map((p) => [String(p._id), p]));
 
   for (const item of items) {
-    const pid = String(item.productId || item.id || '');
+    const pid = String(item.productId || item.id || item._id || '');
     const product = productById.get(pid);
     if (!product) continue;
 

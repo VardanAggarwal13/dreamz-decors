@@ -287,8 +287,18 @@ export default function Checkout() {
               </ul>
 
               <dl className="mt-5 space-y-3 border-t border-hairline/60 pt-5 text-sm">
-                <Row label="Subtotal" value={formatINR(subtotal)} />
-                <Row label="Shipping" value={shipping === 0 ? 'Standard Delivery' : formatINR(shipping)} valueClass={shipping === 0 ? 'text-ink-soft' : ''} />
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-soft">Shipping</span>
+                  <span>
+                    {shipping === 0 ? (
+                      <span className="inline-flex items-center rounded-md border border-emerald-200/90 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-emerald-700 shadow-2xs">
+                        FREE
+                      </span>
+                    ) : (
+                      <span className="font-medium text-ink">{formatINR(shipping)}</span>
+                    )}
+                  </span>
+                </div>
               </dl>
               <div className="mt-4 flex items-baseline justify-between border-t border-hairline/70 pt-4">
                 <div>

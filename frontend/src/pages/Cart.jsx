@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button';
 import MediaImage from '@/components/ui/MediaImage';
 import ProductGrid from '@/components/common/ProductGrid';
 import ProductGridSkeleton from '@/components/common/ProductGridSkeleton';
+import ProductCarousel from '@/components/common/ProductCarousel';
 import useFetch from '@/hooks/useFetch';
 import api from '@/lib/api';
 import { useCartStore } from '@/store/cartStore';
@@ -68,12 +69,12 @@ export default function Cart() {
   }, [items.length]);
 
   // Popular bestselling picks to drive upsells & conversion
-  const recos = useFetch('/products?limit=8&sort=bestselling');
+  const recos = useFetch('/products?limit=12&sort=bestselling');
   const cartIds = new Set(items.map((i) => i.id));
   const recommended = (recos.data?.data || [])
     .map(normalizeProduct)
     .filter((p) => !cartIds.has(p.id))
-    .slice(0, 3);
+    .slice(0, 8);
 
   const WHY_SHOP = [
     { Icon: ShieldCheck, title: 'Secure Payments', text: '100% encrypted & safe checkout' },
@@ -105,15 +106,15 @@ export default function Cart() {
           </p>
 
           {/* Action Buttons */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Button asChild variant="primary" size="lg" className="bg-gold-deep text-bone hover:bg-gold-deep/90 shadow-sm uppercase tracking-[0.16em] text-xs font-semibold px-6 py-3">
-              <Link to="/shop?sort=bestselling" className="flex items-center gap-2">
-                <Flame size={15} /> Find Bestsellers
+          <div className="mt-6 flex flex-col items-center justify-center gap-2.5 sm:mt-8 sm:flex-row sm:gap-3 w-full sm:w-auto">
+            <Button asChild variant="primary" size="sm" className="w-full bg-gold-deep text-bone hover:bg-gold-deep/90 shadow-xs uppercase tracking-[0.12em] text-[11px] font-semibold px-4 py-2.5 rounded-lg sm:w-auto sm:text-xs sm:tracking-[0.16em] sm:px-6 sm:py-3 sm:rounded-xl">
+              <Link to="/shop?sort=bestselling" className="flex items-center justify-center gap-1.5">
+                <Flame size={13} /> Find Bestsellers
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="border-gold/50 text-gold-deep hover:bg-gold/10 uppercase tracking-[0.16em] text-xs font-semibold px-6 py-3">
-              <Link to="/shop" className="flex items-center gap-2">
-                <Compass size={15} /> Explore All Art <FiArrowRight size={13} />
+            <Button asChild variant="outline" size="sm" className="w-full border-gold/50 bg-white text-gold-deep hover:bg-gold/10 uppercase tracking-[0.12em] text-[11px] font-semibold px-4 py-2.5 rounded-lg sm:w-auto sm:text-xs sm:tracking-[0.16em] sm:px-6 sm:py-3 sm:rounded-xl">
+              <Link to="/shop" className="flex items-center justify-center gap-1.5">
+                <Compass size={13} /> Explore All Art <FiArrowRight size={12} />
               </Link>
             </Button>
           </div>
@@ -176,10 +177,10 @@ export default function Cart() {
       </div>
 
       <div className="container-page py-8 sm:py-10">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] xl:gap-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px] xl:gap-8 items-start">
 
-          {/* ── Left: items ───────────────────────────────────── */}
-          <div>
+          {/* ── 1. Cart Items (Desktop: Left top, Mobile: 1st) ───────────────── */}
+          <div className="lg:col-start-1 lg:row-start-1">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">
                 Cart Items <span className="text-ink-muted">({count})</span>
@@ -272,64 +273,10 @@ export default function Cart() {
                 </li>
               ))}
             </ul>
-
-            {/* Recommendations Section — Clean "YOU MAY ALSO LIKE" */}
-            {(recos.loading || recommended.length > 0) && (
-              <div className="mt-10">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">
-                  You may also like
-                </h2>
-
-                <div className="mt-4">
-                  {recos.loading ? (
-                    <ProductGridSkeleton columns={3} count={3} />
-                  ) : (
-                    <ProductGrid products={recommended} columns={3} />
-                  )}
-                </div>
-
-                {/* ── Premium Discovery & Action Buttons (Below "You May Also Like" cards) ── */}
-                <div className="mt-8 rounded-2xl border border-hairline/80 bg-bone-soft/80 p-6 text-center sm:p-7 shadow-xs">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold-deep">
-                    Curated Collections
-                  </span>
-                  <h3 className="mt-1 font-display text-xl text-ink sm:text-2xl">
-                    Discover More for Your Home
-                  </h3>
-                  <p className="mx-auto mt-2 max-w-lg text-xs leading-relaxed text-ink-soft sm:text-sm">
-                    Looking for the perfect piece to elevate your space? Browse our most loved bestselling masterworks or explore the entire collection.
-                  </p>
-
-                  <div className="mt-6 flex flex-wrap items-center justify-center gap-3.5">
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="md"
-                      className="border-gold/50 bg-white text-gold-deep hover:bg-gold/10 hover:border-gold px-6 py-3 text-xs font-semibold uppercase tracking-[0.16em] rounded-xl transition-all shadow-2xs"
-                    >
-                      <Link to="/shop?sort=bestselling" className="flex items-center gap-2">
-                        <Flame size={14} /> Find Bestsellers
-                      </Link>
-                    </Button>
-
-                    <Button
-                      asChild
-                      variant="primary"
-                      size="md"
-                      className="bg-gold-deep text-bone hover:bg-gold px-6 py-3 text-xs font-semibold uppercase tracking-[0.16em] rounded-xl shadow-xs transition-all"
-                    >
-                      <Link to="/shop" className="flex items-center gap-2">
-                        <Compass size={14} /> Explore More Collections <FiArrowRight size={13} />
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* ── Right: summary + why-shop ─────────────────────── */}
-          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          {/* ── 2. Order summary & payment / Why shop (Desktop: Right sticky, Mobile: 2nd, after Cart Items) ── */}
+          <aside className="space-y-4 lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:sticky lg:top-24 lg:self-start">
             {/* Order summary */}
             <div className="rounded-2xl border border-hairline/60 bg-bone-soft p-5">
               <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">Order Summary</h2>
@@ -340,10 +287,16 @@ export default function Cart() {
                   <dt className="text-ink-soft">Subtotal ({count} item{count === 1 ? '' : 's'})</dt>
                   <dd className="text-ink font-medium">{formatINR(subtotal)}</dd>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex items-center justify-between">
                   <dt className="text-ink-soft">Shipping</dt>
-                  <dd className={shipping === 0 ? 'font-medium text-ink-soft' : 'text-ink font-medium'}>
-                    {shipping === 0 ? 'Standard Delivery' : formatINR(shipping)}
+                  <dd>
+                    {shipping === 0 ? (
+                      <span className="inline-flex items-center rounded-md border border-emerald-200/90 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-emerald-700 shadow-2xs">
+                        FREE
+                      </span>
+                    ) : (
+                      <span className="font-medium text-ink">{formatINR(shipping)}</span>
+                    )}
                   </dd>
                 </div>
               </dl>
@@ -371,7 +324,7 @@ export default function Cart() {
               </Button>
             </div>
 
-            {/* Why shop with us */}
+            {/* Why shop with us / Payment trust indicators */}
             <div className="rounded-2xl border border-hairline/60 bg-bone-soft p-5">
               <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">Why shop with us</h3>
               <ul className="mt-4 space-y-3.5">
@@ -389,6 +342,56 @@ export default function Cart() {
               </ul>
             </div>
           </aside>
+
+          {/* ── 3. You May Also Like (Desktop: Left middle, Mobile: 3rd, after Order Summary & Payment) ── */}
+          {(recos.loading || recommended.length > 0) && (
+            <div className="lg:col-start-1 lg:row-start-2">
+              <ProductCarousel
+                title="You may also like"
+                subtitle="Curated bestsellers chosen to complement your selection"
+                products={recommended}
+                loading={recos.loading}
+                skeletonCount={4}
+              />
+            </div>
+          )}
+
+          {/* ── 4. Curated Collections (Desktop: Left bottom, Mobile: 4th, after You May Also Like) ── */}
+          <div className="lg:col-start-1 lg:row-start-3 rounded-2xl border border-hairline/80 bg-bone-soft/80 p-4 sm:p-7 text-center shadow-xs">
+            <span className="text-[9px] font-bold uppercase tracking-[0.24em] text-gold-deep sm:text-[10px] sm:tracking-[0.3em]">
+              Curated Collections
+            </span>
+            <h3 className="mt-1 font-display text-lg text-ink sm:text-2xl">
+              Discover More for Your Home
+            </h3>
+            <p className="mx-auto mt-1.5 max-w-lg text-[11px] leading-relaxed text-ink-soft sm:mt-2 sm:text-sm">
+              Looking for the perfect piece to elevate your space? Browse our most loved bestselling masterworks or explore the entire collection.
+            </p>
+
+            <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:mt-6 sm:flex-row sm:gap-3.5">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="w-full border-gold/50 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-gold-deep shadow-2xs transition-all hover:border-gold hover:bg-gold/10 rounded-lg sm:w-auto sm:px-6 sm:py-2.5 sm:text-xs sm:tracking-[0.16em] sm:rounded-xl"
+              >
+                <Link to="/shop?sort=bestselling" className="flex items-center justify-center gap-1.5">
+                  <Flame size={13} className="shrink-0" /> Find Bestsellers
+                </Link>
+              </Button>
+
+              <Button
+                asChild
+                variant="primary"
+                size="sm"
+                className="w-full bg-gold-deep px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-bone shadow-xs transition-all hover:bg-gold rounded-lg sm:w-auto sm:px-6 sm:py-2.5 sm:text-xs sm:tracking-[0.16em] sm:rounded-xl"
+              >
+                <Link to="/shop" className="flex items-center justify-center gap-1.5">
+                  <Compass size={13} className="shrink-0" /> Explore More Collections <FiArrowRight size={12} className="shrink-0" />
+                </Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
